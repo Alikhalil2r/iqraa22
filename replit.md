@@ -62,6 +62,15 @@ GET  /api/school/theme      — ثيم المدرسة
 GET  /api/reports/*         — التقارير
 ```
 
+## الميزات المكتملة — الجلسة الحالية (أفضل 7 إضافات)
+- ✅ **Mobile Bottom Navigation** في بوابة أولياء الأمور — شريط تنقل ثابت أسفل الشاشة على الجوال بأيقونات وتسميات وبادجات للإشعارات
+- ✅ **Session Expiry Warning** — بانر تحذيري عند اقتراب انتهاء JWT (10 دقائق تحذير، 3 دقائق تنبيه طارئ) مع زر تسجيل خروج
+- ✅ **Notification Bell Dropdown** — جرس الإشعارات في AdminLayout يفتح لوحة منسدلة مع رسائل غير مقروءة وتنبيهات الغياب، وربط بنافذة الاختصارات
+- ✅ **Keyboard Shortcuts Help Modal** — الضغط على '?' يعرض نافذة جميلة لكل الاختصارات المتاحة (Alt+1-7، Ctrl+K، Esc)
+- ✅ **Grade Radar Chart** — في بروفايل الطالب > تبويب الدرجات: مخطط رادار تفاعلي يُظهر أداء المواد مقارنةً بعضها (recharts RadarChart)
+- ✅ **Attendance Heatmap** — في بروفايل الطالب > تبويب الحضور: تقويم ملوّن بـ 10 أسابيع يُظهر الحضور والغياب والتأخر بالألوان
+- ✅ **Smart Insights Widget** — في Dashboard: قسم "تحليل ذكي" يُنتج رسائل ذكية بناءً على البيانات (حضور ممتاز ✅ / رسوم منخفضة ⚠️ / إجمالي المسجلين)
+
 ## الميزات المكتملة
 - ✅ Multi-tenant (كل مدرسة لها بياناتها المعزولة)
 - ✅ لوحة إدارة كاملة مُحسَّنة بالكامل:
@@ -120,6 +129,12 @@ GET  /api/reports/*         — التقارير
 - `Start application`: `cd client && npm run dev` (port 5000)
 
 ## المكونات المشتركة (client/src/components/)
+- `SessionWarning` — بانر تحذير انتهاء JWT (يظهر قبل 10 دقائق، أحمر قبل 3 دقائق)
+- `ShortcutsModal` — نافذة اختصارات لوحة المفاتيح (تُفتح بـ '?')
+- `NotificationPanel` — لوحة إشعارات منسدلة من زر الجرس في AdminLayout
+- `AttendanceHeatmap` — (داخل Students.tsx) تقويم ملوّن بـ 10 أسابيع للحضور والغياب
+
+## المكونات المشتركة (client/src/components/) — القديمة
 - `DataTable` — جدول بيانات مع بحث مع debounce، ترتيب، تصفح، تصدير CSV، ConfirmDialog للحذف
 - `Modal` — نافذة منبثقة مع دعم Escape key
 - `Skeleton` — مكونات skeleton loaders (StatCard, Table, Dashboard, Card)

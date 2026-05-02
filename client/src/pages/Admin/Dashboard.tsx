@@ -107,6 +107,19 @@ export default function Dashboard() {
   if (sAbs > 5) alerts.push({ icon: AlertTriangle, message: `${sAbs} طالب غائب اليوم — يستحق المتابعة`, color: '#f59e0b', href: '/admin/attendance' })
   if (fOverdue > 0) alerts.push({ icon: AlertCircle, message: `${fOverdue} فاتورة رسوم متأخرة السداد`, color: '#f97316', href: '/admin/fees' })
 
+  // Smart Insights
+  const insights = React.useMemo(() => {
+    const list: { type: 'success'|'warning'|'info', icon: any, text: string, sub: string, href: string }[] = []
+    if (!data) return list
+    if (sPct >= 90) list.push({ type:'success', icon:CheckCircle, text:`نسبة حضور ممتازة اليوم (${sPct}%)`, sub:'استمر في متابعة الحضور اليومي', href:'/admin/attendance' })
+    else if (sPct > 0 && sPct < 75) list.push({ type:'warning', icon:AlertTriangle, text:`حضور الطلاب منخفض اليوم (${sPct}%)`, sub:'راجع سجل الغياب واتخذ الإجراء المناسب', href:'/admin/attendance' })
+    if (fTotal > 0 && fPct >= 85) list.push({ type:'success', icon:CheckCircle, text:`تحصيل الرسوم جيد جداً (${fPct}%)`, sub:`تم جمع ${fCollected.toLocaleString()} OMR من أصل ${fTotal.toLocaleString()} OMR`, href:'/admin/fees' })
+    else if (fTotal > 0 && fPct < 50) list.push({ type:'warning', icon:AlertCircle, text:`نسبة تحصيل الرسوم منخفضة (${fPct}%)`, sub:'راجع المتأخرين وأرسل لهم تذكيراً', href:'/admin/fees' })
+    const totalStudents = data.students?.total || 0
+    if (totalStudents > 0) list.push({ type:'info', icon:Star, text:`${totalStudents} طالب مسجل في المنظومة`, sub:`${data.employees?.total || 0} موظف — المنظومة تعمل بكامل طاقتها`, href:'/admin/students' })
+    return list.slice(0, 3)
+  }, [data, sPct, fPct, fTotal, fCollected])
+
   if (isLoading) return <DashboardSkeleton />
 
   return (
@@ -329,6 +342,40 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Smart Insights */}
+      {insights.length > 0 && (
+        <div className="card" style={{ borderTop: '3px solid #a855f7' }}>
+          <h3 className="font-black text-gray-700 mb-3 flex items-center gap-2">
+            <Star size={15} className="text-amber-500" />
+            تحليل ذكي
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-600 mr-auto">AI</span>
+          </h3>
+          <div className="space-y-2.5">
+            {insights.map((ins, i) => {
+              const colors = {
+                success: { bg:'#ecfdf5', border:'#6ee7b7', icon:'#10b981', text:'#065f46' },
+                warning: { bg:'#fffbeb', border:'#fcd34d', icon:'#f59e0b', text:'#92400e' },
+                info:    { bg:'#eff6ff', border:'#93c5fd', icon:'#3b82f6', text:'#1e3a8a' },
+              }[ins.type]
+              return (
+                <Link key={i} to={ins.href}
+                  className="flex items-start gap-3 p-3 rounded-xl border transition-all hover:shadow-sm group"
+                  style={{ background: colors.bg, borderColor: colors.border }}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: colors.icon + '20' }}>
+                    <ins.icon size={16} style={{ color: colors.icon }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black" style={{ color: colors.text }}>{ins.text}</p>
+                    <p className="text-[10px] mt-0.5 opacity-70" style={{ color: colors.text }}>{ins.sub}</p>
+                  </div>
+                  <ArrowLeft size={14} className="flex-shrink-0 mt-1 opacity-40 group-hover:opacity-80 transition-opacity" style={{ color: colors.text }} />
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       {(activityData?.activity?.length || 0) > 0 && (

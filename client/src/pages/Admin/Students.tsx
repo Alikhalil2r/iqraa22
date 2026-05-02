@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'
 import { studentsApi, busesApi, gradesApi, attendanceApi } from '../../api/client'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
@@ -29,6 +30,86 @@ const emptyStudent = {
   className: '', academicYear: '2024-2025', status: 'active',
   parentName: '', parentPhone: '', parentEmail: '', parentRelation: 'أب',
   address: '', bloodType: '', medicalNotes: '', busId: '', photo: '', notes: ''
+}
+
+// Attendance heatmap — last 10 weeks, coloured by status
+function AttendanceHeatmap({ attendance }: { attendance: any[] }) {
+  const statusMap = useMemo(() => {
+    const m: Record<string, string> = {}
+    attendance.forEach((a: any) => { if (a.date) m[a.date.split('T')[0]] = a.status })
+    return m
+  }, [attendance])
+
+  const COLORS: Record<string, string> = {
+    present: '#10b981', absent: '#ef4444', late: '#f59e0b', excused: '#3b82f6'
+  }
+  const LEGENDS = [
+    { s:'present', l:'حاضر' }, { s:'absent', l:'غائب' },
+    { s:'late', l:'متأخر' }, { s:'excused', l:'معذور' }
+  ]
+  // Generate last 10 weeks (Sun–Sat)
+  const weeks = useMemo(() => {
+    const today = new Date()
+    const todayStr = today.toISOString().split('T')[0]
+    const arr: { date: string; day: number }[][] = []
+    for (let w = 9; w >= 0; w--) {
+      const week: { date: string; day: number }[] = []
+      for (let d = 0; d <= 6; d++) {
+        const dt = new Date(today)
+        dt.setDate(today.getDate() - w * 7 - (6 - d))
+        week.push({ date: dt.toISOString().split('T')[0], day: dt.getDay() })
+      }
+      arr.push(week)
+    }
+    return { arr, todayStr }
+  }, [])
+
+  return (
+    <div>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">آخر 10 أسابيع</p>
+      <div className="flex gap-1 mb-1">
+        {['ح','ن','ث','ر','خ','ج','س'].map((d,i) => (
+          <div key={i} className="w-7 text-[9px] text-gray-400 text-center font-bold">{d}</div>
+        ))}
+      </div>
+      <div className="space-y-1">
+        {weeks.arr.map((week, wi) => (
+          <div key={wi} className="flex gap-1">
+            {week.map((day, di) => {
+              const status = statusMap[day.date]
+              const isFuture = day.date > weeks.todayStr
+              return (
+                <div key={di}
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-black transition-all hover:scale-110"
+                  style={{
+                    background: status ? COLORS[status] || '#e2e8f0' : '#f1f5f9',
+                    color: status ? 'white' : '#94a3b8',
+                    opacity: isFuture ? 0.25 : 1,
+                    cursor: status ? 'default' : undefined
+                  }}
+                  title={`${day.date}: ${status || 'غير مسجل'}`}
+                >
+                  {new Date(day.date + 'T12:00:00').getDate()}
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 mt-3 flex-wrap">
+        {LEGENDS.map(item => (
+          <div key={item.s} className="flex items-center gap-1">
+            <div className="w-3 h-3 rounded-sm" style={{ background: COLORS[item.s] }} />
+            <span className="text-[10px] text-gray-500">{item.l}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200" />
+          <span className="text-[10px] text-gray-400">غير مسجل</span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function gradeColor(pct: number) {
@@ -177,6 +258,27 @@ function StudentProfile({ student, onClose }: { student: any; onClose: () => voi
                       </div>
                     ))}
                   </div>
+                  {/* Radar Chart — subject performance */}
+                  {grades.length >= 3 && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-2xl">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">أداء المواد الدراسية</p>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <RadarChart data={grades.slice(0, 8).map((g: any) => ({
+                          subject: (g.subject_name || 'مادة').slice(0, 7),
+                          score: parseFloat(g.percentage) || 0,
+                          fullMark: 100
+                        }))}>
+                          <PolarGrid stroke="#e2e8f0" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontFamily: 'Cairo' }} />
+                          <Radar name="الدرجات" dataKey="score"
+                            stroke="var(--color-primary)" fill="var(--color-primary)"
+                            fillOpacity={0.22} strokeWidth={2}
+                            dot={{ fill: 'var(--color-primary)', r: 3 } as any} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     {grades.map((g: any) => {
                       const pct = parseFloat(g.percentage || 0)
@@ -237,7 +339,13 @@ function StudentProfile({ student, onClose }: { student: any; onClose: () => voi
                       </div>
                     )
                   })()}
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {/* Attendance Heatmap */}
+                  <div className="mb-4 p-3 bg-gray-50 rounded-2xl">
+                    <AttendanceHeatmap attendance={attendance} />
+                  </div>
+
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2">سجل الحضور التفصيلي</p>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {attendance.slice(0, 50).map((a: any) => (
                       <div key={a.id} className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50">
                         <span className="text-sm text-gray-600">{new Date(a.date).toLocaleDateString('ar-OM', {weekday:'short',day:'numeric',month:'short'})}</span>

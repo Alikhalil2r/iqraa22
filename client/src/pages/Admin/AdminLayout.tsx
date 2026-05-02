@@ -11,6 +11,9 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
+import SessionWarning from '../../components/SessionWarning'
+import ShortcutsModal from '../../components/ShortcutsModal'
+import NotificationPanel from '../../components/NotificationPanel'
 import { useDarkMode } from '../../hooks/useDarkMode'
 
 const menuGroups = [
@@ -77,6 +80,8 @@ export default function AdminLayout() {
   const [sidebarOpen,   setSidebarOpen]   = useState(true)
   const [mobileSidebar, setMobileSidebar] = useState(false)
   const [searchOpen,    setSearchOpen]    = useState(false)
+  const [notifOpen,     setNotifOpen]     = useState(false)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const { user, logout } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
@@ -94,6 +99,11 @@ export default function AdminLayout() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(true) }
+      const tag = (e.target as HTMLElement).tagName
+      const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey && !isInput) {
+        e.preventDefault(); setShortcutsOpen(true)
+      }
       if (e.altKey && !e.ctrlKey) {
         const map: Record<string, string> = {
           '1':'/admin','2':'/admin/students','3':'/admin/employees',
@@ -242,6 +252,9 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Session Expiry Warning */}
+        <SessionWarning />
+
         {/* Top Header */}
         <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
           <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors" onClick={() => setMobileSidebar(true)}>
@@ -280,15 +293,25 @@ export default function AdminLayout() {
             </button>
 
             {/* Notifications bell */}
-            <button onClick={() => navigate('/admin/messages')}
-              className="relative p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors">
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white font-black flex items-center justify-center animate-pulse">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen(o => !o)}
+                className="relative p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
+                title="الإشعارات"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] text-white font-black flex items-center justify-center animate-pulse">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+              <NotificationPanel
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                onOpenShortcuts={() => setShortcutsOpen(true)}
+              />
+            </div>
 
             {/* View site link */}
             <a href="/" target="_blank" className="hidden lg:flex p-2.5 rounded-xl hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors" title="عرض الموقع العام">
@@ -315,6 +338,7 @@ export default function AdminLayout() {
       </div>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   )
 }
