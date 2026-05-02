@@ -1,14 +1,9 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useLanguage } from '../../context/LanguageContext'
 import { Shield, Eye, EyeOff, GraduationCap, Users, BarChart3, BookOpen, Lock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const FEATURES = [
-  { icon: GraduationCap, label: 'إدارة الطلاب', desc: 'سجلات، حضور، نتائج' },
-  { icon: Users,         label: 'الموارد البشرية', desc: 'الموظفون والرواتب' },
-  { icon: BarChart3,     label: 'تقارير ذكية', desc: 'إحصائيات وتحليلات' },
-]
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -17,18 +12,25 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const { t, lang, toggleLang } = useLanguage()
+
+  const FEATURES = [
+    { icon: GraduationCap, label: lang === 'ar' ? 'إدارة الطلاب'      : 'Student Management', desc: lang === 'ar' ? 'سجلات، حضور، نتائج'       : 'Records, attendance, grades' },
+    { icon: Users,         label: lang === 'ar' ? 'الموارد البشرية'    : 'Human Resources',    desc: lang === 'ar' ? 'الموظفون والرواتب'          : 'Employees & payroll' },
+    { icon: BarChart3,     label: lang === 'ar' ? 'تقارير ذكية'        : 'Smart Reports',      desc: lang === 'ar' ? 'إحصائيات وتحليلات'          : 'Statistics & analytics' },
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!username.trim()) return toast.error('أدخل اسم المستخدم')
-    if (!password) return toast.error('أدخل كلمة المرور')
+    if (!username.trim()) return toast.error(lang === 'ar' ? 'أدخل اسم المستخدم' : 'Enter your username')
+    if (!password) return toast.error(lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password')
     setLoading(true)
     try {
       await login(username.trim(), password, 'admin')
       navigate('/admin')
-      toast.success('مرحباً بك في لوحة التحكم')
+      toast.success(lang === 'ar' ? 'مرحباً بك في لوحة التحكم' : 'Welcome to the dashboard')
     } catch (err: any) {
-      const msg = err.response?.data?.error || 'بيانات الدخول غير صحيحة'
+      const msg = err.response?.data?.error || (lang === 'ar' ? 'بيانات الدخول غير صحيحة' : 'Invalid credentials')
       toast.error(msg)
     } finally {
       setLoading(false)
@@ -49,9 +51,13 @@ export default function LoginPage() {
           <div className="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-8 shadow-2xl">
             <BookOpen size={48} className="text-white" />
           </div>
-          <h1 className="text-4xl font-black mb-3">نظام إدارة المدرسة</h1>
+          <h1 className="text-4xl font-black mb-3">
+            {lang === 'ar' ? 'نظام إدارة المدرسة' : 'School Management System'}
+          </h1>
           <p className="text-lg text-white/80 leading-relaxed mb-10">
-            منصة احترافية متكاملة لإدارة شؤون المدرسة من طلاب وموظفين وأولياء أمور
+            {lang === 'ar'
+              ? 'منصة احترافية متكاملة لإدارة شؤون المدرسة من طلاب وموظفين وأولياء أمور'
+              : 'A complete professional platform to manage students, staff, and parents'}
           </p>
           <div className="grid grid-cols-3 gap-4">
             {FEATURES.map(f => (
@@ -72,27 +78,36 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-10 animate-fade-in">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md" style={{ background: 'var(--color-primary)' }}>
-                <Shield size={22} className="text-white" />
+            <div className="flex items-start justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md" style={{ background: 'var(--color-primary)' }}>
+                  <Shield size={22} className="text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-gray-800">{t('auth.adminTitle')}</h2>
+                  <p className="text-sm text-gray-400">{t('auth.adminSub')}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-black text-gray-800">دخول الإدارة</h2>
-                <p className="text-sm text-gray-400">لوحة تحكم المشرفين والمعلمين</p>
-              </div>
+              <button onClick={toggleLang}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-black transition-all flex-shrink-0"
+                title={lang === 'ar' ? 'Switch to English' : 'التبديل للعربية'}>
+                <span className={lang === 'ar' ? 'text-green-600' : 'text-gray-400'}>ع</span>
+                <span className="text-gray-300 mx-0.5">|</span>
+                <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
+              </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Username */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  اسم المستخدم <span className="text-red-500">*</span>
+                  {t('auth.username')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <User size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     className="input-field pr-10"
-                    placeholder="أدخل اسم المستخدم"
+                    placeholder={lang === 'ar' ? 'أدخل اسم المستخدم' : 'Enter username'}
                     value={username}
                     onChange={e => setUsername(e.target.value)}
                     autoComplete="username"
@@ -105,53 +120,42 @@ export default function LoginPage() {
               {/* Password */}
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  كلمة المرور <span className="text-red-500">*</span>
+                  {t('auth.password')} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Lock size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     className="input-field pr-10 pl-12"
                     type={showPass ? 'text' : 'password'}
-                    placeholder="أدخل كلمة المرور"
+                    placeholder={lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     autoComplete="current-password"
                     disabled={loading}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
+                  <button type="button" onClick={() => setShowPass(!showPass)}
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                    tabIndex={-1}
-                  >
+                    tabIndex={-1}>
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
 
               {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full py-3.5 text-base justify-center"
-              >
+              <button type="submit" disabled={loading} className="btn-primary w-full py-3.5 text-base justify-center">
                 {loading ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    جارٍ التحقق...
+                    {lang === 'ar' ? 'جارٍ التحقق...' : 'Verifying...'}
                   </>
-                ) : 'دخول'}
+                ) : t('auth.loginBtn')}
               </button>
             </form>
 
             {/* Footer */}
             <div className="mt-6 flex items-center justify-center">
-              <Link
-                to="/parent-login"
-                className="text-sm font-bold hover:underline transition-colors"
-                style={{ color: 'var(--color-primary)' }}
-              >
-                بوابة أولياء الأمور ←
+              <Link to="/parent-login" className="text-sm font-bold hover:underline transition-colors" style={{ color: 'var(--color-primary)' }}>
+                {t('auth.parentPortal')} ←
               </Link>
             </div>
           </div>
@@ -159,7 +163,7 @@ export default function LoginPage() {
           {/* Back to site */}
           <div className="mt-4 text-center">
             <Link to="/" className="text-white/70 text-sm hover:text-white transition-colors">
-              ← العودة للموقع الرئيسي
+              ← {t('auth.backToSite')}
             </Link>
           </div>
         </div>

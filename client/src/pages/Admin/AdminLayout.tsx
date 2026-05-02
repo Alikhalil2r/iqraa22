@@ -6,7 +6,7 @@ import { messagesApi } from '../../api/client'
 import {
   LayoutDashboard, Users, UserCheck, ClipboardCheck, GraduationCap, Bus,
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
-  Bell, BarChart3, Shield, BookOpen, ChevronLeft, Search,
+  Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
   DollarSign, CalendarDays, Home, Globe, Moon, Sun
 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -15,66 +15,65 @@ import SessionWarning from '../../components/SessionWarning'
 import ShortcutsModal from '../../components/ShortcutsModal'
 import NotificationPanel from '../../components/NotificationPanel'
 import { useDarkMode } from '../../hooks/useDarkMode'
+import { useLanguage } from '../../context/LanguageContext'
 
 const menuGroups = [
   {
-    label: 'الرئيسية',
+    labelKey: 'nav.group.main',
     items: [
-      { to: '/admin',         icon: LayoutDashboard, label: 'لوحة المعلومات', end: true },
-      { to: '/admin/reports', icon: BarChart3,        label: 'التقارير والإحصائيات' },
+      { to: '/admin',         icon: LayoutDashboard, labelKey: 'nav.dashboard', end: true },
+      { to: '/admin/reports', icon: BarChart3,        labelKey: 'nav.reports' },
     ]
   },
   {
-    label: 'إدارة المدرسة',
+    labelKey: 'nav.group.school',
     items: [
-      { to: '/admin/students',   icon: GraduationCap,  label: 'الطلاب' },
-      { to: '/admin/employees',  icon: Users,           label: 'الموظفون' },
-      { to: '/admin/attendance', icon: UserCheck,       label: 'الحضور والغياب' },
-      { to: '/admin/grades',     icon: ClipboardCheck,  label: 'النتائج الدراسية' },
-      { to: '/admin/fees',       icon: DollarSign,      label: 'الرسوم الدراسية' },
-      { to: '/admin/buses',      icon: Bus,             label: 'الحافلات المدرسية' },
+      { to: '/admin/students',   icon: GraduationCap,  labelKey: 'nav.students' },
+      { to: '/admin/employees',  icon: Users,           labelKey: 'nav.employees' },
+      { to: '/admin/attendance', icon: UserCheck,       labelKey: 'nav.attendance' },
+      { to: '/admin/grades',     icon: ClipboardCheck,  labelKey: 'nav.grades' },
+      { to: '/admin/fees',       icon: DollarSign,      labelKey: 'nav.fees' },
+      { to: '/admin/buses',      icon: Bus,             labelKey: 'nav.buses' },
     ]
   },
   {
-    label: 'التواصل والمحتوى',
+    labelKey: 'nav.group.communication',
     items: [
-      { to: '/admin/messages',      icon: MessageSquare,  label: 'رسائل الأولياء' },
-      { to: '/admin/announcements', icon: Bell,           label: 'إشعارات الأولياء' },
-      { to: '/admin/schedule',      icon: CalendarDays,   label: 'الجدول الدراسي' },
-      { to: '/admin/news',          icon: Newspaper,      label: 'الأخبار والمنشورات' },
-      { to: '/admin/events',        icon: Calendar,       label: 'التقويم المدرسي' },
+      { to: '/admin/messages',      icon: MessageSquare, labelKey: 'nav.messages' },
+      { to: '/admin/announcements', icon: Bell,          labelKey: 'nav.announcements' },
+      { to: '/admin/schedule',      icon: CalendarDays,  labelKey: 'nav.schedule' },
+      { to: '/admin/news',          icon: Newspaper,     labelKey: 'nav.news' },
+      { to: '/admin/events',        icon: Calendar,      labelKey: 'nav.events' },
     ]
   },
   {
-    label: 'الإعدادات',
+    labelKey: 'nav.group.settings',
     items: [
-      { to: '/admin/theme',    icon: Palette,  label: 'تخصيص التصميم' },
-      { to: '/admin/settings', icon: Settings, label: 'إعدادات المدرسة' },
-      { to: '/admin/users',    icon: Shield,   label: 'إدارة المستخدمين' },
+      { to: '/admin/theme',    icon: Palette,  labelKey: 'nav.theme' },
+      { to: '/admin/settings', icon: Settings, labelKey: 'nav.settings' },
+      { to: '/admin/users',    icon: Shield,   labelKey: 'nav.users' },
     ]
   },
 ]
 
-const BREADCRUMB_MAP: Record<string, string> = {
-  '/admin':            'لوحة المعلومات',
-  '/admin/students':   'الطلاب',
-  '/admin/employees':  'الموظفون',
-  '/admin/attendance': 'الحضور والغياب',
-  '/admin/grades':     'النتائج الدراسية',
-  '/admin/fees':       'الرسوم الدراسية',
-  '/admin/buses':      'الحافلات',
-  '/admin/messages':      'الرسائل',
-  '/admin/announcements': 'إشعارات الأولياء',
-  '/admin/schedule':      'الجدول الدراسي',
-  '/admin/news':       'الأخبار',
-  '/admin/events':     'التقويم',
-  '/admin/reports':    'التقارير',
-  '/admin/theme':      'تخصيص التصميم',
-  '/admin/settings':   'إعدادات المدرسة',
-  '/admin/users':      'إدارة المستخدمين',
+const BREADCRUMB_KEYS: Record<string, string> = {
+  '/admin':               'breadcrumb.dashboard',
+  '/admin/students':      'breadcrumb.students',
+  '/admin/employees':     'breadcrumb.employees',
+  '/admin/attendance':    'breadcrumb.attendance',
+  '/admin/grades':        'breadcrumb.grades',
+  '/admin/fees':          'breadcrumb.fees',
+  '/admin/buses':         'breadcrumb.buses',
+  '/admin/messages':      'breadcrumb.messages',
+  '/admin/announcements': 'breadcrumb.announcements',
+  '/admin/schedule':      'breadcrumb.schedule',
+  '/admin/news':          'breadcrumb.news',
+  '/admin/events':        'breadcrumb.events',
+  '/admin/reports':       'breadcrumb.reports',
+  '/admin/theme':         'breadcrumb.theme',
+  '/admin/settings':      'breadcrumb.settings',
+  '/admin/users':         'breadcrumb.users',
 }
-
-const GROUP_ICON_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#64748b']
 
 export default function AdminLayout() {
   const [sidebarOpen,   setSidebarOpen]   = useState(true)
@@ -82,10 +81,11 @@ export default function AdminLayout() {
   const [searchOpen,    setSearchOpen]    = useState(false)
   const [notifOpen,     setNotifOpen]     = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, logout }                  = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
-  const { isDark, toggle: toggleDark } = useDarkMode()
+  const { isDark, toggle: toggleDark }    = useDarkMode()
+  const { t, lang, toggleLang, isRTL }   = useLanguage()
 
   const { data: unreadData } = useQuery({
     queryKey:       ['unread-count'],
@@ -94,7 +94,11 @@ export default function AdminLayout() {
   })
   const unreadCount = unreadData?.count || 0
 
-  const handleLogout = () => { logout(); navigate('/login'); toast.success('تم تسجيل الخروج بنجاح') }
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+    toast.success(lang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully')
+  }
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -116,7 +120,15 @@ export default function AdminLayout() {
     return () => document.removeEventListener('keydown', handler)
   }, [navigate])
 
-  const currentLabel = BREADCRUMB_MAP[location.pathname] || ''
+  const currentBreadcrumb = t(BREADCRUMB_KEYS[location.pathname] || '')
+
+  const roleLabel = user?.role === 'admin'
+    ? (lang === 'ar' ? 'مدير النظام' : 'System Admin')
+    : user?.role === 'teacher'
+    ? (lang === 'ar' ? 'معلم' : 'Teacher')
+    : (lang === 'ar' ? 'مستخدم' : 'User')
+
+  const ChevronIcon = isRTL ? ChevronLeft : ChevronRight
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-white">
@@ -128,14 +140,16 @@ export default function AdminLayout() {
               <BookOpen size={18} className="text-white" />
             </div>
             <div className="min-w-0">
-              <p className="font-black text-gray-800 text-sm leading-none truncate">لوحة التحكم</p>
+              <p className="font-black text-gray-800 text-sm leading-none truncate">
+                {lang === 'ar' ? 'لوحة التحكم' : 'Control Panel'}
+              </p>
               <p className="text-[10px] text-gray-400 mt-0.5">School Management</p>
             </div>
           </div>
         )}
         <button onClick={() => setSidebarOpen(!sidebarOpen)}
           className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0">
-          {sidebarOpen ? <ChevronLeft size={17} /> : <Menu size={17} />}
+          {sidebarOpen ? <ChevronIcon size={17} /> : <Menu size={17} />}
         </button>
       </div>
 
@@ -145,7 +159,9 @@ export default function AdminLayout() {
           <button onClick={() => setSearchOpen(true)}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-400 text-sm transition-colors border border-gray-200 group">
             <Search size={14} />
-            <span className="flex-1 text-right text-xs">بحث سريع...</span>
+            <span className="flex-1 text-right text-xs">
+              {lang === 'ar' ? 'بحث سريع...' : 'Quick search...'}
+            </span>
             <kbd className="text-[9px] font-mono bg-gray-200 text-gray-400 px-1.5 py-0.5 rounded border border-gray-300">⌘K</kbd>
           </button>
         </div>
@@ -153,48 +169,54 @@ export default function AdminLayout() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5 scrollbar-thin">
-        {menuGroups.map((group, gIdx) => (
-          <div key={group.label} className="mb-1">
+        {menuGroups.map((group) => (
+          <div key={group.labelKey} className="mb-1">
             {sidebarOpen && (
               <div className="flex items-center gap-2 px-3 py-1.5 mt-1.5">
                 <div className="h-px flex-1 bg-gray-100" />
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">{group.label}</span>
+                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                  {t(group.labelKey)}
+                </span>
               </div>
             )}
-            {group.items.map(item => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={() => setMobileSidebar(false)}
-                className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-150 relative ${
-                    isActive
-                      ? 'text-white shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                  } ${!sidebarOpen ? 'justify-center px-2' : ''}`
-                }
-                style={({ isActive }) => isActive ? { background: 'var(--color-primary)' } : {}}
-                title={!sidebarOpen ? item.label : undefined}
-              >
-                <item.icon size={17} className="flex-shrink-0" />
-                {sidebarOpen && (
-                  <>
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.label === 'رسائل الأولياء' && unreadCount > 0 && (
-                      <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse flex-shrink-0">
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </span>
-                    )}
-                  </>
-                )}
-                {!sidebarOpen && item.label === 'رسائل الأولياء' && unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
-              </NavLink>
-            ))}
+            {group.items.map(item => {
+              const label = t(item.labelKey)
+              const isMessages = item.labelKey === 'nav.messages'
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={(item as any).end}
+                  onClick={() => setMobileSidebar(false)}
+                  className={({ isActive }) =>
+                    `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-150 relative ${
+                      isActive
+                        ? 'text-white shadow-sm'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                    } ${!sidebarOpen ? 'justify-center px-2' : ''}`
+                  }
+                  style={({ isActive }) => isActive ? { background: 'var(--color-primary)' } : {}}
+                  title={!sidebarOpen ? label : undefined}
+                >
+                  <item.icon size={17} className="flex-shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="flex-1 truncate">{label}</span>
+                      {isMessages && unreadCount > 0 && (
+                        <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse flex-shrink-0">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {!sidebarOpen && isMessages && unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            })}
           </div>
         ))}
       </nav>
@@ -204,7 +226,7 @@ export default function AdminLayout() {
         <div className="px-3 pb-2">
           <a href="/" target="_blank" className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all font-bold">
             <Globe size={14} />
-            <span>عرض الموقع العام</span>
+            <span>{lang === 'ar' ? 'عرض الموقع العام' : 'View Public Site'}</span>
           </a>
         </div>
       )}
@@ -220,9 +242,9 @@ export default function AdminLayout() {
             <>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-black text-gray-800 truncate">{user?.name}</p>
-                <p className="text-[10px] text-gray-400">{user?.role === 'admin' ? 'مدير النظام' : user?.role === 'teacher' ? 'معلم' : 'مستخدم'}</p>
+                <p className="text-[10px] text-gray-400">{roleLabel}</p>
               </div>
-              <button onClick={handleLogout} title="تسجيل الخروج"
+              <button onClick={handleLogout} title={t('common.logout')}
                 className="p-1.5 text-gray-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 flex-shrink-0">
                 <LogOut size={15} />
               </button>
@@ -265,11 +287,13 @@ export default function AdminLayout() {
           <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
             <Home size={13} className="text-gray-400 flex-shrink-0" />
             <span className="text-gray-400 hidden sm:block text-xs">/</span>
-            <span className="text-gray-400 hidden sm:block text-xs">لوحة التحكم</span>
-            {currentLabel && (
+            <span className="text-gray-400 hidden sm:block text-xs">
+              {lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}
+            </span>
+            {currentBreadcrumb && (
               <>
                 <span className="text-gray-300 text-xs">/</span>
-                <span className="font-black text-gray-700 text-xs truncate">{currentLabel}</span>
+                <span className="font-black text-gray-700 text-xs truncate">{currentBreadcrumb}</span>
               </>
             )}
           </div>
@@ -279,15 +303,26 @@ export default function AdminLayout() {
             <button onClick={() => setSearchOpen(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs transition-colors font-bold">
               <Search size={14} />
-              <span>بحث</span>
+              <span>{t('common.search')}</span>
               <kbd className="text-[9px] font-mono bg-white text-gray-400 px-1 py-0.5 rounded border border-gray-200 shadow-sm">⌘K</kbd>
+            </button>
+
+            {/* Language toggle */}
+            <button
+              onClick={toggleLang}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-black transition-all"
+              title={lang === 'ar' ? 'Switch to English' : 'التبديل للعربية'}
+            >
+              <span className={lang === 'ar' ? 'text-green-600' : 'text-gray-400'}>ع</span>
+              <span className="text-gray-300 mx-0.5">|</span>
+              <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
             </button>
 
             {/* Dark mode toggle */}
             <button
               onClick={toggleDark}
               className="p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-all hover:scale-110"
-              title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}
+              title={isDark ? (lang === 'ar' ? 'الوضع الفاتح' : 'Light Mode') : (lang === 'ar' ? 'الوضع الداكن' : 'Dark Mode')}
             >
               {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
@@ -297,7 +332,7 @@ export default function AdminLayout() {
               <button
                 onClick={() => setNotifOpen(o => !o)}
                 className="relative p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
-                title="الإشعارات"
+                title={t('notif.title')}
               >
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -314,7 +349,9 @@ export default function AdminLayout() {
             </div>
 
             {/* View site link */}
-            <a href="/" target="_blank" className="hidden lg:flex p-2.5 rounded-xl hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors" title="عرض الموقع العام">
+            <a href="/" target="_blank"
+              className="hidden lg:flex p-2.5 rounded-xl hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
+              title={lang === 'ar' ? 'عرض الموقع العام' : 'View Public Site'}>
               <Globe size={18} />
             </a>
 
@@ -325,7 +362,7 @@ export default function AdminLayout() {
               </div>
               <div className="hidden sm:block">
                 <p className="text-xs font-black text-gray-700 leading-none">{user?.name?.split(' ')[0]}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">{user?.role === 'admin' ? 'مدير' : 'معلم'}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{roleLabel}</p>
               </div>
             </div>
           </div>

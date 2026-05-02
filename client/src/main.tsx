@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
+import { LanguageProvider } from './context/LanguageContext'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -23,24 +24,26 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              duration: 3500,
-              style: {
-                fontFamily: 'Cairo, Tajawal, sans-serif',
-                fontWeight: 700,
-                fontSize: '0.875rem',
-                borderRadius: '0.875rem',
-                padding: '0.75rem 1rem',
-              }
-            }}
-          />
-        </BrowserRouter>
-      </QueryClientProvider>
+      <LanguageProvider>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  fontFamily: 'Cairo, Tajawal, sans-serif',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  borderRadius: '0.875rem',
+                  padding: '0.75rem 1rem',
+                }
+              }}
+            />
+          </BrowserRouter>
+        </QueryClientProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>
 )

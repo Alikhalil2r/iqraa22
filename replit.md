@@ -62,6 +62,17 @@ GET  /api/school/theme      — ثيم المدرسة
 GET  /api/reports/*         — التقارير
 ```
 
+## دعم ثنائي اللغة (عربي / إنجليزي) — الجلسة الحالية
+- ✅ `client/src/i18n/translations.ts` — 200+ مفتاح ترجمة (nav.* | dash.* | auth.* | common.* | status.* | parent.* | notif.* | session.* | site.*)
+- ✅ `client/src/context/LanguageContext.tsx` — LanguageProvider مع `t()`, `toggleLang()`, `isRTL`, localStorage persistence, يضبط `document.documentElement.dir` + `lang`
+- ✅ `client/src/main.tsx` — مُلفَّف بـ `<LanguageProvider>`
+- ✅ AdminLayout — القائمة الجانبية + breadcrumbs + زر ع|EN في الـ header
+- ✅ ParentLayout — قائمة التنقل + Mobile Bottom Nav + زر ع|EN + حالة الحضور اليوم
+- ✅ Dashboard — التحية + KPI cards + الرسوم البيانية + الرسائل التحذيرية + التحليل الذكي + آخر الأنشطة
+- ✅ LoginPage (admin) — نموذج الدخول + نص الصفحة + زر ع|EN في الـ card
+- ✅ ParentLoginPage — نموذج الدخول + بطاقات الميزات + زر ع|EN في الـ card
+- **التبديل:** `document.dir = 'ltr'/'rtl'` تلقائياً عند التغيير — محفوظ في localStorage
+
 ## الميزات المكتملة — الجلسة الحالية (أفضل 7 إضافات)
 - ✅ **Mobile Bottom Navigation** في بوابة أولياء الأمور — شريط تنقل ثابت أسفل الشاشة على الجوال بأيقونات وتسميات وبادجات للإشعارات
 - ✅ **Session Expiry Warning** — بانر تحذيري عند اقتراب انتهاء JWT (10 دقائق تحذير، 3 دقائق تنبيه طارئ) مع زر تسجيل خروج

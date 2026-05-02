@@ -9,14 +9,15 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useDarkMode } from '../../hooks/useDarkMode'
+import { useLanguage } from '../../context/LanguageContext'
 
 const navItems = [
-  { to: '/parent',               label: 'الرئيسية', icon: Home,          end: true, badge: null as string | null },
-  { to: '/parent/grades',        label: 'النتائج',  icon: BookOpen,      end: false, badge: null },
-  { to: '/parent/attendance',    label: 'الحضور',   icon: CalendarCheck, end: false, badge: null },
-  { to: '/parent/messages',      label: 'الرسائل',  icon: MessageSquare, end: false, badge: 'unreadMsgs' },
-  { to: '/parent/schedule',      label: 'الجدول',   icon: Clock,         end: false, badge: null },
-  { to: '/parent/notifications', label: 'الإشعارات',icon: Bell,          end: false, badge: 'unreadNotif' },
+  { to: '/parent',               labelKey: 'nav.home',             icon: Home,          end: true,  badge: null as string | null },
+  { to: '/parent/grades',        labelKey: 'nav.parentGrades',     icon: BookOpen,      end: false, badge: null },
+  { to: '/parent/attendance',    labelKey: 'nav.parentAttendance', icon: CalendarCheck, end: false, badge: null },
+  { to: '/parent/messages',      labelKey: 'nav.parentMessages',   icon: MessageSquare, end: false, badge: 'unreadMsgs' },
+  { to: '/parent/schedule',      labelKey: 'nav.parentSchedule',   icon: Clock,         end: false, badge: null },
+  { to: '/parent/notifications', labelKey: 'nav.notifications',    icon: Bell,          end: false, badge: 'unreadNotif' },
 ]
 
 export default function ParentLayout() {
@@ -24,6 +25,7 @@ export default function ParentLayout() {
   const navigate = useNavigate()
   const [mobileMenu, setMobileMenu] = useState(false)
   const { isDark, toggle: toggleDark } = useDarkMode()
+  const { t, lang, toggleLang } = useLanguage()
 
   const { data: dashData } = useQuery({
     queryKey: ['parent-dash'],
@@ -31,14 +33,26 @@ export default function ParentLayout() {
     refetchInterval: 60000
   })
 
-  const handleLogout = () => { logout(); navigate('/parent-login'); toast.success('تم الخروج') }
-  const unreadMsgs  = dashData?.stats?.unreadMessages    || 0
+  const handleLogout = () => {
+    logout()
+    navigate('/parent-login')
+    toast.success(lang === 'ar' ? 'تم الخروج' : 'Logged out successfully')
+  }
+  const unreadMsgs  = dashData?.stats?.unreadMessages     || 0
   const unreadNotif = dashData?.stats?.unreadNotifications || 0
 
   function getBadge(badgeKey: string | null) {
     if (badgeKey === 'unreadMsgs')  return unreadMsgs  > 0 ? unreadMsgs  : null
     if (badgeKey === 'unreadNotif') return unreadNotif > 0 ? unreadNotif : null
     return null
+  }
+
+  const todayStatusLabel = () => {
+    const s = dashData?.stats?.todayStatus
+    if (s === 'present') return t('parent.present')
+    if (s === 'absent')  return t('parent.absent')
+    if (s === 'late')    return t('parent.late')
+    return t('parent.notRecorded')
   }
 
   return (
@@ -52,9 +66,10 @@ export default function ParentLayout() {
             </div>
             <div>
               <p className="font-black text-sm text-gray-800">{user?.name}</p>
-              <p className="text-[10px] text-gray-400">بوابة ولي الأمر</p>
+              <p className="text-[10px] text-gray-400">{t('parent.portal')}</p>
             </div>
           </div>
+
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map(item => {
@@ -64,7 +79,7 @@ export default function ParentLayout() {
                   className={({isActive}) => `relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-white' : 'text-gray-500 hover:bg-gray-100'}`}
                   style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
                   <item.icon size={16}/>
-                  {item.label}
+                  {t(item.labelKey)}
                   {badge !== null && (
                     <span className="w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
                       {badge > 9 ? '9+' : badge}
@@ -74,20 +89,33 @@ export default function ParentLayout() {
               )
             })}
           </nav>
+
+          {/* Language toggle */}
+          <button
+            onClick={toggleLang}
+            className="hidden md:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-black transition-all"
+            title={lang === 'ar' ? 'Switch to English' : 'التبديل للعربية'}
+          >
+            <span className={lang === 'ar' ? 'text-green-600' : 'text-gray-400'}>ع</span>
+            <span className="text-gray-300 mx-0.5">|</span>
+            <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
+          </button>
+
           <button
             onClick={toggleDark}
             className="hidden md:flex p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-all hover:scale-110"
-            title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}
+            title={isDark ? (lang === 'ar' ? 'الوضع الفاتح' : 'Light Mode') : (lang === 'ar' ? 'الوضع الداكن' : 'Dark Mode')}
           >
             {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
           </button>
           <button onClick={handleLogout} className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-400 hover:bg-red-50">
-            <LogOut size={16}/>خروج
+            <LogOut size={16}/>{t('parent.logout')}
           </button>
           <button className="md:hidden p-2 rounded-xl hover:bg-gray-100" onClick={() => setMobileMenu(!mobileMenu)}>
             {mobileMenu ? <X size={20}/> : <Menu size={20}/>}
           </button>
         </div>
+
         {/* Mobile menu */}
         {mobileMenu && (
           <div className="md:hidden border-t border-gray-100 p-3 space-y-1">
@@ -97,13 +125,21 @@ export default function ParentLayout() {
                 <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setMobileMenu(false)}
                   className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'text-white' : 'text-gray-600 hover:bg-gray-100'}`}
                   style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
-                  <item.icon size={18}/>{item.label}
+                  <item.icon size={18}/>{t(item.labelKey)}
                   {badge !== null && <span className="mr-auto badge-danger">{badge}</span>}
                 </NavLink>
               )
             })}
+            <div className="flex items-center gap-2 px-4 py-2">
+              <button onClick={toggleLang}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 text-xs font-black">
+                <span className={lang === 'ar' ? 'text-green-600' : 'text-gray-400'}>ع</span>
+                <span className="text-gray-300 mx-0.5">|</span>
+                <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
+              </button>
+            </div>
             <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 font-bold rounded-xl hover:bg-red-50">
-              <LogOut size={18}/>خروج
+              <LogOut size={18}/>{t('parent.logout')}
             </button>
           </div>
         )}
@@ -122,10 +158,11 @@ export default function ParentLayout() {
             </div>
             {dashData.stats.todayStatus && (
               <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${
-                dashData.stats.todayStatus==='present'?'bg-green-100 text-green-700':
-                dashData.stats.todayStatus==='absent'?'bg-red-100 text-red-700':
-                dashData.stats.todayStatus==='late'?'bg-amber-100 text-amber-700':'bg-white/20 text-white'}`}>
-                {dashData.stats.todayStatus==='present'?'✅ حاضر اليوم':dashData.stats.todayStatus==='absent'?'❌ غائب اليوم':dashData.stats.todayStatus==='late'?'⏰ متأخر اليوم':'الحضور غير مسجل'}
+                dashData.stats.todayStatus === 'present' ? 'bg-green-100 text-green-700' :
+                dashData.stats.todayStatus === 'absent'  ? 'bg-red-100 text-red-700' :
+                dashData.stats.todayStatus === 'late'    ? 'bg-amber-100 text-amber-700' :
+                'bg-white/20 text-white'}`}>
+                {todayStatusLabel()}
               </span>
             )}
           </div>
@@ -161,7 +198,7 @@ export default function ParentLayout() {
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] font-bold leading-none">{item.label}</span>
+                <span className="text-[10px] font-bold leading-none">{t(item.labelKey)}</span>
               </NavLink>
             )
           })}
