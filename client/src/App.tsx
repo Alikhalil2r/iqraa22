@@ -38,6 +38,8 @@ const ThemeSettings    = lazy(() => import('./pages/Admin/ThemeSettings'))
 const SchoolSettings   = lazy(() => import('./pages/Admin/SchoolSettings'))
 const UsersAdmin       = lazy(() => import('./pages/Admin/UsersAdmin'))
 const Reports          = lazy(() => import('./pages/Admin/Reports'))
+const FeesAdmin        = lazy(() => import('./pages/Admin/FeesAdmin'))
+const ScheduleAdmin    = lazy(() => import('./pages/Admin/ScheduleAdmin'))
 
 const ParentLayout     = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard  = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -144,6 +146,8 @@ function RedirectCheck() {
           <Route path="settings"  element={<SchoolSettings />} />
           <Route path="users"     element={<UsersAdmin />} />
           <Route path="reports"   element={<Reports />} />
+          <Route path="fees"      element={<FeesAdmin />} />
+          <Route path="schedule"  element={<ScheduleAdmin />} />
         </Route>
 
         {/* Parent Portal */}

@@ -1,10 +1,13 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { studentsApi, busesApi } from '../../api/client'
+import { studentsApi, busesApi, gradesApi, attendanceApi } from '../../api/client'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { FormField, Input, Select, Textarea } from '../../components/FormField'
-import { GraduationCap, Phone, Bus, Award, User } from 'lucide-react'
+import {
+  GraduationCap, Phone, Bus, User, BookOpen, UserCheck,
+  ClipboardCheck, Award, TrendingUp, AlertTriangle, X, ChevronLeft, ChevronRight
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const GENDER_OPTIONS  = [{ value: 'M', label: 'ذكر' }, { value: 'F', label: 'أنثى' }]
@@ -19,10 +22,239 @@ const emptyStudent = {
   address: '', bloodType: '', medicalNotes: '', busId: '', photo: '', notes: ''
 }
 
+function gradeColor(pct: number) {
+  if (pct >= 90) return '#10b981'
+  if (pct >= 75) return '#3b82f6'
+  if (pct >= 60) return '#f59e0b'
+  return '#ef4444'
+}
+
+function StudentProfile({ student, onClose }: { student: any; onClose: () => void }) {
+  const [tab, setTab] = useState<'info'|'grades'|'attendance'>('info')
+
+  const { data: gradesData } = useQuery({
+    queryKey: ['student-grades', student.id],
+    queryFn: () => studentsApi.grades(student.id).then(r => r.data),
+    enabled: tab === 'grades'
+  })
+  const { data: attData } = useQuery({
+    queryKey: ['student-attendance', student.id],
+    queryFn: () => studentsApi.attendance(student.id).then(r => r.data),
+    enabled: tab === 'attendance'
+  })
+
+  const grades = gradesData?.grades || []
+  const attendance = attData?.attendance || []
+  const avgGrade = grades.length ? grades.reduce((s: number, g: any) => s + parseFloat(g.percentage || 0), 0) / grades.length : null
+  const presRate = attendance.length ? (attendance.filter((a: any) => a.status === 'present').length / attendance.length * 100) : null
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center overflow-y-auto p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl my-6 overflow-hidden">
+        {/* Header */}
+        <div className="relative p-6 text-white" style={{ background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))' }}>
+          <button onClick={onClose} className="absolute top-4 left-4 p-2 hover:bg-white/20 rounded-xl transition-colors">
+            <X size={18} />
+          </button>
+          <div className="flex items-center gap-4">
+            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-black overflow-hidden flex-shrink-0">
+              {student.photo
+                ? <img src={student.photo} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display='none')} />
+                : student.name?.[0]}
+            </div>
+            <div>
+              <h2 className="text-2xl font-black">{student.name}</h2>
+              {student.name_en && <p className="text-white/70 text-sm">{student.name_en}</p>}
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <span className="bg-white/20 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-xl">{student.class_name || 'بدون فصل'}</span>
+                <span className="bg-white/20 backdrop-blur-sm text-xs font-bold px-3 py-1 rounded-xl">{student.student_number || 'بدون رقم'}</span>
+                <span className={`text-xs font-bold px-3 py-1 rounded-xl ${student.status === 'active' ? 'bg-green-500/80' : 'bg-red-500/80'}`}>
+                  {student.status === 'active' ? 'نشط' : 'غير نشط'}
+                </span>
+              </div>
+              {/* Quick stats */}
+              {(avgGrade !== null || presRate !== null) && (
+                <div className="flex gap-4 mt-3">
+                  {avgGrade !== null && <div className="text-center"><p className="text-xl font-black">{avgGrade.toFixed(1)}%</p><p className="text-[10px] text-white/60">متوسط الدرجات</p></div>}
+                  {presRate !== null && <div className="text-center"><p className="text-xl font-black">{presRate.toFixed(0)}%</p><p className="text-[10px] text-white/60">نسبة الحضور</p></div>}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-4">
+          {([['info','المعلومات',User],['grades','الدرجات',ClipboardCheck],['attendance','الحضور',UserCheck]] as const).map(([v,l,Icon])=>(
+            <button key={v} onClick={()=>setTab(v)}
+              className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-2 transition-all ${tab===v?'border-blue-600 text-blue-600':'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              <Icon size={15}/>{l}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto max-h-[60vh]">
+          {tab === 'info' && (
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-black text-gray-700 text-sm uppercase tracking-wide">المعلومات الأساسية</h4>
+                {[
+                  ['الجنس', student.gender === 'M' ? 'ذكر' : 'أنثى'],
+                  ['تاريخ الميلاد', student.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString('ar-OM') : '—'],
+                  ['الجنسية', student.nationality || '—'],
+                  ['العام الدراسي', student.academic_year || '—'],
+                  ['فصيلة الدم', student.blood_type || '—'],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-500 font-bold">{k}</span>
+                    <span className="text-sm font-black text-gray-800">{v as string}</span>
+                  </div>
+                ))}
+                {student.bus_number && (
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
+                    <span className="text-sm text-gray-500 font-bold flex items-center gap-1"><Bus size={13}/>الحافلة</span>
+                    <span className="text-sm font-black text-blue-600">{student.bus_number}</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-4">
+                <h4 className="font-black text-gray-700 text-sm uppercase tracking-wide">ولي الأمر</h4>
+                {[
+                  ['الاسم', student.parent_name || '—'],
+                  ['الصلة', student.parent_relation || '—'],
+                  ['الهاتف', student.parent_phone || '—'],
+                  ['البريد', student.parent_email || '—'],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm text-gray-500 font-bold">{k}</span>
+                    <span className="text-sm font-black text-gray-800 truncate max-w-[150px]">{v as string}</span>
+                  </div>
+                ))}
+                {student.parent_phone && (
+                  <a href={`tel:${student.parent_phone}`} className="flex items-center justify-center gap-2 w-full py-3 bg-green-50 text-green-700 rounded-xl font-bold text-sm hover:bg-green-100 transition-colors">
+                    <Phone size={16}/> اتصال بولي الأمر
+                  </a>
+                )}
+              </div>
+              {student.medical_notes && (
+                <div className="md:col-span-2 p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                  <p className="text-xs font-black text-amber-700 mb-1">ملاحظات طبية</p>
+                  <p className="text-sm text-amber-900">{student.medical_notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {tab === 'grades' && (
+            <div>
+              {grades.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <ClipboardCheck size={36} className="mx-auto mb-2 text-gray-200"/>
+                  <p>لا توجد درجات مسجلة لهذا الطالب</p>
+                </div>
+              ) : (
+                <>
+                  {/* Summary */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    {[
+                      {l:'عدد المواد',v:grades.length,c:'#6366f1'},
+                      {l:'المتوسط',v:(grades.reduce((s:number,g:any)=>s+parseFloat(g.percentage||0),0)/grades.length).toFixed(1)+'%',c:'#3b82f6'},
+                      {l:'الناجح',v:grades.filter((g:any)=>g.status==='pass').length,c:'#10b981'},
+                    ].map(s=>(
+                      <div key={s.l} className="bg-gray-50 rounded-xl p-3 text-center">
+                        <p className="text-xl font-black" style={{color:s.c}}>{s.v}</p>
+                        <p className="text-[10px] text-gray-400">{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    {grades.map((g: any) => {
+                      const pct = parseFloat(g.percentage || 0)
+                      return (
+                        <div key={g.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                            style={{ background: gradeColor(pct) }}>
+                            {g.grade_letter || '—'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-800 text-sm">{g.subject_name}</p>
+                            <p className="text-[10px] text-gray-400">{g.term} — {g.academic_year}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-black text-sm" style={{color:gradeColor(pct)}}>{pct.toFixed(1)}%</p>
+                            <p className="text-[10px] text-gray-400">{g.score}/{g.max_score}</p>
+                          </div>
+                          <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{width:`${Math.min(pct,100)}%`,background:gradeColor(pct)}}/>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {tab === 'attendance' && (
+            <div>
+              {attendance.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <UserCheck size={36} className="mx-auto mb-2 text-gray-200"/>
+                  <p>لا توجد سجلات حضور لهذا الطالب</p>
+                </div>
+              ) : (
+                <>
+                  {/* Summary */}
+                  {(() => {
+                    const pres = attendance.filter((a:any)=>a.status==='present').length
+                    const abs = attendance.filter((a:any)=>a.status==='absent').length
+                    const late = attendance.filter((a:any)=>a.status==='late').length
+                    const rate = Math.round(pres/attendance.length*100)
+                    return (
+                      <div className="grid grid-cols-4 gap-3 mb-4">
+                        {[
+                          {l:'حاضر',v:pres,c:'#10b981',bg:'bg-emerald-50'},
+                          {l:'غائب',v:abs,c:'#ef4444',bg:'bg-red-50'},
+                          {l:'متأخر',v:late,c:'#f59e0b',bg:'bg-amber-50'},
+                          {l:'نسبة الحضور',v:rate+'%',c:'#6366f1',bg:'bg-indigo-50'},
+                        ].map(s=>(
+                          <div key={s.l} className={`${s.bg} rounded-xl p-3 text-center`}>
+                            <p className="text-xl font-black" style={{color:s.c}}>{s.v}</p>
+                            <p className="text-[10px] text-gray-400">{s.l}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                    {attendance.slice(0, 50).map((a: any) => (
+                      <div key={a.id} className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-gray-50">
+                        <span className="text-sm text-gray-600">{new Date(a.date).toLocaleDateString('ar-OM', {weekday:'short',day:'numeric',month:'short'})}</span>
+                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${a.status==='present'?'bg-green-100 text-green-700':a.status==='absent'?'bg-red-100 text-red-700':a.status==='late'?'bg-amber-100 text-amber-700':'bg-blue-100 text-blue-700'}`}>
+                          {a.status==='present'?'حاضر':a.status==='absent'?'غائب':a.status==='late'?'متأخر':'معذور'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Students() {
   const [modal,   setModal]   = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form,    setForm]    = useState(emptyStudent)
+  const [profile, setProfile] = useState<any>(null)
+  const [filterClass, setFilterClass] = useState('')
+  const [filterStatus, setFilterStatus] = useState('')
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
@@ -79,24 +311,36 @@ export default function Students() {
   const buses = busesData?.buses || []
   const busOptions = [{ value: '', label: 'لا حافلة' }, ...buses.map((b: any) => ({ value: b.id, label: `${b.bus_number} — ${b.route_name || ''}` }))]
 
+  const allStudents = data?.students || []
+  const classes = [...new Set(allStudents.map((s: any) => s.class_name).filter(Boolean))].sort()
+
+  const students = allStudents.filter((s: any) => {
+    const matchClass = !filterClass || s.class_name === filterClass
+    const matchStatus = !filterStatus || s.status === filterStatus
+    return matchClass && matchStatus
+  })
+
+  const activeCount   = allStudents.filter((s: any) => s.status === 'active').length
+  const inactiveCount = allStudents.filter((s: any) => s.status !== 'active').length
+
   const columns = [
     {
       key: 'photo', label: '', width: '52px', exportable: false,
       render: (_: any, row: any) => (
-        <div className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">
+        <button onClick={() => setProfile(row)} className="w-9 h-9 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0 hover:ring-2 ring-blue-400 transition-all">
           {row.photo
             ? <img src={row.photo} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
             : <GraduationCap size={16} />}
-        </div>
+        </button>
       )
     },
     {
       key: 'name', label: 'اسم الطالب', sortable: true,
       render: (v: string, row: any) => (
-        <div>
-          <p className="font-bold text-gray-800">{v}</p>
+        <button onClick={() => setProfile(row)} className="text-right hover:text-blue-600 transition-colors">
+          <p className="font-bold text-gray-800 hover:text-blue-600">{v}</p>
           <p className="text-xs text-gray-400">{row.student_number}</p>
-        </div>
+        </button>
       )
     },
     { key: 'class_name',  label: 'الفصل',  sortable: true },
@@ -134,22 +378,18 @@ export default function Students() {
     },
   ]
 
-  const students = data?.students || []
-  const activeCount   = students.filter((s: any) => s.status === 'active').length
-  const inactiveCount = students.filter((s: any) => s.status !== 'active').length
-
   return (
     <>
       <div className="mb-6">
         <h1 className="text-2xl font-black text-gray-800">إدارة الطلاب</h1>
-        <p className="text-sm text-gray-400 mt-1">إضافة وتعديل وحذف بيانات الطلاب</p>
+        <p className="text-sm text-gray-400 mt-1">إضافة وتعديل وحذف بيانات الطلاب — انقر على اسم الطالب لعرض بروفايله الكامل</p>
       </div>
 
       {/* Quick stats */}
       {!isLoading && (
         <div className="grid grid-cols-3 gap-3 mb-6">
           {[
-            { label: 'إجمالي الطلاب', value: students.length, color: '#6366f1' },
+            { label: 'إجمالي الطلاب', value: allStudents.length, color: '#6366f1' },
             { label: 'طلاب نشطون',    value: activeCount,      color: '#10b981' },
             { label: 'غير نشط/محوّل', value: inactiveCount,    color: '#f59e0b' },
           ].map(s => (
@@ -165,7 +405,7 @@ export default function Students() {
       )}
 
       <DataTable
-        title={`قائمة الطلاب (${data?.total || 0})`}
+        title={`قائمة الطلاب (${students.length}${allStudents.length !== students.length ? ` من ${allStudents.length}` : ''})`}
         data={students}
         columns={columns}
         onAdd={openAdd}
@@ -177,12 +417,28 @@ export default function Students() {
         loading={isLoading}
         emptyMessage="لا يوجد طلاب مسجلون بعد"
         exportFilename="قائمة_الطلاب"
+        filters={
+          <div className="flex gap-2 flex-wrap">
+            <select className="input-field py-2 text-sm w-44" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
+              <option value="">كل الفصول</option>
+              {classes.map((c: any) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className="input-field py-2 text-sm w-36" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+              <option value="">كل الحالات</option>
+              <option value="active">نشط</option>
+              <option value="inactive">غير نشط</option>
+              <option value="transferred">محوّل</option>
+            </select>
+          </div>
+        }
       />
+
+      {/* Student Profile Modal */}
+      {profile && <StudentProfile student={profile} onClose={() => setProfile(null)} />}
 
       {/* Form Modal */}
       <Modal open={modal} onClose={closeModal} title={editing ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد'} size="xl">
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Basic info */}
           <div className="grid grid-cols-2 gap-4">
             <FormField label="الاسم بالعربي" required>
               <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="الاسم الكامل" />

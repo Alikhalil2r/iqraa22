@@ -19,6 +19,9 @@ import parentRouter from './routes/parent'
 import publicRouter from './routes/public'
 import eventsRouter from './routes/events'
 import reportsRouter from './routes/reports'
+import feesRouter from './routes/fees'
+import scheduleRouter from './routes/schedule'
+import usersRouter from './routes/users'
 
 dotenv.config()
 
@@ -91,6 +94,9 @@ app.use('/api/parent', parentRouter)
 app.use('/api/public', publicRouter)
 app.use('/api/events', eventsRouter)
 app.use('/api/reports', reportsRouter)
+app.use('/api/fees', feesRouter)
+app.use('/api/schedule', scheduleRouter)
+app.use('/api/users', usersRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 

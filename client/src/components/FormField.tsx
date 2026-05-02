@@ -6,11 +6,12 @@ interface FormFieldProps {
   children: React.ReactNode
   hint?: string
   error?: string
+  className?: string
 }
 
-export function FormField({ label, required, children, hint, error }: FormFieldProps) {
+export function FormField({ label, required, children, hint, error, className = '' }: FormFieldProps) {
   return (
-    <div>
+    <div className={className}>
       <label className="block text-sm font-bold text-gray-700 mb-1.5">
         {label} {required && <span className="text-red-500">*</span>}
       </label>

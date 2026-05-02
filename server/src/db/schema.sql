@@ -336,7 +336,31 @@ CREATE TABLE IF NOT EXISTS achievements (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Fees / Payments
+CREATE TABLE IF NOT EXISTS fees (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+  fee_type VARCHAR(100) NOT NULL,
+  description TEXT,
+  amount DECIMAL(10,2) NOT NULL,
+  paid_amount DECIMAL(10,2) DEFAULT 0,
+  due_date DATE,
+  paid_date DATE,
+  payment_method VARCHAR(50),
+  status VARCHAR(20) DEFAULT 'unpaid' CHECK (status IN ('paid','unpaid','partial','waived')),
+  academic_year VARCHAR(20),
+  term VARCHAR(50),
+  reference_number VARCHAR(100),
+  notes TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes
+CREATE INDEX IF NOT EXISTS idx_fees_student ON fees(student_id);
+CREATE INDEX IF NOT EXISTS idx_fees_school ON fees(school_id);
+CREATE INDEX IF NOT EXISTS idx_fees_status ON fees(status);
 CREATE INDEX IF NOT EXISTS idx_students_school ON students(school_id);
 CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
 CREATE INDEX IF NOT EXISTS idx_employees_school ON employees(school_id);

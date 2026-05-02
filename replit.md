@@ -63,25 +63,41 @@ GET  /api/reports/*         — التقارير
 
 ## الميزات المكتملة
 - ✅ Multi-tenant (كل مدرسة لها بياناتها المعزولة)
-- ✅ لوحة إدارة كاملة (طلاب، موظفين، حضور، درجات، حافلات، رسائل، أخبار، فعاليات، إعدادات، ثيم)
-- ✅ بوابة أولياء الأمور (نتائج، حضور، رسائل، جداول)
+- ✅ لوحة إدارة كاملة مُحسَّنة بالكامل:
+  - Dashboard: KPI cards + line charts + رسوم بيانية
+  - Students: بروفايل كامل (3 تبويبات: معلومات، درجات، حضور)
+  - Employees: بروفايل + KPI + إحصائيات
+  - Attendance: تسجيل يومي + stats bar + progress bar
+  - Grades: تحليل توزيعي + أداء المواد + KPI (ConfirmDialog حذف ✅)
+  - Messages: compose + inbox كامل
+  - News: منشور/مسودة + مميز + stats (ConfirmDialog حذف ✅)
+  - Events: تقويم فعاليات
+  - Buses: إدارة حافلات + طلاب
+  - Users: KPI bar + role colors + modal محسّن
+  - Reports: تقارير متقدمة
+  - ThemeSettings: ثيم ديناميكي
+  - SchoolSettings: إعدادات المدرسة
+- ✅ بوابة أولياء الأمور:
+  - ParentDashboard: hero banner + KPI cards + MiniDonut + GradeBar + events + notifications + quick-links
+  - نتائج، حضور، رسائل، جداول
 - ✅ موقع عام للمدرسة — 13 صفحة كاملة مع RTL عربي
   - شريط إعلانات طوارئ قابل للإغلاق
   - شريط أخبار متحرك (news ticker)
   - شريط تنقل علوي بـ 13 رابط + تبديل الوضع الليلي
-  - صفحة رئيسية بـ Ken Burns hero slider + إحصائيات + شهادات + يوتيوب
+  - صفحة رئيسية: Ken Burns hero + Programs section (6 cards) + إحصائيات + شهادات + يوتيوب
   - جدار الشرف مع منصة المراكز الأولى
   - معرض صور masonry مع lightbox
   - تقويم دراسي مع عدّ تنازلي للأحداث
   - مكتبة مرئية يوتيوب مع مشغّل مدمج
   - نموذج توظيف كامل مع CAPTCHA رياضي
   - نموذج تسجيل الخريجين
+  - فوتر 4-أعمدة + أيقونات وسائل التواصل SVG (فيسبوك، تويتر، إنستغرام، يوتيوب، واتساب)
 - ✅ مصادقة JWT مع أدوار (admin, teacher, parent)
 - ✅ Arabic RTL كامل
 - ✅ ثيم ديناميكي لكل مدرسة (ألوان من قاعدة البيانات)
 - ✅ Lazy loading (code splitting) لكل الصفحات
 - ✅ Skeleton loaders بدلاً من spinners
-- ✅ ConfirmDialog للحذف بدلاً من browser confirm()
+- ✅ ConfirmDialog للحذف في كل الصفحات (بلا browser confirm())
 - ✅ CSV export في DataTable والتقارير
 - ✅ Global search (Ctrl+K) في لوحة التحكم
 - ✅ Keyboard shortcuts (Alt+1-7) للتنقل السريع
@@ -89,7 +105,6 @@ GET  /api/reports/*         — التقارير
 - ✅ صفحة 404 احترافية
 - ✅ PWA support (vite-plugin-pwa)
 - ✅ Breadcrumbs في الهيدر
-- ✅ صفحة تسجيل دخول محسّنة بدون بيانات ظاهرة
 - ✅ تحسينات CSS (shimmer skeletons, scale-in, slide-in, focus rings)
 
 ## إعداد Tailwind CSS v4

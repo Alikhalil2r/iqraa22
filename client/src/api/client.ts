@@ -139,6 +139,30 @@ export const parentApi = {
   notifications: () => api.get('/parent/notifications'),
 }
 
+// Fees
+export const feesApi = {
+  list: (params?: any) => api.get('/fees', { params }),
+  create: (data: any) => api.post('/fees', data),
+  update: (id: string, data: any) => api.put(`/fees/${id}`, data),
+  delete: (id: string) => api.delete(`/fees/${id}`),
+}
+
+// Schedule
+export const scheduleApi = {
+  list: (params?: any) => api.get('/schedule', { params }),
+  create: (data: any) => api.post('/schedule', data),
+  update: (id: string, data: any) => api.put(`/schedule/${id}`, data),
+  delete: (id: string) => api.delete(`/schedule/${id}`),
+}
+
+// Users (admin management)
+export const usersAdminApi = {
+  list: (params?: any) => api.get('/users', { params }),
+  create: (data: any) => api.post('/users', data),
+  update: (id: string, data: any) => api.put(`/users/${id}`, data),
+  delete: (id: string) => api.delete(`/users/${id}`),
+}
+
 // Public website
 export const publicApi = {
   school: () => api.get('/public/school'),

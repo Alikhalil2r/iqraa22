@@ -6,7 +6,8 @@ import { Link } from 'react-router-dom'
 import {
   GraduationCap, Target, Award, Heart, Lightbulb, Rocket, Play, Pause,
   ChevronLeft, ChevronRight, MessageCircle, Star, Briefcase, Video,
-  Users, X
+  Users, X, BookOpen, Microscope, Calculator, Globe, Music, Dumbbell,
+  Shield, Cpu, Trophy, ArrowLeft
 } from 'lucide-react'
 
 const DEFAULT_SLIDES = [
@@ -16,15 +17,25 @@ const DEFAULT_SLIDES = [
 ]
 
 const DEFAULT_TESTIMONIALS = [
-  { id: 1, text: 'مدرسة متميزة، لاحظت فرقاً كبيراً في شخصية ابنتي.', name: 'أم خديجة', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
-  { id: 2, text: 'الاهتمام بالجانب القيمي يوازي الاهتمام بالأكاديمي.', name: 'أبو سلطان', relation: 'ولي أمر', rating: 5, image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
-  { id: 3, text: 'الكادر التدريسي متعاون والتواصل سهل وسلس.', name: 'أم يوسف', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80' },
+  { id: 1, text: 'مدرسة متميزة، لاحظت فرقاً كبيراً في شخصية ابنتي وانتمائها لمدرستها.', name: 'أم خديجة', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
+  { id: 2, text: 'الاهتمام بالجانب القيمي يوازي الاهتمام بالأكاديمي، وهذا نادر في مدارسنا.', name: 'أبو سلطان', relation: 'ولي أمر', rating: 5, image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
+  { id: 3, text: 'الكادر التدريسي متعاون جداً والتواصل مع الإدارة سهل وسلس.', name: 'أم يوسف', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80' },
+  { id: 4, text: 'ابني تطور كثيراً في مهارات التفكير النقدي والقيادة منذ انتسابه للمدرسة.', name: 'أبو حمد', relation: 'ولي أمر', rating: 5, image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
 ]
 
 const DEFAULT_VIDEOS = [
   { id: 1, title: 'فعاليات اليوم المفتوح 2025', url: 'https://www.youtube.com/watch?v=ScMzIvxBSi4', category: 'فعاليات', desc: 'جولة شاملة في فعاليات اليوم المفتوح' },
   { id: 2, title: 'مسابقة الروبوت التعليمية', url: 'https://www.youtube.com/watch?v=LXb3EKWsInQ', category: 'مسابقات', desc: 'تغطية مشاركة فريق المدرسة' },
   { id: 3, title: 'حفل تكريم المتفوقين', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', category: 'حفلات', desc: 'حفل تكريم الطلاب المتميزين أكاديمياً' },
+]
+
+const PROGRAMS = [
+  { icon: <Calculator size={24} />, title: 'العلوم والرياضيات', desc: 'مسار علمي متكامل بمختبرات ذكية ومناهج أولمبياد', color: '#3b82f6', bg: 'bg-blue-50', border: 'border-blue-200' },
+  { icon: <Globe size={24} />, title: 'اللغات والأدب', desc: 'برنامج اللغة العربية والإنجليزية مع التواصل الدولي', color: '#10b981', bg: 'bg-emerald-50', border: 'border-emerald-200' },
+  { icon: <Cpu size={24} />, title: 'التقنية والروبوت', desc: 'نادي البرمجة والروبوت والذكاء الاصطناعي للطلاب', color: '#8b5cf6', bg: 'bg-purple-50', border: 'border-purple-200' },
+  { icon: <Trophy size={24} />, title: 'الأنشطة الرياضية', desc: 'كرة القدم والسلة والألعاب الفردية والجماعية', color: '#f59e0b', bg: 'bg-amber-50', border: 'border-amber-200' },
+  { icon: <Music size={24} />, title: 'الفنون والإبداع', desc: 'مسرح، رسم، خط عربي، وفعاليات إبداعية طلابية', color: '#ec4899', bg: 'bg-pink-50', border: 'border-pink-200' },
+  { icon: <Shield size={24} />, title: 'التربية الإسلامية', desc: 'حفظ القرآن الكريم، السيرة، والقيم الإسلامية الأصيلة', color: '#0ea5e9', bg: 'bg-sky-50', border: 'border-sky-200' },
 ]
 
 function useCountUp(target: number, duration = 2000, start = false) {
@@ -71,18 +82,12 @@ function HeroSlider({ slides }: { slides: typeof DEFAULT_SLIDES }) {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  const goTo = useCallback((idx: number) => {
-    setCur(idx)
-    setProgress(0)
-  }, [])
+  const goTo = useCallback((idx: number) => { setCur(idx); setProgress(0) }, [])
 
   useEffect(() => {
     if (paused) return
     progressRef.current = setInterval(() => setProgress(p => p < 100 ? p + 100 / 50 : 100), 100)
-    intervalRef.current = setInterval(() => {
-      setCur(c => (c + 1) % slides.length)
-      setProgress(0)
-    }, 5000)
+    intervalRef.current = setInterval(() => { setCur(c => (c + 1) % slides.length); setProgress(0) }, 5000)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
       if (progressRef.current) clearInterval(progressRef.current)
@@ -135,12 +140,11 @@ function HeroSlider({ slides }: { slides: typeof DEFAULT_SLIDES }) {
 
 function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_TESTIMONIALS }) {
   const [cur, setCur] = useState(0)
-  const items = testimonials
   useEffect(() => {
-    const iv = setInterval(() => setCur(p => (p + 1) % items.length), 5000)
+    const iv = setInterval(() => setCur(p => (p + 1) % testimonials.length), 5000)
     return () => clearInterval(iv)
-  }, [items.length])
-  const t = items[cur]
+  }, [testimonials.length])
+  const t = testimonials[cur]
   return (
     <section className="py-16 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 relative overflow-hidden">
       <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E\")" }} />
@@ -159,7 +163,8 @@ function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_T
             {[...Array(5)].map((_, i) => <Star key={i} size={16} fill={i < t.rating ? '#fbbf24' : 'transparent'} className={i < t.rating ? 'text-amber-400' : 'text-white/20'} />)}
           </div>
           <div className="flex items-center justify-center gap-3">
-            <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50" onError={e => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&size=100&background=065f46&color=fbbf24` }} />
+            <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50"
+              onError={e => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&size=100&background=065f46&color=fbbf24` }} />
             <div className="text-right">
               <p className="text-white font-bold text-sm">{t.name}</p>
               <p className="text-emerald-300 text-[11px]">{t.relation}</p>
@@ -167,7 +172,7 @@ function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_T
           </div>
         </div>
         <div className="flex justify-center gap-2 mt-6">
-          {items.map((_, i) => (
+          {testimonials.map((_, i) => (
             <button key={i} onClick={() => setCur(i)} className={`h-2 rounded-full transition-all ${i === cur ? 'w-8 bg-amber-400' : 'w-2 bg-white/30 hover:bg-white/50'}`} />
           ))}
         </div>
@@ -313,15 +318,15 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { icon: <Lightbulb size={24} />, title: 'تفكير إبداعي', desc: 'تنمية مهارات الابتكار', bg: 'bg-emerald-50' },
-                { icon: <Target size={24} />, title: 'تميز أكاديمي', desc: 'نتائج متقدمة وطنياً', bg: 'bg-amber-50' },
-                { icon: <Heart size={24} />, title: 'قيم أصيلة', desc: 'تربية على الهوية العُمانية', bg: 'bg-rose-50' },
-                { icon: <Rocket size={24} />, title: 'تقنية حديثة', desc: 'مختبرات ذكية ورقمية', bg: 'bg-sky-50' },
+                { icon: <Lightbulb size={24} />, title: 'تفكير إبداعي', desc: 'تنمية مهارات الابتكار والتفكير النقدي', bg: 'bg-emerald-50', color: 'text-emerald-600' },
+                { icon: <Target size={24} />, title: 'تميز أكاديمي', desc: 'نتائج متقدمة محلياً وطنياً', bg: 'bg-amber-50', color: 'text-amber-600' },
+                { icon: <Heart size={24} />, title: 'قيم أصيلة', desc: 'تربية على الهوية والانتماء العُماني', bg: 'bg-rose-50', color: 'text-rose-600' },
+                { icon: <Rocket size={24} />, title: 'تقنية حديثة', desc: 'مختبرات ذكية وفصول رقمية متكاملة', bg: 'bg-sky-50', color: 'text-sky-600' },
               ].map((c, i) => (
-                <div key={i} className={`${c.bg} p-5 rounded-2xl hover:-translate-y-1 transition-all group`}>
-                  <div className="text-emerald-600 mb-3 group-hover:scale-110 transition-transform">{c.icon}</div>
+                <div key={i} className={`${c.bg} p-5 rounded-2xl hover:-translate-y-1 transition-all group border border-gray-100`}>
+                  <div className={`${c.color} mb-3 group-hover:scale-110 transition-transform`}>{c.icon}</div>
                   <h4 className="font-bold text-sm mb-1 text-gray-800">{c.title}</h4>
-                  <p className="text-[11px] text-gray-500">{c.desc}</p>
+                  <p className="text-[11px] text-gray-500 leading-relaxed">{c.desc}</p>
                 </div>
               ))}
             </div>
@@ -329,26 +334,59 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Programs Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl mb-4">
+              <BookOpen size={16} className="text-emerald-600" />
+              <span className="text-emerald-700 font-black text-xs tracking-wider">مسارات التعلم</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">برامجنا <span className="text-emerald-600">الأكاديمية</span> واللاصفية</h2>
+            <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">تنوع في المسارات يضمن لكل طالب اكتشاف موهبته وتطوير مهاراته بطريقة شاملة ومتكاملة</p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            {PROGRAMS.map((p, i) => (
+              <div key={i} className={`bg-white rounded-2xl p-5 border ${p.border} hover:shadow-lg hover:-translate-y-1 transition-all group cursor-default`}>
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ background: p.color + '15', color: p.color }}>
+                  {p.icon}
+                </div>
+                <h4 className="font-black text-gray-800 text-sm mb-2">{p.title}</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center">
+            <Link to="/articles" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
+              استكشف إبداعات طلابنا <ChevronLeft size={16} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* News Section */}
       {featuredNews.length > 0 && (
-        <section className="py-16 bg-gray-50">
+        <section className="py-16 bg-white">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex justify-between items-end mb-10">
               <div>
                 <span className="text-amber-600 font-black text-[10px] tracking-[0.2em] uppercase">آخر المستجدات</span>
-                <h2 className="text-2xl font-black mt-1 text-gray-900">أحدث الأخبار</h2>
+                <h2 className="text-2xl font-black mt-1 text-gray-900">أحدث الأخبار والفعاليات</h2>
               </div>
               <Link to="/news" className="text-emerald-600 font-bold text-sm hover:underline flex items-center gap-1">عرض الكل <ChevronLeft size={14} /></Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredNews.map((n: any) => (
-                <div key={n.id} className="rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 bg-white group">
+              {featuredNews.map((n: any, idx: number) => (
+                <div key={n.id} className={`rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 bg-white group ${idx === 0 ? 'md:row-span-1' : ''}`}>
                   <div className="h-52 overflow-hidden relative">
-                    {n.image_url && <img src={n.image_url} alt={n.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy" onError={e => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/800x400/064e3b/fff?text=خبر' }} />}
+                    {n.image_url && <img src={n.image_url} alt={n.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy"
+                      onError={e => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/800x400/064e3b/fff?text=خبر' }} />}
+                    {!n.image_url && <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center"><BookOpen size={40} className="text-emerald-400" /></div>}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                     <span className="absolute bottom-3 right-3 text-white text-[10px] font-bold bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">
                       {new Date(n.publish_date).toLocaleDateString('ar-OM')}
                     </span>
+                    {n.category && <span className="absolute top-3 right-3 text-[9px] bg-emerald-600/80 text-white px-2 py-0.5 rounded-md font-black">{n.category}</span>}
                   </div>
                   <div className="p-5">
                     <h3 className="font-bold mb-2 line-clamp-2 text-gray-800">{n.title}</h3>
@@ -366,9 +404,13 @@ export default function HomePage() {
 
       {/* CTA */}
       <section className="py-16 bg-gradient-to-l from-amber-500 to-amber-600 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23000' stroke-width='1' stroke-opacity='0.5'%3E%3Cpath d='M0 40L40 0M0 0l40 40'/%3E%3C/g%3E%3C/svg%3E\")" }} />
         <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl font-black text-gray-900 mb-3">انضم إلى عائلتنا</h2>
-          <p className="text-gray-800/80 mb-8 max-w-xl mx-auto">نرحب بالكوادر التعليمية المتميزة. اكتشف الوظائف الشاغرة وقدّم طلبك الآن.</p>
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
+            <Briefcase size={28} className="text-gray-900" />
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 mb-3">انضم إلى عائلتنا التعليمية</h2>
+          <p className="text-gray-800/80 mb-8 max-w-xl mx-auto text-sm leading-relaxed">نرحب بالكوادر التعليمية المتميزة وأولياء الأمور الراغبين في تسجيل أبنائهم. اكتشف الوظائف الشاغرة أو تواصل مع الإدارة.</p>
           <div className="flex gap-3 justify-center flex-wrap">
             <Link to="/jobs" className="bg-gray-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
               <Briefcase size={16} /> الوظائف الشاغرة
