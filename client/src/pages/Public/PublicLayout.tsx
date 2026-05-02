@@ -329,10 +329,28 @@ export default function PublicLayout() {
             <p className="text-white/25 text-xs">
               جميع الحقوق محفوظة © {new Date().getFullYear()} {theme.schoolName}
             </p>
-            <div className="flex items-center gap-1">
-              <span className="text-white/20 text-[10px]">تم التطوير بـ</span>
-              <span className="text-amber-500 text-[11px]">♥</span>
-              <span className="text-white/20 text-[10px]">لخدمة التعليم العُماني</span>
+            {/* Developer info */}
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              <div className="flex items-center gap-1.5">
+                <span className="text-white/20 text-[10px]">تصميم وتطوير</span>
+                <span className="text-amber-400/70 text-[10px] font-bold">علي المعمري</span>
+              </div>
+              <span className="text-white/10 text-[10px] hidden sm:block">|</span>
+              <a href="https://instagram.com/dev.account" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1 text-white/25 hover:text-amber-400 transition-colors group">
+                <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3 flex-shrink-0">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+                </svg>
+                <span className="text-[10px]">@dev.account</span>
+              </a>
+              <span className="text-white/10 text-[10px] hidden sm:block">|</span>
+              <a href="tel:+96812345678"
+                className="flex items-center gap-1 text-white/25 hover:text-amber-400 transition-colors">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 flex-shrink-0">
+                  <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.01 1.18 2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+                </svg>
+                <span className="text-[10px]">+968 1234 5678</span>
+              </a>
             </div>
           </div>
         </div>
