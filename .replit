@@ -37,13 +37,13 @@ waitForPort = 5000
 name = "Backend Server"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd server && npm run dev"
-waitForPort = 3001
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npm start"
+waitForPort = 3001
 
 [[ports]]
 localPort = 5000
@@ -52,3 +52,8 @@ externalPort = 80
 [[ports]]
 localPort = 5173
 externalPort = 5173
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "5dc6988495b12810bb068dec7719c9ab4e19f958da853f198af79a388714e496e7439f10b3013a0b3b1241bc31a34980d44d5c0a49059509963ae45ecc8d6ce4"

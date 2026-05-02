@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { busesApi, studentsApi } from '../../api/client'
 import Modal from '../../components/Modal'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { FormField, Input, Textarea } from '../../components/FormField'
 import { Bus, Users, Phone, MapPin, Clock, Plus, Trash2, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -16,6 +17,7 @@ export default function Buses() {
   const [editing, setEditing] = useState<any>(null)
   const [form, setForm] = useState(emptyBus)
   const [selectedBus, setSelectedBus] = useState<any>(null)
+  const [confirmBus, setConfirmBus] = useState<any>(null)
   const qc = useQueryClient()
 
   const { data: busesData, isLoading } = useQuery({
@@ -89,7 +91,7 @@ export default function Buses() {
                   <div className="flex items-center gap-2">
                     <span className={bus.is_active ? 'badge-success' : 'badge-danger'}>{bus.is_active ? 'نشطة' : 'متوقفة'}</span>
                     <button onClick={e=>{e.stopPropagation();openEdit(bus)}} className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-600"><Edit size={14}/></button>
-                    <button onClick={e=>{e.stopPropagation();if(confirm('حذف الحافلة؟'))deleteMut.mutate(bus.id)}} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
+                    <button onClick={e=>{e.stopPropagation();setConfirmBus(bus)}} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"><Trash2 size={14}/></button>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -143,6 +145,16 @@ export default function Buses() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmBus}
+        title="حذف الحافلة"
+        message={`هل تريد حذف حافلة رقم "${confirmBus?.bus_number}" بشكل نهائي؟`}
+        confirmLabel="نعم، احذف"
+        danger
+        onConfirm={() => { deleteMut.mutate(confirmBus.id); setConfirmBus(null) }}
+        onCancel={() => setConfirmBus(null)}
+      />
 
       <Modal open={modal} onClose={closeModal} title={editing?'تعديل الحافلة':'إضافة حافلة جديدة'} size="lg">
         <form onSubmit={handleSubmit} className="space-y-4">

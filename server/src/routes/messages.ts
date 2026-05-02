@@ -7,7 +7,7 @@ const router = Router()
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { id: userId, schoolId } = req.user!
-    const { box } = req.query // inbox, sent, all
+    const { box } = req.query
     let sql = `
       SELECT m.*,
         fu.name as from_name, fu.role as from_role, fu.avatar as from_avatar,
@@ -39,22 +39,30 @@ router.get('/unread/count', authenticateToken, async (req: AuthRequest, res) => 
 
 router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const { id: userId } = req.user!
+    const { id: userId, schoolId } = req.user!
     const result = await query(`
       SELECT m.*, fu.name as from_name, fu.role as from_role, tu.name as to_name
-      FROM messages m JOIN users fu ON fu.id=m.from_user_id JOIN users tu ON tu.id=m.to_user_id
-      WHERE m.id=$1`, [req.params.id])
+      FROM messages m
+      JOIN users fu ON fu.id=m.from_user_id
+      JOIN users tu ON tu.id=m.to_user_id
+      WHERE m.id=$1 AND m.school_id=$2`, [req.params.id, schoolId])
     const msg = result.rows[0]
     if (!msg) return res.status(404).json({ error: 'Not found' })
-    // Mark as read
+
+    // Verify the requesting user is sender or recipient
+    if (msg.from_user_id !== userId && msg.to_user_id !== userId) {
+      return res.status(403).json({ error: 'غير مصرح' })
+    }
+
     if (msg.to_user_id === userId && !msg.is_read) {
       await query('UPDATE messages SET is_read=true WHERE id=$1', [req.params.id])
     }
-    // Get replies
+
     const replies = await query(`
       SELECT m.*, fu.name as from_name, fu.role as from_role
       FROM messages m JOIN users fu ON fu.id=m.from_user_id
-      WHERE m.parent_message_id=$1 ORDER BY m.created_at ASC`, [req.params.id])
+      WHERE m.parent_message_id=$1 AND m.school_id=$2 ORDER BY m.created_at ASC`,
+      [req.params.id, schoolId])
     res.json({ message: msg, replies: replies.rows })
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
@@ -62,23 +70,41 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
 router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { id: fromId, schoolId } = req.user!
-    const { toUserId, subject, body, priority } = req.body
-    // Find admin if no specific target
+    const { toUserId, subject, body } = req.body
+
+    if (!subject || !body) {
+      return res.status(400).json({ error: 'الموضوع والنص مطلوبان' })
+    }
+
     let targetId = toUserId
     if (!targetId) {
-      const adminResult = await query(`SELECT id FROM users WHERE school_id=$1 AND role='admin' LIMIT 1`, [schoolId])
+      const adminResult = await query(
+        `SELECT id FROM users WHERE school_id=$1 AND role='admin' LIMIT 1`,
+        [schoolId]
+      )
       targetId = adminResult.rows[0]?.id
     }
+
+    if (!targetId) return res.status(400).json({ error: 'المستقبل غير موجود' })
+
+    // Verify target belongs to same school
+    const targetCheck = await query(
+      'SELECT id FROM users WHERE id=$1 AND school_id=$2 AND is_active=true',
+      [targetId, schoolId]
+    )
+    if (!targetCheck.rows[0]) return res.status(400).json({ error: 'المستقبل غير موجود' })
+
+    const priority = ['normal', 'high', 'urgent'].includes(req.body.priority) ? req.body.priority : 'normal'
     const result = await query(`
       INSERT INTO messages (school_id,from_user_id,to_user_id,subject,body,priority)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [schoolId, fromId, targetId, subject, body, priority||'normal']
+      [schoolId, fromId, targetId, subject.slice(0, 200), body.slice(0, 5000), priority]
     )
-    // Create notification
+
     await query(`
       INSERT INTO notifications (school_id,user_id,title,body,type,link)
       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [schoolId, targetId, 'رسالة جديدة', `من: ${req.user!.name}`, 'message', `/admin/messages`]
+      [schoolId, targetId, 'رسالة جديدة', `من: ${req.user!.name}`, 'message', '/admin/messages']
     )
     res.status(201).json({ message: result.rows[0] })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
@@ -87,13 +113,27 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
 router.post('/:id/reply', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { id: fromId, schoolId } = req.user!
-    const parent = await query('SELECT * FROM messages WHERE id=$1', [req.params.id])
+    if (!req.body.body) return res.status(400).json({ error: 'نص الرد مطلوب' })
+
+    const parent = await query(
+      'SELECT * FROM messages WHERE id=$1 AND school_id=$2',
+      [req.params.id, schoolId]
+    )
     if (!parent.rows[0]) return res.status(404).json({ error: 'Not found' })
-    const toId = parent.rows[0].from_user_id === fromId ? parent.rows[0].to_user_id : parent.rows[0].from_user_id
+
+    // Verify user is part of the conversation
+    const p = parent.rows[0]
+    if (p.from_user_id !== fromId && p.to_user_id !== fromId) {
+      return res.status(403).json({ error: 'غير مصرح' })
+    }
+
+    const toId = p.from_user_id === fromId ? p.to_user_id : p.from_user_id
     const result = await query(`
       INSERT INTO messages (school_id,from_user_id,to_user_id,parent_message_id,subject,body)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [schoolId, fromId, toId, req.params.id, 'رد: ' + parent.rows[0].subject, req.body.body]
+      [schoolId, fromId, toId, req.params.id,
+       ('رد: ' + p.subject).slice(0, 200),
+       req.body.body.slice(0, 5000)]
     )
     await query('UPDATE messages SET is_read=false WHERE id=$1', [req.params.id])
     res.status(201).json({ message: result.rows[0] })
@@ -102,7 +142,10 @@ router.post('/:id/reply', authenticateToken, async (req: AuthRequest, res) => {
 
 router.put('/:id/read', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    await query('UPDATE messages SET is_read=true WHERE id=$1 AND to_user_id=$2', [req.params.id, req.user!.id])
+    await query(
+      'UPDATE messages SET is_read=true WHERE id=$1 AND to_user_id=$2 AND school_id=$3',
+      [req.params.id, req.user!.id, req.user!.schoolId]
+    )
     res.json({ success: true })
   } catch { res.status(500).json({ error: 'Server error' }) }
 })

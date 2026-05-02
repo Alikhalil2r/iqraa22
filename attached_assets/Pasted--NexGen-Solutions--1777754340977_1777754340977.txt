@@ -1,0 +1,202 @@
+
+🌐 البرومبت الكامل لإنشاء موقع NexGen Solutions
+المهمة الرئيسية
+أنشئ موقعاً إلكترونياً احترافياً باللغة العربية (RTL) لشركة برمجيات متخصصة باسم NexGen Solutions. الموقع يجب أن يكون الواجهة الرسمية للشركة على الإنترنت، مرتبطاً بتطبيق جوال Expo/React Native بنفس الهوية البصرية.
+
+هوية الشركة
+الاسم: NexGen Solutions
+الشعار (اختصار): NX
+التخصص: تطوير تطبيقات الجوال، منصات الويب، حلول الذكاء الاصطناعي، أمان المعلومات، تحليل البيانات، DevOps
+الجمهور المستهدف: الشركات الناشئة والمؤسسات الكبرى في منطقة الخليج والشرق الأوسط
+نبرة الشركة: احترافية، موثوقة، مبتكرة، مباشرة
+الإنجازات: 500+ عميل · 1,200+ مشروع · 98% معدل رضا · 8+ سنوات خبرة · عمل في 12 دولة
+المواصفات التقنية
+Stack المطلوب
+Framework: Next.js 14+ (App Router)
+Styling: Tailwind CSS
+Animations: Framer Motion
+Language: TypeScript
+RTL Support: كامل باستخدام dir="rtl" و Tailwind RTL plugin
+Font: Tajawal أو IBM Plex Arabic من Google Fonts
+Icons: Lucide React
+Deploy Target: Vercel
+الأداء المطلوب
+Lighthouse Score: 95+ في جميع المحاور
+Core Web Vitals: جميعها في المنطقة الخضراء
+SEO: meta tags، Open Graph، Schema.org للشركة
+Sitemap.xml وrobots.txt تلقائيان
+نظام الألوان (مطابق للتطبيق)
+--bg-primary: #0A0A0F;        /* خلفية رئيسية — أسود دافئ */
+--bg-card: rgba(255,255,255,0.04);   /* خلفية البطاقات */
+--border: rgba(255,255,255,0.08);    /* حدود البطاقات */
+--text-primary: #F5F0E8;      /* نص رئيسي — أبيض دافئ */
+--text-secondary: #6B7280;    /* نص ثانوي */
+--accent-warm: #E8A87C;       /* لون مميز دافئ (كورال/أمبر) */
+--accent-purple: #A89CFF;     /* لون مميز بنفسجي */
+--success: #34D399;           /* أخضر للحالات الناجحة */
+
+صفحات الموقع (7 صفحات)
+1. الصفحة الرئيسية /
+Hero Section:
+
+عنوان رئيسي كبير: "نحوّل أفكارك إلى واقع رقمي"
+وصف مختصر محفّز للتواصل
+زران: "ابدأ مشروعك" (يفتح نموذج التواصل) + "شاهد أعمالنا" (يرتبط بصفحة Portfolio)
+خلفية: تأثير mesh gradient متحرك بالألوان المحددة
+Badge صغير أعلى: "#1 شركة برمجة موثوقة في المنطقة"
+Stats Bar (أرقام متحركة عند الظهور):
+
+500+ عميل راضٍ
+1,200+ مشروع منجز
+98% معدل الرضا
+12 دولة نعمل فيها
+Services Preview (4 بطاقات):
+
+تطبيقات الجوال · منصات الويب · الذكاء الاصطناعي · أمان المعلومات
+كل بطاقة: icon، عنوان، وصف مختصر، رابط "اعرف أكثر"
+hover effect: glow بلون الـ accent
+عروض حية (Promotions Strip):
+
+شريط متحرك يعرض العروض النشطة المسحوبة من API التطبيق
+تحديث تلقائي كل 30 ثانية
+Featured Projects (3 مشاريع):
+
+ShopNext، MindFlow AI، EduPortal
+كل مشروع: صورة، اسم، وصف، badge التقنية، رقم النتيجة
+Testimonials (carousel تلقائي):
+
+3 آراء عملاء مع اسم ودور وتقييم نجوم
+CTA Section:
+
+"لديك فكرة مشروع؟ تحدث معنا اليوم"
+زر "احصل على عرض مجاني" — يفتح نموذج التواصل
+Technology Stack:
+
+Logos/chips: React Native · Next.js · Flutter · Python · AWS · GPT-4o · Kubernetes · PostgreSQL
+2. صفحة الخدمات /services
+Hero صغير مع عنوان الصفحة
+6 بطاقات خدمات تفاعلية (accordion):
+تطبيقات الجوال — يبدأ من $8,000 — 6–10 أسابيع
+منصات الويب — يبدأ من $6,000 — 4–8 أسابيع
+الذكاء الاصطناعي — يبدأ من $12,000 — 8–14 أسبوعاً
+أمان المعلومات — يبدأ من $5,000 — 2–4 أسابيع
+تحليل البيانات — يبدأ من $4,000 — 3–6 أسابيع
+DevOps والأتمتة — يبدأ من $7,000 — 4–6 أسابيع
+كل بطاقة: icon، عنوان، وصف، features checklist، السعر، وقت التسليم
+قسم "كيف نعمل" (6 خطوات): الاكتشاف ← التخطيط ← التصميم ← التطوير ← الاختبار ← الإطلاق
+ضماناتنا: 6 أشهر ضمان · الكود ملكك · دعم مجاني شهر · تسليم بالموعد
+3. صفحة الأعمال /portfolio
+Filter bar: الكل | جوال | ويب | AI | أمان
+6 بطاقات مشاريع:
+ShopNext (جوال) — 200K مستخدم — نمو 340%
+MindFlow AI (AI) — 50 شركة — توفير 60% وقت
+EduPortal (ويب) — 80K طالب
+SecureNet (أمان) — صفر اختراق
+HealthTrack (جوال) — 120 عيادة
+FinDash (ويب) — 30 صندوق استثمار
+كل بطاقة: صورة كاملة، اسم، وصف، tech stack chips، نتيجة قابلة للقياس، تقييم
+عند الضغط: تفاصيل كاملة في modal أو صفحة منفصلة
+4. صفحة من نحن /about
+Hero: قصة الشركة منذ 2016، رسالتنا ورؤيتنا
+الفريق (4 أعضاء):
+أحمد السعيد — CEO & Co-founder
+سارة الخالد — Head of Design & UX
+محمد النور — Lead Developer & Architect
+ليلى الراشد — AI & Data Science Lead
+Timeline الشركة: 2016 التأسيس → 2018 أول 50 عميل → 2020 توسع خليجي → 2023 إطلاق قسم AI → 2025 1000+ مشروع
+قيمنا: الجودة · الشفافية · الابتكار · الشراكة طويلة الأمد
+شهادات ومعايير: ISO 27001 · AWS Partner · Google Developer Partner
+5. صفحة التواصل /contact
+نموذج احترافي:
+الاسم الكامل (مطلوب)
+البريد الإلكتروني (مطلوب)
+رقم الهاتف (اختياري)
+نوع المشروع: [قائمة منسدلة] جوال / ويب / AI / أمان / أخرى
+الميزانية التقريبية: [قائمة] أقل من $5K / $5K–$20K / $20K–$50K / أكثر من $50K
+وصف المشروع (textarea)
+زر الإرسال مع loading state
+معلومات الاتصال:
+البريد: hello@nexgen-solutions.com
+الهاتف / واتساب: +966 50 000 0000
+المقر الرئيسي: الرياض، المملكة العربية السعودية
+ساعات العمل: الأحد – الخميس، 9ص – 6م
+خريطة Google Maps (Embed) — موقع المكتب
+6. بوابة العميل /client-portal
+صفحة مخصصة لكل عميل بعد تسجيل الدخول:
+
+Login: بريد إلكتروني + كلمة مرور — أو Google OAuth
+Dashboard بعد الدخول:
+بيانات المشروع: الاسم، المرحلة الحالية، نسبة الإنجاز
+Timeline المراحل مع تواريخ فعلية
+قسم التحديثات من الفريق
+الملفات والوثائق (PDF، Figma links)
+فواتير وحالة الدفع
+زر "تواصل مع الفريق" → يفتح نموذج رسالة مباشرة
+7. صفحة المدونة /blog (اختياري)
+مقالات تقنية وتسويقية
+فئات: جوال · ويب · AI · تجارب الشركة
+3 مقالات افتراضية جاهزة
+المكونات المشتركة
+Header (Sticky)
+Logo (NX badge + NexGen Solutions)
+Navigation: الرئيسية · الخدمات · أعمالنا · من نحن · تواصل معنا
+زر CTA: "ابدأ مشروعك" (filled, accent color)
+Hamburger menu للموبايل
+Backdrop blur عند التمرير
+Footer
+Logo + وصف مختصر للشركة
+روابط سريعة: الصفحات الرئيسية
+التواصل الاجتماعي: LinkedIn · Twitter/X · Instagram · GitHub
+Newsletter signup (اختياري)
+حقوق النشر: © 2026 NexGen Solutions. جميع الحقوق محفوظة.
+المميزات التقنية الإضافية
+API Integration (اختياري لاحقاً)
+// نقاط API للتكامل مع التطبيق
+GET /api/promotions     // العروض النشطة
+GET /api/projects       // أحدث المشاريع
+POST /api/contact       // نموذج التواصل
+POST /api/client/login  // تسجيل دخول العميل
+GET /api/client/:id     // بيانات العميل
+
+SEO & Meta
+// metadata.ts لكل صفحة
+export const metadata = {
+  title: 'NexGen Solutions | شركة برمجة احترافية في السعودية',
+  description: 'نبني تطبيقات جوال ومنصات ويب وحلول AI للشركات في الخليج. 500+ عميل راضٍ، 8+ سنوات خبرة.',
+  keywords: 'شركة برمجة، تطوير تطبيقات، ذكاء اصطناعي، الرياض، الخليج',
+  openGraph: { images: ['/og-image.jpg'] },
+}
+
+التحريكات (Framer Motion)
+Hero: fade + slide-up عند التحميل
+Cards: stagger animation عند الدخول للـ viewport
+Numbers: count-up animation
+Page transitions: fade بين الصفحات
+Scroll-triggered: كل section يظهر بسلاسة
+Responsive Design
+Desktop (1200px+): Layout متعدد الأعمدة
+Tablet (768–1199px): تخطيط مرن
+Mobile (< 768px): عمود واحد — تجربة مثالية
+جميع الصور responsive مع next/image
+الخطوات المقترحة للتنفيذ
+# 1. إنشاء المشروع
+npx create-next-app@latest nexgen-website --typescript --tailwind --app
+# 2. تثبيت المكتبات
+npm install framer-motion lucide-react @tailwindcss/typography
+# 3. إضافة خط عربي في layout.tsx
+import { Tajawal } from 'next/font/google'
+# 4. تفعيل RTL في tailwind.config.ts
+plugins: [require('tailwindcss-rtl')]
+# 5. إنشاء الـ components
+/components: Header, Footer, HeroSection, ServiceCard, ProjectCard, TestimonialCard, ContactForm, ClientPortal
+# 6. بناء الصفحات
+/app: page.tsx, services/page.tsx, portfolio/page.tsx, about/page.tsx, contact/page.tsx, client-portal/page.tsx
+
+ملاحظات مهمة
+RTL أولاً: كل النصوص والعناصر تعمل من اليمين لليسار — استخدم dir="rtl" في <html>
+الأداء: استخدم next/image لكل الصور، lazy loading افتراضي
+الأمان: نموذج التواصل محمي بـ reCAPTCHA v3 أو Turnstile من Cloudflare
+الإمكانية: WCAG 2.1 AA — aria-labels بالعربية، contrast ratio مناسب
+التحليلات: اربط Google Analytics 4 أو Plausible (مع احترام الخصوصية)
+البريد الإلكتروني: استخدم Resend أو EmailJS لإرسال نماذج التواصل
+هذا البرومبت كتبه مساعد NexGen Solutions الذكي — مصمم لإنشاء موقع كامل مرتبط بتطبيق الشركة.

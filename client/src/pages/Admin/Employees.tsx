@@ -120,10 +120,13 @@ export default function Employees() {
         columns={columns}
         onAdd={openAdd}
         onEdit={openEdit}
-        onDelete={row => { if (confirm(`حذف "${row.name}"؟`)) deleteMut.mutate(row.id) }}
+        onDelete={row => deleteMut.mutate(row.id)}
+        deleteMessage={row => `هل تريد حذف الموظف "${row.name}" بشكل نهائي؟`}
         searchKeys={['name','employee_number','position','department']}
         addLabel="إضافة موظف"
         loading={isLoading}
+        emptyMessage="لا يوجد موظفون مسجلون"
+        exportFilename="قائمة_الموظفين"
       />
 
       <Modal open={modal} onClose={closeModal} title={editing ? 'تعديل الموظف' : 'إضافة موظف جديد'} size="xl">

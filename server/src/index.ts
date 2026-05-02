@@ -1,19 +1,10 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
 import path from 'path'
 import dotenv from 'dotenv'
 import { initDB } from './db'
-
-dotenv.config()
-
-const app = express()
-const PORT = process.env.PORT || 3001
-
-app.use(cors({ origin: true, credentials: true }))
-app.use(express.json({ limit: '10mb' }))
-app.use(express.urlencoded({ extended: true, limit: '10mb' }))
-
-// Routes
+import { globalLimiter } from './middleware/rateLimiter'
 import authRouter from './routes/auth'
 import dashboardRouter from './routes/dashboard'
 import studentsRouter from './routes/students'
@@ -29,6 +20,63 @@ import publicRouter from './routes/public'
 import eventsRouter from './routes/events'
 import reportsRouter from './routes/reports'
 
+dotenv.config()
+
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET environment variable is not set.')
+  process.exit(1)
+}
+
+const app = express()
+const PORT = process.env.PORT || 3001
+
+// Trust Replit's reverse proxy for correct IP detection (needed for rate limiting)
+app.set('trust proxy', 1)
+
+// ─── Security Headers ─────────────────────────────────────────────────────────
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
+      scriptSrc: ["'self'"],
+      connectSrc: ["'self'", 'https:'],
+    },
+  },
+}))
+
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const allowedOriginPatterns = [
+  /^http:\/\/localhost:\d+$/,
+  /\.replit\.dev$/,
+  /\.repl\.co$/,
+  /\.pike\.replit\.dev$/,
+  /\.worf\.replit\.dev$/,
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true)
+    const allowed = allowedOriginPatterns.some(pattern => pattern.test(origin))
+    if (allowed) return callback(null, true)
+    callback(new Error('CORS policy violation'))
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}))
+
+// ─── Rate Limiting ────────────────────────────────────────────────────────────
+app.use('/api/', globalLimiter)
+
+// ─── Body Parsers ─────────────────────────────────────────────────────────────
+app.use(express.json({ limit: '500kb' }))
+app.use(express.urlencoded({ extended: true, limit: '500kb' }))
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter)
 app.use('/api/dashboard', dashboardRouter)
 app.use('/api/students', studentsRouter)
@@ -46,11 +94,33 @@ app.use('/api/reports', reportsRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 
-// Serve static files in production
+// ─── API 404 ──────────────────────────────────────────────────────────────────
+app.use('/api/*path', (_req, res) => res.status(404).json({ error: 'Not found' }))
+
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err.message === 'CORS policy violation') {
+    return res.status(403).json({ error: 'Not allowed by CORS' })
+  }
+  console.error('[SERVER ERROR]', err.message)
+  res.status(500).json({ error: 'Internal server error' })
+})
+
+// ─── Static in Production ─────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../../client/dist')))
-  app.get('*', (_, res) => res.sendFile(path.join(__dirname, '../../client/dist/index.html')))
+  app.get('*', (_, res) =>
+    res.sendFile(path.join(__dirname, '../../client/dist/index.html'))
+  )
 }
+
+// Prevent crashes from unhandled async errors
+process.on('unhandledRejection', (reason: any) => {
+  console.error('[UNHANDLED REJECTION]', reason?.message || reason)
+})
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err.message)
+})
 
 async function start() {
   try {
@@ -58,7 +128,8 @@ async function start() {
     const { seedDatabase } = await import('./db/seed')
     await seedDatabase()
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 School Management Server running on port ${PORT}`)
+      console.log(`🚀 Server running on port ${PORT}`)
+      console.log(`🔒 Helmet ✓ | Rate Limiting ✓ | CORS ✓ | JWT ✓`)
     })
   } catch (err) {
     console.error('Failed to start server:', err)

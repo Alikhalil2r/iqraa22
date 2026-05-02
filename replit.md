@@ -14,13 +14,10 @@
 ```
 client/         — Vite React app (port 5000)
 server/         — Express.js API (port 3001)
-node_modules/   — Shared packages (Replit installs to root)
+node_modules/   — Shared packages
 ```
 
-## التطبيق الحالي
-**المدرسة في قاعدة البيانات**: مدرسة اقرأ الخاصة
-
-### بيانات الدخول التجريبية
+## بيانات الدخول التجريبية
 | الدور | المستخدم | كلمة المرور |
 |-------|----------|-------------|
 | مدير | admin | admin2026 |
@@ -52,6 +49,7 @@ GET  /api/news              — الأخبار
 GET  /api/events            — الفعاليات
 GET  /api/school/settings   — إعدادات المدرسة
 GET  /api/school/theme      — ثيم المدرسة
+GET  /api/reports/*         — التقارير
 ```
 
 ## الميزات المكتملة
@@ -62,7 +60,18 @@ GET  /api/school/theme      — ثيم المدرسة
 - ✅ مصادقة JWT مع أدوار (admin, teacher, parent)
 - ✅ Arabic RTL كامل
 - ✅ ثيم ديناميكي لكل مدرسة (ألوان من قاعدة البيانات)
-- ✅ صور من Unsplash (بدون API key)
+- ✅ Lazy loading (code splitting) لكل الصفحات
+- ✅ Skeleton loaders بدلاً من spinners
+- ✅ ConfirmDialog للحذف بدلاً من browser confirm()
+- ✅ CSV export في DataTable والتقارير
+- ✅ Global search (Ctrl+K) في لوحة التحكم
+- ✅ Keyboard shortcuts (Alt+1-7) للتنقل السريع
+- ✅ Error boundary للتعامل مع الأخطاء
+- ✅ صفحة 404 احترافية
+- ✅ PWA support (vite-plugin-pwa)
+- ✅ Breadcrumbs في الهيدر
+- ✅ صفحة تسجيل دخول محسّنة بدون بيانات ظاهرة
+- ✅ تحسينات CSS (shimmer skeletons, scale-in, slide-in, focus rings)
 
 ## إعداد Tailwind CSS v4
 - استخدام `@tailwindcss/vite` plugin في vite.config.ts
@@ -76,5 +85,15 @@ GET  /api/school/theme      — ثيم المدرسة
 - news, events, settings, gallery
 
 ## Workflows
-- `Backend Server`: `cd server && npm run dev` (port 3001)
+- `Backend Server`: `cd server && npm start` (port 3001)
 - `Start application`: `cd client && npm run dev` (port 5000)
+
+## المكونات المشتركة (client/src/components/)
+- `DataTable` — جدول بيانات مع بحث، ترتيب، تصفح، تصدير CSV، ConfirmDialog للحذف
+- `Modal` — نافذة منبثقة مع دعم Escape key
+- `Skeleton` — مكونات skeleton loaders (StatCard, Table, Dashboard)
+- `ConfirmDialog` — نافذة تأكيد احترافية للحذف
+- `ErrorBoundary` — class component للتعامل مع أخطاء React
+- `ExportButton` — تصدير CSV/JSON مع dropdown
+- `GlobalSearch` — Command palette (Ctrl+K)
+- `FormField`, `Input`, `Select`, `Textarea` — مكونات نماذج موحّدة
