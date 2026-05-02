@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أولمبياد الرياضيات</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    animation: {
+                        'shake': 'shake 0.3s cubic-bezier(.36,.07,.19,.97) both',
+                        'timer-shake': 'timer-shake 0.2s infinite',
+                        'confetti-fall': 'confetti-fall linear infinite',
+                        'firework': 'firework 3s ease-out infinite',
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '25%': { transform: 'translateX(-20px)' },
+                            '75%': { transform: 'translateX(20px)' },
+                        },
+                        'timer-shake': {
+                            '0%, 100%': { transform: 'scale(1) rotate(-2deg)' },
+                            '50%': { transform: 'scale(1.05) rotate(2deg)' },
+                        },
+                        'confetti-fall': {
+                            '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
+                            '100%': { transform: 'translateY(115vh) rotate(1080deg)', opacity: '0' },
+                        },
+                        firework: {
+                            '0%': { transform: 'translateY(100vh)', opacity: '1' },
+                            '45%': { opacity: '1' },
+                            '50%, 100%': { transform: 'translateY(15vh)', opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        body { font-family: 'Cairo', sans-serif; background: #f8fafc; scroll-behavior: smooth; }
+        .custom-scrollbar::-webkit-scrollbar { width: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 20px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .shadow-neon { filter: drop-shadow(0 0 12px currentColor); }
+        .shadow-glow { text-shadow: 0 0 20px #fbbf24; }
+    </style>
+
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, Fragment } = React;
+
+        // --- بنك الأسئلة الشامل ---
+        const curriculumData = {
+          grade1: { title: "الصف الأول", s1: { title: "فصل 1", units: { u1: { title: "الجمع", questions: [{q: "5 + 3 = ?", a: "8", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade2: { title: "الصف الثاني", s1: { title: "فصل 1", units: { u1: { title: "الأعداد", questions: [{q: "20 + 30 = ?", a: "50", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade3: { title: "الصف الثالث", s1: { title: "فصل 1", units: { u1: { title: "الضرب", questions: [{q: "3 × 4 = ?", a: "12", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade4: { title: "الصف الرابع", s1: { title: "فصل 1", units: { u1: { title: "القسمة", questions: [{q: "20 ÷ 4 = ?", a: "5", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade5: { title: "الصف الخامس", s1: { title: "فصل 1", units: { u1: { title: "الأعداد", questions: [{q: "125 + 75 = ?", a: "200", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade6: { title: "الصف السادس", s1: { title: "فصل 1", units: { u1: { title: "الجبر", questions: [{q: "2س = 12", a: "6", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          grade7: { title: "الصف السابع", s1: { title: "فصل 1", units: { u1: { title: "الأعداد الموجهة", questions: [{q: "-10 + 5", a: "-5", type: "number"}] } } }, s2: { title: "فصل 2", units: {} } },
+          
+          grade8: {
+            title: "الصف الثامن",
+            s1: { title: "الفصل الأول", units: { u1: { title: "القوى", questions: [{q: "2 أس 3 = ?", a: "8", type: "number"}] } } },
+            s2: { 
+              title: "الفصل الدراسي الثاني", 
+              units: {
+                unit9: { title: "الوحدة 9: النسبة والتناسب", questions: [
+                  { q: "بسّط النسبة 24 : 36 لأبسط صورة", a: "2:3", type: "ratio" },
+                  { q: "قسّم مبلغ 150 ريالاً بنسبة 3 : 2. كم نصيب الأكبر؟", a: "90", type: "number" },
+                  { q: "بسط النسبة المكونة من 3 أعداد: 12 : 30 : 24", a: "2:5:4", type: "ratio" },
+                  { q: "إذا كان 1 ريال = 2.29 يورو، كم يورو في 10 ريالات؟", a: "22.9", type: "decimal" },
+                  { q: "بسط النسبة 1.5 كجم : 500 جرام", a: "3:1", type: "ratio" },
+                  { q: "نسبة الرجال للنساء 7:5 والعدد الكلي 240، كم عدد الرجال؟", a: "140", type: "number" }
+                ]},
+                unit10: { title: "الوحدة 10: المعادلات والمتباينات", questions: [
+                  { q: "حل المعادلة: 4س + 14 = 8", a: "-1.5", type: "number" },
+                  { q: "حل المعادلة: 2(س - 5) = 2 + 8س", a: "-2", type: "number" },
+                  { q: "حل المتباينة: 3س ≤ 15", a: "س ≤ 5", type: "text" },
+                  { q: "حل المعادلة: 3(س+3) + 5 = 5س", a: "7", type: "number" },
+                  { q: "مجموع ثلاثة أعداد متتالية يساوي 141. ما العدد الأوسط؟", a: "47", type: "number" }
+                ]},
+                unit11: { title: "الوحدة 11: الرسوم البيانية", questions: [
+                  { q: "أوجد ميل المستقيم المار بـ (1,3) و (3,7)", a: "2", type: "number" },
+                  { q: "ما إحداثيات منتصف المسافة بين (2,4) و (6,8)؟", a: "(4, 6)", type: "coord" },
+                  { q: "ميل المستقيم الرأسي يكون دائماً؟", a: "غير معرف", type: "text" },
+                  { q: "معادلة المستقيم الذي ميله 2 ويقطع ص عند 3؟", a: "ص = 2س + 3", type: "text" }
+                ]},
+                unit12: { title: "الوحدة 12: المضلعات والزوايا", questions: [
+                  { q: "مجموع الزوايا الخارجية لأي مضلع؟", a: "360", type: "number" },
+                  { q: "قياس الزاوية الداخلية لسداسي منتظم؟", a: "120", type: "number" },
+                  { q: "مثلث قائم طول ضلعيه 6سم و 8سم، ما طول الوتر؟", a: "10", type: "number" },
+                  { q: "عدد أضلاع مضلع مجموع زواياه الداخلية 1800؟", a: "12", type: "number" }
+                ]},
+                unit13: { title: "الوحدة 13: الإحصاء", questions: [
+                  { q: "المنوال للبيانات: 4, 2, 4, 3, 2, 4", a: "4", type: "number" },
+                  { q: "الوسيط للأعداد: 3, 7, 9, 12, 15", a: "9", type: "number" },
+                  { q: "المتوسط الحسابي للأعداد: 2, 4, 6, 8", a: "5", type: "number" },
+                  { q: "المقياس الأنسب لبيانات بها قيمة متطرفة كبيرة؟", a: "الوسيط", type: "text" }
+                ]}
+              } 
+            }
+          },
+
+          grade9: { title: "الصف التاسع", s1: {title:"فصل 1", units:{}}, s2: {title:"فصل 2", units:{}} },
+          grade10: { title: "الصف العاشر", s1: {title:"فصل 1", units:{}}, s2: {title:"فصل 2", units:{}} },
+
+          grade11: { 
+            title: "الصف 11 متقدم", 
+            s1: { title: "الفصل الأول", units: {} },
+            s2: { 
+              title: "الفصل الدراسي الثاني", 
+              units: {
+                unit7: { title: "الوحدة 7: التكامل", questions: [
+                  { q: "تكامل 2س د س؟", a: "س^2 + ث", type: "text" },
+                  { q: "أوجد تكامل (3س^2 + 4) د س", a: "س^3 + 4س + ث", type: "text" },
+                  { q: "ما ناتج تكامل الجا س؟", a: "-جتا س + ث", type: "text" },
+                  { q: "تكامل 1/س بالنسبة لـ س؟", a: "لو|س| + ث", type: "text" }
+                ]},
+                unit8: { title: "الوحدة 8: حساب المثلثات", questions: [
+                  { q: "إذا كان ظا س = 1، فما قيمة س بالدرجات؟", a: "45", type: "number" },
+                  { q: "تبسيط: جا^2 س + جتا^2 س = ؟", a: "1", type: "number" },
+                  { q: "قيمة جتا (90 - س) تساوي؟", a: "جا س", type: "text" },
+                  { q: "قانون جيب التمام: أ^2 = ب^2 + ج^2 - ؟", a: "2ب ج جتا أ", type: "text" }
+                ]},
+                unit9: { title: "الوحدة 9: المتجهات", questions: [
+                  { q: "طول المتجه ع = (3 , 4) يساوي؟", a: "5", type: "number" },
+                  { q: "المتجه الصفري هو المتجه الذي طوله يساوي؟", a: "0", type: "number" },
+                  { q: "إذا كان أ=(1,2) ب=(3,4)، فما ناتج أ + ب؟", a: "(4, 6)", type: "coord" }
+                ]},
+                unit11: { title: "الوحدة 11: الهندسة 3D", questions: [
+                  { q: "حل المعادلة: |2س - 1| = 3 (س موجبة)", a: "2", type: "number" },
+                  { q: "حل المعادلة: |س^2 - 4| = 12 (س موجبة)", a: "4", type: "number" },
+                  { q: "المسافة بين (0,0,0) و (3,4,0) في الفضاء؟", a: "5", type: "number" }
+                ]}
+              } 
+            }
+          },
+          grade12: { title: "الصف الثاني عشر", s1: {title:"فصل 1", units:{}}, s2: {title:"فصل 2", units:{}} }
+        };
+
+        const ReactorTimer = ({ seconds, total = 30 }) => {
+          const percentage = (seconds / total) * 100;
+          const isCritical = seconds <= 5;
+          const color = isCritical ? '#ef4444' : seconds <= 15 ? '#f59e0b' : '#3b82f6';
+
+          return (
+            <div className={`relative flex items-center justify-center w-28 h-28 ${isCritical ? 'animate-timer-shake' : ''}`}>
+              <svg className="w-full h-full transform -rotate-90 drop-shadow-md">
+                <circle cx="56" cy="56" r="48" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-slate-200" />
+                <circle 
+                    cx="56" cy="56" r="48" stroke={color} strokeWidth="8" fill="transparent" 
+                    strokeDasharray="301.5" 
+                    strokeDashoffset={301.5 - (301.5 * percentage) / 100}
+                    className="transition-all duration-1000 ease-linear shadow-neon"
+                    strokeLinecap="round"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className={`text-4xl font-mono font-black ${isCritical ? 'text-red-500 animate-pulse' : 'text-slate-800'}`}>
+                    {seconds}
+                </span>
+                {isCritical && <i className="fas fa-fire text-red-500 animate-bounce mt-1" style={{ fontSize: 20 }}></i>}
+              </div>
+            </div>
+          );
+        };
+
+        const Celebration = () => (
+          <div className="fixed inset-0 pointer-events-none z-[100] overflow-hidden bg-white/5 backdrop-blur-[2px]">
+            {[...Array(60)].map((_, i) => (
+              <div key={i} className="absolute animate-confetti drop-shadow-md" 
+                style={{
+                  left: `${Math.random() * 100}%`, top: `-10%`,
+                  backgroundColor: ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6'][Math.floor(Math.random() * 5)],
+                  width: `${Math.random() * 14 + 8}px`, height: `${Math.random() * 14 + 8}px`, borderRadius: Math.random() > 0.5 ? '50%' : '4px',
+                  animationDelay: `${Math.random() * 5}s`, animationDuration: `${Math.random() * 2 + 2}s`
+                }} 
+              />
+            ))}
+          </div>
+        );
+
+        const App = () => {
+          const [gameState, setGameState] = useState('landing'); 
+          const [selectedGrade, setSelectedGrade] = useState(null);
+          const [selectedSemester, setSelectedSemester] = useState(null);
+          
+          const [playerName, setPlayerName] = useState(''); 
+          const [studentNames, setStudentNames] = useState(Array(23).fill(''));
+          
+          const [currentStudentIndex, setCurrentStudentIndex] = useState(0);
+          const [gameMode, setGameMode] = useState(null); 
+          const [selectedUnitKey, setSelectedUnitKey] = useState(null);
+          const [soloScore, setSoloScore] = useState(0);
+          const [currentQIdx, setCurrentQIdx] = useState(0);
+          const [timeLeft, setTimeLeft] = useState(30);
+          const [selectedAns, setSelectedAns] = useState(null);
+          const [currentOptions, setCurrentOptions] = useState([]);
+          const [ropePos, setRopePos] = useState(50); 
+          const [tugQuestions, setTugQuestions] = useState({ q1: null, q2: null });
+          const [tugOptions, setTugOptions] = useState({ o1: [], o2: [] });
+          const [tugAnswered, setTugAnswered] = useState({ a1: false, a2: false });
+          const [isShaking, setIsShaking] = useState(false);
+          const [climbHeight, setClimbHeight] = useState(0);
+
+          const renderMath = useCallback((text) => {
+            if (text == null) return null;
+            const strText = String(text);
+            const isMathPart = /[0-9]|[:\-+=<>()≤≥^|]/.test(strText);
+            return isMathPart ? (
+              <span dir="ltr" className="inline-block font-mono font-bold mx-1 text-inherit" style={{ unicodeBidi: 'isolate', direction: 'ltr' }}>
+                {strText}
+              </span>
+            ) : <span className="inline-block">{strText}</span>;
+          }, []);
+
+          const formatText = useCallback((text) => {
+            if (text == null) return null;
+            const strText = String(text);
+            const parts = strText.split(/(\d+(?:\.\d+)?|[:\-+=<>()≤≥^|]+)/g);
+            return (
+              <Fragment>
+                {parts.map((part, i) => <Fragment key={i}>{renderMath(part)}</Fragment>)}
+              </Fragment>
+            );
+          }, [renderMath]);
+
+          const playHypeSound = (type) => {
+            try {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              const ctx = new AudioCtx(); if (ctx.state === 'suspended') ctx.resume();
+              const osc = ctx.createOscillator(); const gain = ctx.createGain();
+              osc.connect(gain); gain.connect(ctx.destination);
+              if (type === 'correct') { 
+                osc.frequency.setValueAtTime(659, ctx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(1318, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+              } else if (type === 'win') {
+                [523, 659, 784, 1046].forEach((f, i) => {
+                  const o = ctx.createOscillator(); const g = ctx.createGain();
+                  o.connect(g); g.connect(ctx.destination);
+                  o.frequency.setValueAtTime(f, ctx.currentTime + i * 0.1);
+                  g.gain.setValueAtTime(0.15, ctx.currentTime + i * 0.1);
+                  g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.1 + 0.5);
+                  o.start(ctx.currentTime + i * 0.1); o.stop(ctx.currentTime + i * 0.1 + 0.5);
+                });
+                return;
+              } else if (type === 'tick') {
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                osc.start(); osc.stop(ctx.currentTime + 0.05);
+                return;
+              } else { 
+                osc.frequency.setValueAtTime(150, ctx.currentTime); 
+                gain.gain.setValueAtTime(0.2, ctx.currentTime); 
+              }
+              osc.start(); osc.stop(ctx.currentTime + 0.2);
+            } catch (e) {}
+
+            try {
+              if (type !== 'tick') {
+                  window.speechSynthesis.cancel();
+                  const msg = new SpeechSynthesisUtterance();
+                  msg.text = type === 'correct' ? "إجابة رائعة" : (type === 'win' ? "مبارك الفوز والتفوق" : "حاول مرة أخرى");
+                  msg.pitch = type === 'correct' ? 1.4 : 0.8; msg.lang = 'ar-SA';
+                  window.speechSynthesis.speak(msg);
+              }
+            } catch (e) {}
+          };
+
+          const generateOptions = useCallback((qObj) => {
+            if (!qObj) return [];
+            const correct = String(qObj.a); 
+            const distractors = new Set();
+            
+            if (qObj.type === "number" || qObj.type === "decimal") {
+              const n = parseFloat(correct); 
+              if (!isNaN(n)) {
+                  distractors.add((n + 1).toFixed(correct.includes('.') ? 1 : 0)); 
+                  distractors.add((n - 1).toFixed(correct.includes('.') ? 1 : 0)); 
+                  distractors.add((n * 2).toFixed(correct.includes('.') ? 1 : 0));
+              }
+            } else if (qObj.type === "ratio") {
+              const p = correct.split(':'); 
+              if (p.length >= 2) {
+                  distractors.add(`${p[1]}:${p[0]}`); 
+                  distractors.add(`${parseInt(p[0])+1}:${p[1]}`);
+              }
+            } else if (qObj.type === "coord") {
+              const clean = correct.replace(/[()]/g, '').split(','); 
+              if(clean.length >= 2) {
+                  distractors.add(`(${parseInt(clean[0])+1}, ${clean[1]})`); 
+                  distractors.add(`(${clean[1]}, ${clean[0]})`);
+              }
+            } else { 
+                distractors.add("إجابة أخرى"); 
+                distractors.add("خطأ"); 
+            }
+            
+            const filtered = Array.from(distractors).filter(d => d !== correct);
+            return [correct, ...filtered.slice(0, 3)].sort(() => Math.random() - 0.5);
+          }, []);
+
+          const startGameLogic = (unitKey, mode) => {
+            setSelectedUnitKey(unitKey); setGameMode(mode); setCurrentQIdx(0); setSoloScore(0); setClimbHeight(0);
+            const unit = curriculumData[selectedGrade]?.[selectedSemester]?.units?.[unitKey];
+            if (!unit || !unit.questions || unit.questions.length === 0) return;
+
+            if (mode === 'solo' || mode === 'climb' || mode === 'free_play') {
+              setGameState(mode === 'climb' ? 'playing_climb' : 'playing_solo');
+              setCurrentOptions(generateOptions(unit.questions[0])); setSelectedAns(null); setTimeLeft(30);
+            } else if (mode === 'tug') {
+              setGameState('playing_tug'); setRopePos(50); loadNewTugQuestions(unitKey);
+              setTimeLeft(30);
+            }
+          };
+
+          const handleSoloAnswer = (ans) => {
+            if (selectedAns !== null) return;
+            const correct = String(curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions?.[currentQIdx]?.a);
+            setSelectedAns(ans); 
+            if (ans === correct) { 
+                setSoloScore(s => s + 1); playHypeSound('correct'); 
+                if (gameMode === 'climb') setClimbHeight(prev => Math.min(prev + 20, 100));
+            } else {
+                playHypeSound('wrong');
+                if (gameMode === 'climb') setClimbHeight(prev => Math.max(prev - 10, 0));
+            }
+          };
+
+          const nextSoloQuestion = () => {
+            const next = currentQIdx + 1;
+            const questions = curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions || [];
+            if (next < questions.length && (gameMode !== 'climb' || climbHeight < 100)) {
+              setCurrentQIdx(next); setCurrentOptions(generateOptions(questions[next])); setSelectedAns(null); setTimeLeft(30);
+            } else { setGameState('result'); playHypeSound('win'); }
+          };
+
+          const loadNewTugQuestions = useCallback((unitKey) => {
+            const unitQs = curriculumData[selectedGrade]?.[selectedSemester]?.units?.[unitKey]?.questions || [];
+            if (unitQs.length === 0) return;
+            const q1 = unitQs[Math.floor(Math.random() * unitQs.length)];
+            const q2 = unitQs[Math.floor(Math.random() * unitQs.length)];
+            setTugQuestions({ q1, q2 }); setTugOptions({ o1: generateOptions(q1), o2: generateOptions(q2) }); setTugAnswered({ a1: false, a2: false });
+            setTimeLeft(30);
+          }, [selectedGrade, selectedSemester, generateOptions]);
+
+          const handleTugAnswer = (team, ans) => {
+            if (tugAnswered[`a${team}`]) return;
+            const correct = String(tugQuestions[`q${team}`]?.a); 
+            const isRight = ans === correct;
+            setTugAnswered(prev => ({ ...prev, [`a${team}`]: true }));
+            setIsShaking(true); setTimeout(() => setIsShaking(false), 200);
+            if (isRight) { playHypeSound('correct'); setRopePos(prev => Math.min(Math.max(prev + (team === 1 ? -20 : 20), 0), 100)); }
+            else { playHypeSound('wrong'); setRopePos(prev => Math.min(Math.max(prev + (team === 1 ? 12 : -12), 0), 100)); }
+            setTimeout(() => { if (gameState === 'playing_tug') loadNewTugQuestions(selectedUnitKey); }, 800);
+          };
+
+          useEffect(() => {
+            let timer;
+            if (['playing_solo', 'playing_climb', 'playing_tug'].includes(gameState) && timeLeft > 0 && selectedAns === null) {
+              timer = setInterval(() => {
+                setTimeLeft(t => {
+                    if (t <= 10 && t > 1) playHypeSound('tick');
+                    return t - 1;
+                });
+              }, 1000);
+            } else if (timeLeft === 0 && selectedAns === null && gameState.startsWith('playing')) {
+              if (gameState === 'playing_tug') {
+                  playHypeSound('wrong');
+                  setRopePos(prev => prev > 50 ? Math.min(prev + 10, 100) : Math.max(prev - 10, 0));
+                  loadNewTugQuestions(selectedUnitKey);
+              } else {
+                  handleSoloAnswer('__timeout__');
+              }
+            }
+            return () => { if (timer) clearInterval(timer); };
+          }, [timeLeft, gameState, selectedAns, selectedUnitKey, loadNewTugQuestions, playHypeSound]);
+
+          useEffect(() => { if (gameState === 'playing_tug' && (ropePos <= 5 || ropePos >= 95)) { setGameState('result'); playHypeSound('win'); } }, [ropePos, gameState, playHypeSound]);
+
+          return (
+            <div className="min-h-screen flex flex-col relative w-full h-full">
+              {gameState === 'result' && <Celebration />}
+
+              <div className="max-w-7xl mx-auto px-6 py-6 flex-1 flex flex-col relative z-10 w-full">
+                
+                {/* Landing Page */}
+                {gameState === 'landing' && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-10 animate-in fade-in zoom-in duration-1000">
+                    <div className="relative group scale-110 mt-6">
+                      <div className="absolute inset-0 bg-yellow-400 rounded-full blur-[50px] opacity-20 group-hover:opacity-40 transition-all duration-700 animate-pulse" />
+                      <i className="fas fa-trophy text-orange-400 drop-shadow-[0_0_60px_rgba(249,115,22,0.8)] animate-bounce relative z-10" style={{ fontSize: 160 }}></i>
+                      <i className="fas fa-star absolute -top-6 -right-6 text-yellow-400 animate-pulse" style={{ fontSize: 40 }}></i>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h1 className="text-7xl md:text-8xl font-black bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 leading-tight tracking-tight pb-2 drop-shadow-sm">
+                        أولمبياد الرياضيات
+                      </h1>
+                      <div className="flex items-center justify-center gap-3 bg-white/80 px-8 py-3 rounded-full border border-emerald-100 mx-auto w-fit shadow-lg backdrop-blur-md">
+                        <i className="fas fa-info-circle text-emerald-600" style={{ fontSize: 24 }}></i>
+                        <p className="text-xl font-bold text-emerald-800 uppercase tracking-wide">المنصة التعليمية الشاملة - المنهج العماني</p>
+                      </div>
+                    </div>
+
+                    <div className="w-full max-w-lg mx-auto mt-4">
+                        <input 
+                          type="text" 
+                          value={playerName} 
+                          onChange={(e) => setPlayerName(e.target.value)}
+                          placeholder="اسم البطل (للمسابقة الحرة)..." 
+                          className="w-full bg-white border-2 border-slate-200 px-8 py-5 rounded-full text-center text-2xl font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 transition-all shadow-lg"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-6xl overflow-y-auto max-h-[40vh] p-4 custom-scrollbar">
+                      {Object.entries(curriculumData).map(([key, data]) => (
+                        <button key={key} onClick={() => { setSelectedGrade(key); setGameState('semester_select'); playHypeSound('correct'); }} className="group bg-white/90 backdrop-blur-md border border-slate-200 p-8 rounded-[35px] hover:border-emerald-400 hover:bg-emerald-50 transition-all duration-300 shadow-xl hover:shadow-2xl relative overflow-hidden">
+                          <span className="text-2xl font-black text-slate-700 group-hover:text-emerald-700 relative z-10 transition-colors">{data.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Semester Selection */}
+                {gameState === 'semester_select' && (
+                  <div className="flex-1 flex flex-col items-center justify-center space-y-12 animate-in slide-in-from-bottom duration-700">
+                    <div className="flex items-center gap-8 w-full max-w-5xl justify-center relative">
+                      <button onClick={() => setGameState('landing')} className="absolute right-0 p-5 bg-white border border-slate-200 rounded-[25px] hover:bg-slate-50 hover:border-slate-300 shadow-lg group transition-all">
+                        <i className="fas fa-arrow-left text-slate-600 group-hover:-translate-x-2 transition-transform" style={{ fontSize: 35 }}></i>
+                      </button>
+                      <h2 className="text-6xl font-black tracking-tight text-slate-800">{curriculumData[selectedGrade]?.title}</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 w-full max-w-5xl">
+                      {['s1', 's2'].map((sem) => (
+                        <button 
+                          key={sem}
+                          onClick={() => { setSelectedSemester(sem); setGameState('select_mode'); }} 
+                          className="relative group bg-white/90 backdrop-blur-xl border border-slate-200 p-20 rounded-[50px] hover:border-emerald-400 transition-all duration-300 shadow-xl hover:shadow-2xl overflow-hidden text-center"
+                        >
+                          <div className={`absolute inset-0 bg-gradient-to-r ${sem === 's1' ? 'from-emerald-50' : 'from-orange-50'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity`} />
+                          <i className={`fas fa-book-open ${sem === 's1' ? 'text-emerald-500' : 'text-orange-500'} mb-8 mx-auto group-hover:scale-110 transition-transform block`} style={{ fontSize: 90 }}></i>
+                          <h3 className="text-5xl font-black text-slate-800">{curriculumData[selectedGrade]?.[sem]?.title}</h3>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mode Select */}
+                {gameState === 'select_mode' && (
+                  <div className="animate-in slide-in-from-bottom space-y-12 flex-1 flex flex-col justify-center overflow-y-auto px-4 pb-10">
+                    <div className="flex items-center gap-8 justify-center relative w-full max-w-7xl mx-auto">
+                      <button onClick={() => setGameState('semester_select')} className="absolute right-0 p-5 bg-white border border-slate-200 rounded-[25px] hover:bg-slate-50 shadow-lg group">
+                        <i className="fas fa-arrow-left text-slate-600 group-hover:-translate-x-2 transition-transform" style={{ fontSize: 35 }}></i>
+                      </button>
+                      <h2 className="text-6xl font-black text-slate-800">اختر نمط اللعب</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <button onClick={() => setGameState('name_entry')} className="bg-white/90 backdrop-blur-xl border border-slate-200 p-10 rounded-[40px] hover:border-indigo-400 hover:bg-indigo-50 transition-all group shadow-xl hover:shadow-2xl text-center relative overflow-hidden">
+                        <i className="fas fa-users text-indigo-500 mb-6 mx-auto group-hover:scale-110 transition-transform duration-300 block" style={{ fontSize: 80 }}></i>
+                        <h3 className="text-3xl font-black mb-4 text-slate-800">تحدي الفصول</h3>
+                        <p className="text-lg text-slate-500 font-bold">تسجيل 23 طالباً</p>
+                      </button>
+                      
+                      <button onClick={() => {setGameMode('free_play'); setGameState('select_unit');}} className="bg-white/90 backdrop-blur-xl border border-slate-200 p-10 rounded-[40px] hover:border-cyan-400 hover:bg-cyan-50 transition-all group shadow-xl hover:shadow-2xl text-center relative overflow-hidden">
+                        <i className="fas fa-bullseye text-cyan-500 mb-6 mx-auto group-hover:scale-110 transition-transform duration-300 block" style={{ fontSize: 80 }}></i>
+                        <h3 className="text-3xl font-black mb-4 text-slate-800">مسابقة حرة</h3>
+                        <p className="text-lg text-slate-500 font-bold">تحدي فردي سريع</p>
+                      </button>
+                      
+                      <button onClick={() => {setGameMode('climb'); setGameState('select_unit');}} className="bg-white/90 backdrop-blur-xl border border-slate-200 p-10 rounded-[40px] hover:border-emerald-400 hover:bg-emerald-50 transition-all group shadow-xl hover:shadow-2xl text-center relative overflow-hidden">
+                        <i className="fas fa-mountain text-emerald-500 mb-6 mx-auto group-hover:scale-110 transition-transform duration-300 block" style={{ fontSize: 80 }}></i>
+                        <h3 className="text-3xl font-black mb-4 text-slate-800">تسلق الجبل</h3>
+                        <p className="text-lg text-slate-500 font-bold">القمة لمن يحل أسرع</p>
+                      </button>
+                      
+                      <button onClick={() => {setGameMode('tug'); setGameState('select_unit');}} className="bg-white/90 backdrop-blur-xl border border-slate-200 p-10 rounded-[40px] hover:border-orange-400 hover:bg-orange-50 transition-all group shadow-xl hover:shadow-2xl text-center relative overflow-hidden">
+                        <i className="fas fa-khanda text-orange-500 mb-6 mx-auto group-hover:scale-110 transition-transform duration-300 block" style={{ fontSize: 80 }}></i>
+                        <h3 className="text-3xl font-black mb-4 text-slate-800">شد الحبل</h3>
+                        <p className="text-lg text-slate-500 font-bold">منافسة الفرق الجماعية</p>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Name Entry (23 Students) */}
+                {gameState === 'name_entry' && (
+                  <div className="animate-in fade-in space-y-10 pb-16 flex-1 flex flex-col overflow-y-auto px-4 custom-scrollbar">
+                    <div className="flex items-center justify-between bg-white/90 p-6 rounded-[35px] border border-slate-200 shadow-lg backdrop-blur-md sticky top-0 z-20">
+                      <div className="flex items-center gap-6">
+                        <button onClick={() => setGameState('select_mode')} className="p-4 bg-slate-50 rounded-2xl hover:bg-slate-100 shadow-sm border border-slate-200">
+                          <i className="fas fa-arrow-left text-slate-700" style={{ fontSize: 30 }}></i>
+                        </button>
+                        <h2 className="text-4xl font-black text-slate-800">📝 سجل الأسماء</h2>
+                      </div>
+                      <button onClick={() => { setGameMode('solo'); setGameState('select_unit'); }} disabled={studentNames.filter(n => n.trim()).length === 0} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 px-12 py-4 rounded-full text-2xl font-black shadow-lg text-white disabled:opacity-50 transition-all flex items-center gap-3">
+                        ابدأ المهمة <i className="fas fa-bolt" style={{ fontSize: 28 }}></i>
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-5 p-2">
+                      {studentNames.map((name, i) => (
+                        <div key={i} className="relative group">
+                          <div className="absolute -top-3 -right-3 bg-gradient-to-br from-blue-500 to-indigo-600 w-10 h-10 rounded-full flex items-center justify-center font-black text-base z-10 border-4 border-white shadow-md text-white">{i+1}</div>
+                          <input type="text" value={name} placeholder={`اسم البطل ${i+1}...`} className="w-full bg-white border border-slate-200 p-5 rounded-2xl outline-none focus:border-blue-400 text-xl font-bold transition-all shadow-sm focus:shadow-md text-slate-800 placeholder-slate-400" onChange={(e) => { const n = [...studentNames]; n[i] = e.target.value; setStudentNames(n); }} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Unit Select */}
+                {gameState === 'select_unit' && (
+                  <div className="space-y-10 animate-in fade-in overflow-y-auto max-h-[85vh] px-4 custom-scrollbar pb-20">
+                    <div className="flex items-center gap-8 sticky top-0 bg-[#f8fafc]/90 backdrop-blur-xl py-6 z-20 border-b border-slate-200">
+                      <button onClick={() => setGameState('select_mode')} className="p-5 bg-white border border-slate-200 rounded-[25px] hover:bg-slate-50 shadow-md transition-all">
+                        <i className="fas fa-arrow-left text-slate-700" style={{ fontSize: 35 }}></i>
+                      </button>
+                      <h2 className="text-5xl font-black text-slate-800">اختر محطة العلم</h2>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {Object.entries(curriculumData[selectedGrade]?.[selectedSemester]?.units || {}).map(([key, data]) => (
+                        <button key={key} onClick={() => startGameLogic(key, gameMode)} className="group bg-white/90 backdrop-blur-md border border-slate-200 p-12 rounded-[45px] text-right hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 flex justify-between items-center shadow-lg hover:shadow-xl relative overflow-hidden">
+                          <div className="absolute left-0 top-0 bottom-0 w-3 bg-blue-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-bottom" />
+                          <span className="text-4xl font-black block text-slate-700 group-hover:text-blue-700 transition-colors">{data.title}</span>
+                          <div className="bg-blue-100 p-5 rounded-full group-hover:bg-blue-600 shadow-sm text-blue-600 group-hover:text-white transition-all">
+                            <i className="fas fa-chevron-right" style={{ fontSize: 40 }}></i>
+                          </div>
+                        </button>
+                      ))}
+                      {Object.keys(curriculumData[selectedGrade]?.[selectedSemester]?.units || {}).length === 0 && (
+                        <div className="col-span-2 p-24 text-center border-4 border-dashed border-slate-300 rounded-[60px] opacity-70 bg-white/50">
+                          <p className="text-4xl font-black text-slate-500 italic">بانتظار إضافة المنهج...</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Playing: Solo and Free Play View */}
+                {(gameState === 'playing_solo') && (
+                  <div className="flex-1 flex flex-col space-y-10 animate-in slide-in-from-left duration-700 overflow-y-auto px-2 pb-10 custom-scrollbar">
+                    <div className="flex items-center justify-between bg-white/90 p-6 rounded-[40px] border border-slate-200 shadow-xl backdrop-blur-xl">
+                      <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-10 py-4 rounded-full font-black text-3xl shadow-md text-white"> 
+                        {gameMode === 'free_play' ? (playerName || "بطل مجهول") : (studentNames[currentStudentIndex] || playerName || `بطل ${currentStudentIndex+1}`)} 🎯 
+                      </div>
+                      <div className="flex items-center gap-10">
+                        <div className="text-slate-500 font-black text-3xl">سؤال <span className="text-blue-600 text-5xl font-mono">{currentQIdx+1}</span></div>
+                        <ReactorTimer seconds={timeLeft} />
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white/90 border border-slate-200 rounded-[60px] p-20 shadow-2xl flex-1 flex flex-col justify-center text-center relative overflow-hidden backdrop-blur-xl">
+                      <div className="absolute top-0 left-0 right-0 h-3 bg-slate-100"><div className="h-full bg-gradient-to-r from-blue-400 to-indigo-500 transition-all duration-1000" style={{width:`${(timeLeft/30)*100}%`}} /></div>
+                      
+                      <h2 className="text-7xl font-black mb-20 leading-snug text-slate-800 drop-shadow-sm">{formatText(curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions?.[currentQIdx]?.q)}</h2>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {currentOptions.map((opt, i) => (
+                          <button key={i} disabled={selectedAns !== null} onClick={() => handleSoloAnswer(opt)} className={`p-10 rounded-[40px] text-5xl font-black transition-all duration-300 border-4 shadow-md transform active:scale-95 ${selectedAns === null ? 'bg-white border-slate-200 text-slate-700 hover:border-blue-400 hover:bg-blue-50' : opt === String(curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions?.[currentQIdx]?.a) ? 'bg-emerald-500 border-emerald-400 text-white scale-105 shadow-xl shadow-emerald-500/30' : selectedAns === opt ? 'bg-red-500 border-red-400 text-white animate-shake' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-50'}`}>{renderMath(opt)}</button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {selectedAns !== null && <button onClick={nextSoloQuestion} className="self-center bg-slate-800 text-white px-24 py-8 rounded-full text-5xl font-black shadow-xl hover:bg-slate-700 hover:scale-105 transition-all flex items-center gap-6 mt-4">التالي <i className="fas fa-arrow-right" style={{ fontSize: 45 }}></i></button>}
+                  </div>
+                )}
+
+                {/* Climb Mode View */}
+                {gameState === 'playing_climb' && (
+                  <div className="flex-1 flex flex-col space-y-10 animate-in fade-in duration-700 overflow-y-auto px-2 pb-10 custom-scrollbar">
+                     <div className="bg-white/90 rounded-[50px] p-6 relative h-[400px] border border-slate-200 overflow-hidden shadow-xl shrink-0 backdrop-blur-md">
+                        <div className="absolute inset-0 bg-gradient-to-t from-emerald-50 via-transparent to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 h-32 bg-emerald-100/50 backdrop-blur-sm border-t border-emerald-200 z-0" />
+                        
+                        <div className="absolute left-1/2 -translate-x-1/2 transition-all duration-1000 ease-out z-20 flex flex-col items-center" style={{ bottom: `${15 + (climbHeight * 0.65)}%` }}>
+                            <div className="bg-emerald-500 p-6 rounded-full shadow-[0_10px_30px_rgba(16,185,129,0.5)] animate-bounce relative border-4 border-white flex justify-center items-center h-[100px] w-[100px]">
+                              <i className="fas fa-user text-white" style={{ fontSize: 60 }}></i>
+                              <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-white text-emerald-800 border border-emerald-100 px-6 py-2 rounded-xl font-black text-2xl whitespace-nowrap shadow-lg">البطل {playerName || "الشجاع"}</div>
+                            </div>
+                        </div>
+                        
+                        <div className="absolute right-10 top-16 flex flex-col gap-8 text-slate-400 font-black text-3xl">
+                            <div className={climbHeight === 100 ? 'text-emerald-600 scale-110 drop-shadow-md' : ''}>القمة (100%)</div>
+                            <div className={climbHeight >= 50 ? 'text-emerald-500' : ''}>منتصف الجبل</div>
+                        </div>
+                        <div className="absolute top-8 left-8 z-30"><ReactorTimer seconds={timeLeft} /></div>
+                     </div>
+                     
+                     <div className="bg-white/90 border border-slate-200 rounded-[60px] p-16 shadow-xl flex-1 flex flex-col justify-center text-center relative overflow-hidden backdrop-blur-xl">
+                        <h2 className="text-6xl font-black mb-16 leading-tight text-slate-800 drop-shadow-sm">{formatText(curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions?.[currentQIdx]?.q)}</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          {currentOptions.map((opt, i) => (
+                            <button key={i} disabled={selectedAns !== null} onClick={() => handleSoloAnswer(opt)} className={`p-8 rounded-[40px] text-4xl font-black transition-all border-4 shadow-sm transform active:scale-95 ${selectedAns === null ? 'bg-white border-slate-200 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50' : opt === String(curriculumData[selectedGrade]?.[selectedSemester]?.units?.[selectedUnitKey]?.questions?.[currentQIdx]?.a) ? 'bg-emerald-500 border-emerald-400 text-white scale-105 shadow-lg shadow-emerald-500/30' : selectedAns === opt ? 'bg-red-500 border-red-400 text-white animate-shake' : 'bg-slate-50 border-slate-200 text-slate-400 opacity-50'}`}>{renderMath(opt)}</button>
+                          ))}
+                        </div>
+                     </div>
+                     {selectedAns !== null && <button onClick={nextSoloQuestion} className="self-center bg-emerald-600 text-white px-20 py-8 rounded-full text-4xl font-black shadow-xl hover:bg-emerald-500 hover:scale-105 transition-all flex items-center gap-4 mt-2">استمر بالتسلق <i className="fas fa-mountain" style={{ fontSize: 35 }}></i></button>}
+                  </div>
+                )}
+
+                {/* Tug Playing View */}
+                {gameState === 'playing_tug' && (
+                  <div className="flex-1 flex flex-col space-y-10 animate-in fade-in duration-700 overflow-y-auto px-2 pb-10 custom-scrollbar">
+                     <div className="bg-white border-4 border-slate-200 rounded-[80px] p-4 relative h-[500px] flex items-center justify-center shadow-2xl overflow-hidden shrink-0">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-20 z-0 pointer-events-none"><div className="w-1.5 h-full border-r-8 border-dashed border-slate-400" /></div>
+                        
+                        <div className={`w-[140%] h-full flex items-center justify-center transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) z-10 ${isShaking ? 'animate-bounce' : ''}`} style={{ transform: `translateX(${(ropePos - 50) * 16}px)` }}>
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Tug_of_war_icon.svg/1024px-Tug_of_war_icon.svg.png" alt="شد الحبل" className="h-[75%] w-auto object-contain drop-shadow-[0_30px_50px_rgba(0,0,0,0.3)] scale-110" onError={(e) => { e.target.style.display='none'; }}/>
+                        </div>
+                        
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 scale-[1.4] bg-white rounded-full p-2 shadow-2xl"><ReactorTimer seconds={timeLeft} /></div>
+                        
+                        <div className="absolute top-10 left-12 px-12 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full font-black text-3xl shadow-lg border-2 border-white z-20 text-white">الفريق الأزرق</div>
+                        <div className="absolute top-10 right-12 px-12 py-4 bg-gradient-to-r from-rose-500 to-orange-500 rounded-full font-black text-3xl shadow-lg border-2 border-white z-20 text-white">الفريق الأحمر</div>
+                        
+                        <div className="absolute bottom-8 left-32 right-32 h-6 bg-slate-100 rounded-full overflow-hidden flex border-2 border-slate-200 z-20 shadow-inner">
+                            <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-400 transition-all duration-500" style={{width: `${100 - ropePos}%`}} />
+                            <div className="h-full bg-gradient-to-l from-rose-400 to-orange-400 transition-all duration-500" style={{width: `${ropePos}%`}} />
+                        </div>
+                     </div>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 flex-1 min-h-[450px]">
+                        {/* Team Blue Card */}
+                        <div className="bg-blue-50/80 backdrop-blur-md border-2 border-blue-200 rounded-[60px] p-12 flex flex-col shadow-xl text-center group relative overflow-hidden">
+                          <div className="absolute top-0 left-0 right-0 h-2 bg-blue-400" />
+                          <h3 className="text-4xl font-black mb-12 text-slate-800 min-h-[140px] flex items-center justify-center leading-relaxed drop-shadow-sm">{tugQuestions.q1 && formatText(tugQuestions.q1.q)}</h3>
+                          <div className="grid grid-cols-2 gap-6">{tugOptions.o1.map((opt, i) => (<button key={i} onClick={() => handleTugAnswer(1, opt)} disabled={tugAnswered.a1} className={`p-8 rounded-[35px] text-4xl font-black border-2 transition-all duration-300 transform active:scale-95 ${tugAnswered.a1 ? 'opacity-30 bg-white border-slate-200 text-slate-400' : 'bg-white border-blue-200 text-blue-800 hover:border-blue-500 hover:bg-blue-100 shadow-md hover:shadow-lg'}`}>{renderMath(opt)}</button>))}</div>
+                        </div>
+                        {/* Team Red Card */}
+                        <div className="bg-rose-50/80 backdrop-blur-md border-2 border-rose-200 rounded-[60px] p-12 flex flex-col shadow-xl text-center group relative overflow-hidden">
+                          <div className="absolute top-0 left-0 right-0 h-2 bg-rose-400" />
+                          <h3 className="text-4xl font-black mb-12 text-slate-800 min-h-[140px] flex items-center justify-center leading-relaxed drop-shadow-sm">{tugQuestions.q2 && formatText(tugQuestions.q2.q)}</h3>
+                          <div className="grid grid-cols-2 gap-6">{tugOptions.o2.map((opt, i) => (<button key={i} onClick={() => handleTugAnswer(2, opt)} disabled={tugAnswered.a2} className={`p-8 rounded-[35px] text-4xl font-black border-2 transition-all duration-300 transform active:scale-95 ${tugAnswered.a2 ? 'opacity-30 bg-white border-slate-200 text-slate-400' : 'bg-white border-rose-200 text-rose-800 hover:border-rose-500 hover:bg-rose-100 shadow-md hover:shadow-lg'}`}>{renderMath(opt)}</button>))}</div>
+                        </div>
+                     </div>
+                  </div>
+                )}
+
+                {/* Result View */}
+                {gameState === 'result' && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-12 animate-in zoom-in duration-1000 py-10 overflow-y-auto px-4 custom-scrollbar">
+                    <div className="relative group scale-150 mb-16 shrink-0">
+                        <i className="fas fa-gift text-blue-500 absolute -top-24 -left-24 animate-pulse" style={{ fontSize: 120 }}></i>
+                        <i className="fas fa-medal text-yellow-400 drop-shadow-[0_20px_40px_rgba(250,204,21,0.4)] animate-bounce relative z-10" style={{ fontSize: 240 }}></i>
+                        <i className="fas fa-gift text-rose-500 absolute -top-24 -right-24 animate-pulse delay-200" style={{ fontSize: 120 }}></i>
+                    </div>
+                    
+                    <h2 className="text-[100px] font-black text-slate-800 leading-none drop-shadow-md italic tracking-tighter shrink-0 uppercase">فوز أسطوري! 🏆</h2>
+                    
+                    <div className="bg-white/90 backdrop-blur-2xl border-8 border-yellow-400/50 p-24 rounded-[100px] w-full max-w-5xl shadow-[0_30px_80px_rgba(0,0,0,0.1)] relative overflow-hidden group shrink-0">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-transparent to-rose-50 pointer-events-none opacity-50" />
+                      <p className="text-4xl text-slate-500 mb-8 font-black tracking-[10px] uppercase relative z-10">البطل المتوج</p>
+                      <p className={`text-[120px] font-black leading-none drop-shadow-sm animate-pulse relative z-10 ${['solo', 'climb', 'free_play'].includes(gameMode) ? 'text-indigo-600' : (ropePos <= 50 ? 'text-blue-600' : 'text-rose-600')}`}>
+                        {['solo', 'climb', 'free_play'].includes(gameMode) ? (gameMode === 'free_play' ? (playerName || "بطل مجهول") : (studentNames[currentStudentIndex] || playerName || "بـطـل")) : (ropePos <= 50 ? "الفريق الأزرق" : "الفريق الأحمر")}
+                      </p>
+                    </div>
+                    
+                    <div className="flex gap-8 w-full max-w-4xl pt-10 shrink-0 pb-12">
+                      <button onClick={() => { if (gameMode === 'solo' && currentStudentIndex < studentNames.filter(n=>n.trim()).length - 1) { setCurrentStudentIndex(prev => prev + 1); setGameState('playing_solo'); startGameLogic(selectedUnitKey, 'solo'); } else { setGameState('landing'); setCurrentStudentIndex(0); setPlayerName(''); } }} className="flex-1 bg-slate-800 text-white px-16 py-10 rounded-full text-5xl font-black shadow-xl hover:bg-slate-700 hover:scale-105 transition-all duration-300"> {gameMode === 'solo' && currentStudentIndex < studentNames.filter(n=>n.trim()).length - 1 ? "البطل التالي ➡️" : "الرئيسية 🏠"} </button>
+                      <button onClick={() => setGameState('select_mode')} className="flex-1 bg-white text-slate-800 border-4 border-slate-200 px-16 py-10 rounded-full text-5xl font-black shadow-lg hover:border-slate-300 hover:bg-slate-50 transition-all duration-300 italic">تحدي جديد 🔄</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <footer className="relative z-20 pb-8 pt-4 text-center px-4 shrink-0">
+                  <div className="bg-white/80 backdrop-blur-md border border-slate-200 p-8 rounded-[40px] max-w-5xl mx-auto shadow-lg">
+                      <div className="flex flex-col md:flex-row items-center justify-center gap-6 mb-4">
+                          <div className="flex items-center gap-3 bg-blue-50 px-6 py-2 rounded-full border border-blue-100 text-xl font-black text-blue-700"> فكرة الطالب: عبدالله آل فنة </div>
+                          <div className="flex items-center gap-3 bg-purple-50 px-6 py-2 rounded-full border border-purple-100 text-xl font-black text-purple-700"> إشراف وتطوير: الأستاذ علي خليل </div>
+                      </div>
+                      <div className="text-2xl font-bold text-slate-500 mb-6 tracking-widest"> (مشروع مبدعي المستقبل) - مدرسة اقرأ الخاصة </div>
+                      <div className="flex items-center justify-center gap-3 text-orange-500 animate-pulse border-t border-slate-200 pt-6 font-black italic text-xl"> 
+                        <i className="fas fa-exclamation-circle" style={{ fontSize: 28 }}></i> هذا المشروع نسخة تجريبية وتحت التطوير والتحسين 
+                      </div>
+                  </div>
+              </footer>
+            </div>
+          );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
