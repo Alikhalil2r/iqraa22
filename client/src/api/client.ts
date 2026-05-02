@@ -2,7 +2,8 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: '/api',
-  headers: { 'Content-Type': 'application/json' }
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
 })
 
 api.interceptors.request.use(config => {
@@ -16,8 +17,10 @@ api.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      // Smart redirect: parent users go to parent-login, others go to login
+      const path = window.location.pathname
+      const isParentArea = path.startsWith('/parent')
+      window.location.href = isParentArea ? '/parent-login' : '/login'
     }
     return Promise.reject(err)
   }
@@ -84,10 +87,9 @@ export const busesApi = {
   create: (data: any) => api.post('/buses', data),
   update: (id: string, data: any) => api.put(`/buses/${id}`, data),
   delete: (id: string) => api.delete(`/buses/${id}`),
-  assignStudent: (busId: string, studentId: string) =>
-    api.post(`/buses/${busId}/students`, { studentId }),
-  removeStudent: (busId: string, studentId: string) =>
-    api.delete(`/buses/${busId}/students/${studentId}`),
+  students: (busId: string) => api.get(`/buses/${busId}/students`),
+  assignStudent: (busId: string, studentId: string) => api.post(`/buses/${busId}/students`, { studentId }),
+  removeStudent: (busId: string, studentId: string) => api.delete(`/buses/${busId}/students/${studentId}`),
 }
 
 // Messages
@@ -97,13 +99,13 @@ export const messagesApi = {
   send: (data: any) => api.post('/messages', data),
   reply: (id: string, data: any) => api.post(`/messages/${id}/reply`, data),
   markRead: (id: string) => api.put(`/messages/${id}/read`),
-  unreadCount: () => api.get('/messages/unread/count'),
+  delete: (id: string) => api.delete(`/messages/${id}`),
+  unreadCount: () => api.get('/messages/unread-count'),
 }
 
 // News
 export const newsApi = {
   list: (params?: any) => api.get('/news', { params }),
-  get: (id: string) => api.get(`/news/${id}`),
   create: (data: any) => api.post('/news', data),
   update: (id: string, data: any) => api.put(`/news/${id}`, data),
   delete: (id: string) => api.delete(`/news/${id}`),
@@ -121,22 +123,37 @@ export const eventsApi = {
 export const settingsApi = {
   get: () => api.get('/settings'),
   update: (data: any) => api.put('/settings', data),
+  theme: () => api.get('/settings/theme'),
   updateTheme: (data: any) => api.put('/settings/theme', data),
-  updateLogo: (formData: FormData) => api.put('/settings/logo', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
 }
 
-// Parent Portal
+// Public
+export const publicApi = {
+  school: () => api.get('/public/school'),
+  news: (params?: any) => api.get('/public/news', { params }),
+  events: (params?: any) => api.get('/public/events', { params }),
+  gallery: () => api.get('/public/gallery'),
+  staff: () => api.get('/public/staff'),
+  achievements: () => api.get('/public/achievements'),
+}
+
+// Parent portal
 export const parentApi = {
   dashboard: () => api.get('/parent/dashboard'),
-  child: () => api.get('/parent/child'),
   grades: (params?: any) => api.get('/parent/grades', { params }),
   attendance: (params?: any) => api.get('/parent/attendance', { params }),
-  schedule: () => api.get('/parent/schedule'),
   messages: () => api.get('/parent/messages'),
   sendMessage: (data: any) => api.post('/parent/messages', data),
-  notifications: () => api.get('/parent/notifications'),
+  markMessageRead: (id: string) => api.put(`/parent/messages/${id}/read`),
+  schedule: () => api.get('/parent/schedule'),
+}
+
+// Reports
+export const reportsApi = {
+  attendance: (params?: any) => api.get('/reports/attendance', { params }),
+  grades: (params?: any) => api.get('/reports/grades', { params }),
+  students: (params?: any) => api.get('/reports/students', { params }),
+  summary: () => api.get('/reports/summary'),
 }
 
 // Fees
@@ -145,6 +162,7 @@ export const feesApi = {
   create: (data: any) => api.post('/fees', data),
   update: (id: string, data: any) => api.put(`/fees/${id}`, data),
   delete: (id: string) => api.delete(`/fees/${id}`),
+  stats: () => api.get('/fees/stats'),
 }
 
 // Schedule
@@ -155,19 +173,11 @@ export const scheduleApi = {
   delete: (id: string) => api.delete(`/schedule/${id}`),
 }
 
-// Users (admin management)
+// Users admin
 export const usersAdminApi = {
   list: (params?: any) => api.get('/users', { params }),
   create: (data: any) => api.post('/users', data),
   update: (id: string, data: any) => api.put(`/users/${id}`, data),
   delete: (id: string) => api.delete(`/users/${id}`),
-}
-
-// Public website
-export const publicApi = {
-  school: () => api.get('/public/school'),
-  news: () => api.get('/public/news'),
-  staff: () => api.get('/public/staff'),
-  achievements: () => api.get('/public/achievements'),
-  gallery: () => api.get('/public/gallery'),
+  resetPassword: (id: string, data: any) => api.put(`/users/${id}/password`, data),
 }

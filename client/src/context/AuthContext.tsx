@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+/* @refresh reset */
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { authApi } from '../api/client'
 
 interface User {
@@ -23,46 +24,69 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>(null!)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'))
+  const [user, setUser]       = useState<User | null>(null)
+  const [token, setToken]     = useState<string | null>(() => localStorage.getItem('token'))
   const [isLoading, setIsLoading] = useState(true)
 
+  // Verify token on mount and when token changes
   useEffect(() => {
-    if (token) {
-      authApi.me()
-        .then(res => setUser(res.data.user))
-        .catch(() => {
-          localStorage.removeItem('token')
-          setToken(null)
-        })
-        .finally(() => setIsLoading(false))
-    } else {
+    if (!token) {
+      setUser(null)
       setIsLoading(false)
+      return
     }
+
+    // Validate token is not expired before hitting the server
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]))
+      if (payload.exp && Date.now() / 1000 > payload.exp) {
+        // Token already expired locally — clean up without a server request
+        localStorage.removeItem('token')
+        setToken(null)
+        setUser(null)
+        setIsLoading(false)
+        return
+      }
+    } catch {
+      // Invalid token format
+      localStorage.removeItem('token')
+      setToken(null)
+      setUser(null)
+      setIsLoading(false)
+      return
+    }
+
+    authApi.me()
+      .then(res => setUser(res.data.user))
+      .catch(() => {
+        localStorage.removeItem('token')
+        setToken(null)
+        setUser(null)
+      })
+      .finally(() => setIsLoading(false))
   }, [token])
 
-  const login = async (username: string, password: string, role: string) => {
+  const login = useCallback(async (username: string, password: string, role: string) => {
     const res = await authApi.login({ username, password, role })
     const { token: newToken, user: newUser } = res.data
+    // Only store the token — user data is fetched from server via /auth/me
     localStorage.setItem('token', newToken)
-    localStorage.setItem('user', JSON.stringify(newUser))
     setToken(newToken)
     setUser(newUser)
-  }
+  }, [])
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token')
-    localStorage.removeItem('user')
     setToken(null)
     setUser(null)
-  }
+  }, [])
 
   return (
     <AuthContext.Provider value={{
       user, token, isLoading,
       login, logout,
       isAdmin: user?.role === 'admin' || user?.role === 'teacher',
-      isParent: user?.role === 'parent'
+      isParent: user?.role === 'parent',
     }}>
       {children}
     </AuthContext.Provider>

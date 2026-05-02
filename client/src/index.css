@@ -266,3 +266,57 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   .table-header { padding: 0.6rem 0.75rem; }
   .btn-primary, .btn-accent, .btn-ghost { padding: 0.55rem 0.9rem; font-size: 0.8rem; }
 }
+
+/* ─── Safe Area (iPhone notch / Dynamic Island) ─────────────────────────── */
+.safe-top    { padding-top:    env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.safe-left   { padding-left:   env(safe-area-inset-left, 0px); }
+.safe-right  { padding-right:  env(safe-area-inset-right, 0px); }
+
+header.sticky {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ─── Tablet improvements ────────────────────────────────────────────────── */
+@media (min-width: 641px) and (max-width: 1023px) {
+  .card { padding: 1.1rem; }
+}
+
+/* ─── Prevent content overflow on small screens ─────────────────────────── */
+* { min-width: 0; }
+img, video, svg { max-width: 100%; height: auto; }
+
+/* ─── Better touch targets ───────────────────────────────────────────────── */
+@media (hover: none) {
+  .btn-primary, .btn-accent, .btn-ghost {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  input, select, textarea {
+    font-size: 16px; /* Prevent iOS zoom on focus */
+  }
+}
+
+/* ─── Table horizontal scroll on mobile ─────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.table-scroll table { min-width: 600px; }
+
+/* ─── No text selection on buttons ──────────────────────────────────────── */
+button { user-select: none; -webkit-user-select: none; }
+
+/* ─── Landscape phone adjustments ───────────────────────────────────────── */
+@media (max-width: 896px) and (orientation: landscape) {
+  .min-h-screen { min-height: 100dvh; }
+}
+
+/* ─── Smooth scrolling ───────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+/* ─── Selection color ────────────────────────────────────────────────────── */
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  color: var(--color-primary-dark);
+}

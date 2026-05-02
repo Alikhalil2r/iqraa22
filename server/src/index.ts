@@ -41,14 +41,28 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'https:', 'blob:'],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'", 'https:'],
+      defaultSrc:      ["'self'"],
+      styleSrc:        ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc:         ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc:          ["'self'", 'data:', 'https:', 'blob:'],
+      scriptSrc:       ["'self'", "'unsafe-inline'"],
+      connectSrc:      ["'self'", 'https:', 'wss:'],
+      mediaSrc:        ["'self'", 'https:'],
+      frameSrc:        ['https://www.youtube.com', 'https://youtube.com'],
+      frameAncestors:  ["'none'"],
+      objectSrc:       ["'none'"],
+      baseUri:         ["'self'"],
+      formAction:      ["'self'"],
+      upgradeInsecureRequests: [],
     },
   },
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  permittedCrossDomainPolicies: { permittedPolicies: 'none' },
 }))
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────

@@ -74,16 +74,22 @@ function DashPageLoader() {
 function RequireAuth({ children, role }: { children: React.ReactNode; role?: string }) {
   const { user, isLoading } = useAuth()
   if (isLoading) return <PageLoader />
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    // Redirect to the correct login page based on the required role
+    const loginPath = role === 'parent' ? '/parent-login' : '/login'
+    return <Navigate to={loginPath} replace />
+  }
   if (role && user.role !== role && !(role === 'admin' && user.role === 'teacher')) {
-    return <Navigate to="/" replace />
+    // Logged-in user doesn't have the right role — send them to their home
+    const homePath = user.role === 'parent' ? '/parent' : '/admin'
+    return <Navigate to={homePath} replace />
   }
   return <>{children}</>
 }
 
 function RedirectIfAuthed() {
   const { user, isLoading } = useAuth()
-  if (isLoading) return null
+  if (isLoading) return <PageLoader />
   if (user?.role === 'parent') return <Navigate to="/parent" replace />
   if (user?.role === 'admin' || user?.role === 'teacher') return <Navigate to="/admin" replace />
   return null
