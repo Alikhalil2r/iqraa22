@@ -1,4 +1,4 @@
-modules = ["python-3.11"]
+modules = ["python-3.11", "nodejs-20", "postgresql-16"]
 [nix]
 channel = "stable-25_05"
 
@@ -17,18 +17,38 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend Server"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python3 -m http.server 5000 --directory iqraa-school"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd client && npm run dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Backend Server"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd server && npm run dev"
+waitForPort = 3001
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 5173
+externalPort = 5173
