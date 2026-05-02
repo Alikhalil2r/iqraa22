@@ -101,6 +101,8 @@ export const messagesApi = {
   markRead: (id: string) => api.put(`/messages/${id}/read`),
   delete: (id: string) => api.delete(`/messages/${id}`),
   unreadCount: () => api.get('/messages/unread-count'),
+  broadcast: (data: { title: string; body: string }) => api.post('/messages/broadcast', data),
+  broadcasts: () => api.get('/messages/broadcasts'),
 }
 
 // News
@@ -146,6 +148,9 @@ export const parentApi = {
   sendMessage: (data: any) => api.post('/parent/messages', data),
   markMessageRead: (id: string) => api.put(`/parent/messages/${id}/read`),
   schedule: () => api.get('/parent/schedule'),
+  notifications: () => api.get('/parent/notifications'),
+  markNotificationRead: (id: string) => api.put(`/parent/notifications/${id}/read`),
+  markAllNotificationsRead: () => api.put('/parent/notifications/read-all'),
 }
 
 // Reports

@@ -34,10 +34,11 @@ const menuGroups = [
   {
     label: 'التواصل والمحتوى',
     items: [
-      { to: '/admin/messages',  icon: MessageSquare,  label: 'رسائل الأولياء' },
-      { to: '/admin/schedule',  icon: CalendarDays,   label: 'الجدول الدراسي' },
-      { to: '/admin/news',      icon: Newspaper,      label: 'الأخبار والمنشورات' },
-      { to: '/admin/events',    icon: Calendar,       label: 'التقويم المدرسي' },
+      { to: '/admin/messages',      icon: MessageSquare,  label: 'رسائل الأولياء' },
+      { to: '/admin/announcements', icon: Bell,           label: 'إشعارات الأولياء' },
+      { to: '/admin/schedule',      icon: CalendarDays,   label: 'الجدول الدراسي' },
+      { to: '/admin/news',          icon: Newspaper,      label: 'الأخبار والمنشورات' },
+      { to: '/admin/events',        icon: Calendar,       label: 'التقويم المدرسي' },
     ]
   },
   {
@@ -58,8 +59,9 @@ const BREADCRUMB_MAP: Record<string, string> = {
   '/admin/grades':     'النتائج الدراسية',
   '/admin/fees':       'الرسوم الدراسية',
   '/admin/buses':      'الحافلات',
-  '/admin/messages':   'الرسائل',
-  '/admin/schedule':   'الجدول الدراسي',
+  '/admin/messages':      'الرسائل',
+  '/admin/announcements': 'إشعارات الأولياء',
+  '/admin/schedule':      'الجدول الدراسي',
   '/admin/news':       'الأخبار',
   '/admin/events':     'التقويم',
   '/admin/reports':    'التقارير',

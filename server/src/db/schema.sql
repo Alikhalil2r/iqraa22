@@ -357,6 +357,18 @@ CREATE TABLE IF NOT EXISTS fees (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Broadcasts (admin → all parents)
+CREATE TABLE IF NOT EXISTS broadcasts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(300) NOT NULL,
+  body TEXT NOT NULL,
+  sent_by UUID REFERENCES users(id),
+  recipient_count INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_broadcasts_school ON broadcasts(school_id);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_fees_student ON fees(student_id);
 CREATE INDEX IF NOT EXISTS idx_fees_school ON fees(school_id);

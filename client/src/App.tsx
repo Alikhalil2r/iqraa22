@@ -41,12 +41,15 @@ const Reports          = lazy(() => import('./pages/Admin/Reports'))
 const FeesAdmin        = lazy(() => import('./pages/Admin/FeesAdmin'))
 const ScheduleAdmin    = lazy(() => import('./pages/Admin/ScheduleAdmin'))
 
-const ParentLayout     = lazy(() => import('./pages/Parent/ParentLayout'))
-const ParentDashboard  = lazy(() => import('./pages/Parent/ParentDashboard'))
-const ParentGrades     = lazy(() => import('./pages/Parent/ParentGrades'))
-const ParentAttendance = lazy(() => import('./pages/Parent/ParentAttendance'))
-const ParentMessages   = lazy(() => import('./pages/Parent/ParentMessages'))
-const ParentSchedule   = lazy(() => import('./pages/Parent/ParentSchedule'))
+const Announcements    = lazy(() => import('./pages/Admin/Announcements'))
+
+const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
+const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
+const ParentGrades          = lazy(() => import('./pages/Parent/ParentGrades'))
+const ParentAttendance      = lazy(() => import('./pages/Parent/ParentAttendance'))
+const ParentMessages        = lazy(() => import('./pages/Parent/ParentMessages'))
+const ParentSchedule        = lazy(() => import('./pages/Parent/ParentSchedule'))
+const ParentNotifications   = lazy(() => import('./pages/Parent/ParentNotifications'))
 
 const NotFoundPage     = lazy(() => import('./pages/NotFoundPage'))
 
@@ -148,12 +151,13 @@ function RedirectCheck() {
           <Route path="messages"  element={<Messages />} />
           <Route path="news"      element={<NewsAdmin />} />
           <Route path="events"    element={<Events />} />
-          <Route path="theme"     element={<ThemeSettings />} />
-          <Route path="settings"  element={<SchoolSettings />} />
-          <Route path="users"     element={<UsersAdmin />} />
-          <Route path="reports"   element={<Reports />} />
-          <Route path="fees"      element={<FeesAdmin />} />
-          <Route path="schedule"  element={<ScheduleAdmin />} />
+          <Route path="theme"         element={<ThemeSettings />} />
+          <Route path="settings"      element={<SchoolSettings />} />
+          <Route path="users"         element={<UsersAdmin />} />
+          <Route path="reports"       element={<Reports />} />
+          <Route path="fees"          element={<FeesAdmin />} />
+          <Route path="schedule"      element={<ScheduleAdmin />} />
+          <Route path="announcements" element={<Announcements />} />
         </Route>
 
         {/* Parent Portal */}
@@ -163,10 +167,11 @@ function RedirectCheck() {
           </RequireAuth>
         }>
           <Route index element={<ParentDashboard />} />
-          <Route path="grades"     element={<ParentGrades />} />
-          <Route path="attendance" element={<ParentAttendance />} />
-          <Route path="messages"   element={<ParentMessages />} />
-          <Route path="schedule"   element={<ParentSchedule />} />
+          <Route path="grades"        element={<ParentGrades />} />
+          <Route path="attendance"    element={<ParentAttendance />} />
+          <Route path="messages"      element={<ParentMessages />} />
+          <Route path="schedule"      element={<ParentSchedule />} />
+          <Route path="notifications" element={<ParentNotifications />} />
         </Route>
 
         {/* 404 */}

@@ -19,8 +19,9 @@ router.get('/dashboard', authenticateToken, requireRole('parent'), async (req: A
     if (!child) return res.json({ child: null, stats: {} })
 
     const today = new Date().toISOString().split('T')[0]
-    const [gradesResult, attTodayResult, attMonthResult, msgResult, nextEventsResult, notifResult] = await Promise.all([
+    const [gradesResult, recentGradesResult, attTodayResult, attMonthResult, msgResult, nextEventsResult, notifResult] = await Promise.all([
       query(`SELECT AVG(percentage) as avg, COUNT(*) as total FROM grades WHERE student_id=$1`, [child.id]),
+      query(`SELECT subject_name, score, max_score, percentage, grade_letter, term, academic_year FROM grades WHERE student_id=$1 ORDER BY created_at DESC LIMIT 6`, [child.id]),
       query(`SELECT status FROM attendance WHERE person_id=$1 AND date=$2 AND person_type='student'`, [child.id, today]),
       query(`SELECT status, COUNT(*) FROM attendance WHERE person_id=$1 AND person_type='student' AND date >= date_trunc('month', NOW()) GROUP BY status`, [child.id]),
       query(`SELECT COUNT(*) FROM messages WHERE to_user_id=$1 AND is_read=false`, [parentId]),
@@ -29,16 +30,19 @@ router.get('/dashboard', authenticateToken, requireRole('parent'), async (req: A
     ])
 
     const attMonth = attMonthResult.rows.reduce((a: any, r: any) => { a[r.status] = parseInt(r.count); return a }, {})
+    const unreadNotif = notifResult.rows.filter((n: any) => !n.is_read).length
     res.json({
       child,
       stats: {
         gradeAvg: parseFloat(gradesResult.rows[0]?.avg || 0).toFixed(1),
         gradeCount: parseInt(gradesResult.rows[0]?.total || 0),
+        recentGrades: recentGradesResult.rows,
         todayStatus: attTodayResult.rows[0]?.status || 'unknown',
         attendanceMonth: attMonth,
         unreadMessages: parseInt(msgResult.rows[0]?.count || 0),
         upcomingEvents: nextEventsResult.rows,
-        notifications: notifResult.rows
+        notifications: notifResult.rows,
+        unreadNotifications: unreadNotif,
       }
     })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
@@ -142,8 +146,29 @@ router.get('/schedule', authenticateToken, requireRole('parent'), async (req: Au
 
 router.get('/notifications', authenticateToken, requireRole('parent'), async (req: AuthRequest, res) => {
   try {
-    const result = await query('SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20', [req.user!.id])
-    res.json({ notifications: result.rows })
+    const result = await query(
+      'SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',
+      [req.user!.id]
+    )
+    const unread = result.rows.filter((n: any) => !n.is_read).length
+    res.json({ notifications: result.rows, unread })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+router.put('/notifications/read-all', authenticateToken, requireRole('parent'), async (req: AuthRequest, res) => {
+  try {
+    await query('UPDATE notifications SET is_read=true WHERE user_id=$1', [req.user!.id])
+    res.json({ success: true })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+router.put('/notifications/:id/read', authenticateToken, requireRole('parent'), async (req: AuthRequest, res) => {
+  try {
+    await query(
+      'UPDATE notifications SET is_read=true WHERE id=$1 AND user_id=$2',
+      [req.params.id, req.user!.id]
+    )
+    res.json({ success: true })
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 

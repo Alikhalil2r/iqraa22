@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
 
 const router = Router()
 
@@ -148,6 +148,65 @@ router.put('/:id/read', authenticateToken, async (req: AuthRequest, res) => {
     )
     res.json({ success: true })
   } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { id: userId, schoolId, role } = req.user!
+    const msg = await query('SELECT * FROM messages WHERE id=$1 AND school_id=$2', [req.params.id, schoolId])
+    if (!msg.rows[0]) return res.status(404).json({ error: 'Not found' })
+    if (msg.rows[0].from_user_id !== userId && role !== 'admin') {
+      return res.status(403).json({ error: 'غير مصرح' })
+    }
+    await query('DELETE FROM messages WHERE id=$1 OR parent_message_id=$1', [req.params.id])
+    res.json({ success: true })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// ── Broadcast: admin sends to all parents ──────────────────────────────────
+router.get('/broadcasts', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+  try {
+    const result = await query(
+      `SELECT b.*, u.name as sent_by_name
+       FROM broadcasts b LEFT JOIN users u ON u.id=b.sent_by
+       WHERE b.school_id=$1 ORDER BY b.created_at DESC LIMIT 50`,
+      [req.user!.schoolId]
+    )
+    res.json({ broadcasts: result.rows })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+router.post('/broadcast', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+  try {
+    const { title, body } = req.body
+    if (!title || !body) return res.status(400).json({ error: 'العنوان والنص مطلوبان' })
+    const { schoolId, id: sentBy } = req.user!
+
+    const parents = await query(
+      `SELECT id FROM users WHERE school_id=$1 AND role='parent' AND is_active=true`,
+      [schoolId]
+    )
+
+    if (parents.rows.length === 0) {
+      return res.status(400).json({ error: 'لا يوجد أولياء أمور مسجلون' })
+    }
+
+    for (const parent of parents.rows) {
+      await query(
+        `INSERT INTO notifications (school_id, user_id, title, body, type)
+         VALUES ($1, $2, $3, $4, 'broadcast')`,
+        [schoolId, parent.id, title.slice(0, 300), body.slice(0, 2000)]
+      )
+    }
+
+    const broadcast = await query(
+      `INSERT INTO broadcasts (school_id, title, body, sent_by, recipient_count)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [schoolId, title.slice(0, 300), body.slice(0, 2000), sentBy, parents.rows.length]
+    )
+
+    res.status(201).json({ broadcast: broadcast.rows[0], sentTo: parents.rows.length })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
 export default router

@@ -5,16 +5,17 @@ import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
 import {
   Home, BookOpen, CalendarCheck, MessageSquare, Clock,
-  LogOut, Menu, X, Bell, GraduationCap, User
+  LogOut, Menu, X, Bell, GraduationCap
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const navItems = [
-  { to: '/parent', label: 'الرئيسية', icon: Home, end: true },
-  { to: '/parent/grades', label: 'النتائج', icon: BookOpen },
-  { to: '/parent/attendance', label: 'الحضور', icon: CalendarCheck },
-  { to: '/parent/messages', label: 'الرسائل', icon: MessageSquare },
-  { to: '/parent/schedule', label: 'الجدول', icon: Clock },
+  { to: '/parent',               label: 'الرئيسية', icon: Home,          end: true, badge: null as string | null },
+  { to: '/parent/grades',        label: 'النتائج',  icon: BookOpen,      end: false, badge: null },
+  { to: '/parent/attendance',    label: 'الحضور',   icon: CalendarCheck, end: false, badge: null },
+  { to: '/parent/messages',      label: 'الرسائل',  icon: MessageSquare, end: false, badge: 'unreadMsgs' },
+  { to: '/parent/schedule',      label: 'الجدول',   icon: Clock,         end: false, badge: null },
+  { to: '/parent/notifications', label: 'الإشعارات',icon: Bell,          end: false, badge: 'unreadNotif' },
 ]
 
 export default function ParentLayout() {
@@ -29,7 +30,14 @@ export default function ParentLayout() {
   })
 
   const handleLogout = () => { logout(); navigate('/parent-login'); toast.success('تم الخروج') }
-  const unreadMsgs = dashData?.stats?.unreadMessages || 0
+  const unreadMsgs  = dashData?.stats?.unreadMessages    || 0
+  const unreadNotif = dashData?.stats?.unreadNotifications || 0
+
+  function getBadge(badgeKey: string | null) {
+    if (badgeKey === 'unreadMsgs')  return unreadMsgs  > 0 ? unreadMsgs  : null
+    if (badgeKey === 'unreadNotif') return unreadNotif > 0 ? unreadNotif : null
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -47,17 +55,22 @@ export default function ParentLayout() {
           </div>
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1">
-            {navItems.map(item => (
-              <NavLink key={item.to} to={item.to} end={item.end}
-                className={({isActive}) => `flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-                style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
-                <item.icon size={16}/>
-                {item.label}
-                {item.label==='الرسائل' && unreadMsgs > 0 && (
-                  <span className="w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{unreadMsgs}</span>
-                )}
-              </NavLink>
-            ))}
+            {navItems.map(item => {
+              const badge = getBadge(item.badge)
+              return (
+                <NavLink key={item.to} to={item.to} end={item.end}
+                  className={({isActive}) => `relative flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                  style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
+                  <item.icon size={16}/>
+                  {item.label}
+                  {badge !== null && (
+                    <span className="w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">
+                      {badge > 9 ? '9+' : badge}
+                    </span>
+                  )}
+                </NavLink>
+              )
+            })}
           </nav>
           <button onClick={handleLogout} className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-400 hover:bg-red-50">
             <LogOut size={16}/>خروج
@@ -69,14 +82,17 @@ export default function ParentLayout() {
         {/* Mobile menu */}
         {mobileMenu && (
           <div className="md:hidden border-t border-gray-100 p-3 space-y-1">
-            {navItems.map(item => (
-              <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setMobileMenu(false)}
-                className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-                style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
-                <item.icon size={18}/>{item.label}
-                {item.label==='الرسائل' && unreadMsgs > 0 && <span className="mr-auto badge-danger">{unreadMsgs}</span>}
-              </NavLink>
-            ))}
+            {navItems.map(item => {
+              const badge = getBadge(item.badge)
+              return (
+                <NavLink key={item.to} to={item.to} end={item.end} onClick={() => setMobileMenu(false)}
+                  className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive ? 'text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  style={({isActive}) => isActive ? {background:'var(--color-accent)'} : {}}>
+                  <item.icon size={18}/>{item.label}
+                  {badge !== null && <span className="mr-auto badge-danger">{badge}</span>}
+                </NavLink>
+              )
+            })}
             <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-red-400 font-bold rounded-xl hover:bg-red-50">
               <LogOut size={18}/>خروج
             </button>
