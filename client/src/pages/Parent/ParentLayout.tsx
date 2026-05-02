@@ -5,9 +5,10 @@ import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
 import {
   Home, BookOpen, CalendarCheck, MessageSquare, Clock,
-  LogOut, Menu, X, Bell, GraduationCap
+  LogOut, Menu, X, Bell, GraduationCap, Moon, Sun
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useDarkMode } from '../../hooks/useDarkMode'
 
 const navItems = [
   { to: '/parent',               label: 'الرئيسية', icon: Home,          end: true, badge: null as string | null },
@@ -22,6 +23,7 @@ export default function ParentLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [mobileMenu, setMobileMenu] = useState(false)
+  const { isDark, toggle: toggleDark } = useDarkMode()
 
   const { data: dashData } = useQuery({
     queryKey: ['parent-dash'],
@@ -72,6 +74,13 @@ export default function ParentLayout() {
               )
             })}
           </nav>
+          <button
+            onClick={toggleDark}
+            className="hidden md:flex p-2 rounded-xl hover:bg-gray-100 text-gray-500 transition-all hover:scale-110"
+            title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}
+          >
+            {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} />}
+          </button>
           <button onClick={handleLogout} className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold text-red-400 hover:bg-red-50">
             <LogOut size={16}/>خروج
           </button>

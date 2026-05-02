@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
+import compression from 'compression'
 import path from 'path'
 import dotenv from 'dotenv'
 import { initDB } from './db'
@@ -35,6 +36,9 @@ const PORT = process.env.PORT || 3001
 
 // Trust Replit's reverse proxy for correct IP detection (needed for rate limiting)
 app.set('trust proxy', 1)
+
+// ─── Compression ──────────────────────────────────────────────────────────────
+app.use(compression())
 
 // ─── Security Headers ─────────────────────────────────────────────────────────
 app.use(helmet({

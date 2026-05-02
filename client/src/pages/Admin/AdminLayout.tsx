@@ -7,10 +7,11 @@ import {
   LayoutDashboard, Users, UserCheck, ClipboardCheck, GraduationCap, Bus,
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, Search,
-  DollarSign, CalendarDays, Home, Globe
+  DollarSign, CalendarDays, Home, Globe, Moon, Sun
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
+import { useDarkMode } from '../../hooks/useDarkMode'
 
 const menuGroups = [
   {
@@ -79,6 +80,7 @@ export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate  = useNavigate()
   const location  = useLocation()
+  const { isDark, toggle: toggleDark } = useDarkMode()
 
   const { data: unreadData } = useQuery({
     queryKey:       ['unread-count'],
@@ -266,6 +268,15 @@ export default function AdminLayout() {
               <Search size={14} />
               <span>بحث</span>
               <kbd className="text-[9px] font-mono bg-white text-gray-400 px-1 py-0.5 rounded border border-gray-200 shadow-sm">⌘K</kbd>
+            </button>
+
+            {/* Dark mode toggle */}
+            <button
+              onClick={toggleDark}
+              className="p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-all hover:scale-110"
+              title={isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}
+            >
+              {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
 
             {/* Notifications bell */}

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react'
-import { Search, Plus, Trash2, Edit, ChevronLeft, ChevronRight, Filter, Download } from 'lucide-react'
+import { Search, Plus, Trash2, Edit, ChevronLeft, ChevronRight, Filter, X } from 'lucide-react'
 import ConfirmDialog from './ConfirmDialog'
 import ExportButton from './ExportButton'
+import { useDebounce } from '../hooks/useDebounce'
 
 interface Column {
   key: string
@@ -51,7 +52,8 @@ export default function DataTable({
   deleteMessage, searchKeys = [], addLabel = 'إضافة', loading,
   emptyMessage = 'لا توجد بيانات', filters, exportFilename
 }: DataTableProps) {
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const search = useDebounce(searchInput, 280)
   const [page, setPage] = useState(1)
   const [sortKey, setSortKey] = useState('')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -61,8 +63,9 @@ export default function DataTable({
   const filtered = useMemo(() => {
     let result = data
     if (search && searchKeys.length > 0) {
+      const q = search.toLowerCase()
       result = result.filter(row =>
-        searchKeys.some(key => String(row[key] || '').toLowerCase().includes(search.toLowerCase()))
+        searchKeys.some(key => String(row[key] || '').toLowerCase().includes(q))
       )
     }
     if (sortKey) {
@@ -105,14 +108,22 @@ export default function DataTable({
           <h2 className="text-base md:text-lg font-black text-gray-800 flex-1">{title}</h2>
           {searchKeys.length > 0 && (
             <div className="relative">
-              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
-                className="pr-9 pl-4 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:bg-white w-48 md:w-56 transition-all"
-                style={{ '--tw-ring-color': 'var(--color-primary)30' } as any}
+                className="pr-9 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:bg-white transition-all"
+                style={{ '--tw-ring-color': 'color-mix(in srgb, var(--color-primary) 20%, transparent)', width: searchInput ? '14rem' : '12rem' } as any}
                 placeholder="بحث..."
-                value={search}
-                onChange={e => { setSearch(e.target.value); setPage(1) }}
+                value={searchInput}
+                onChange={e => { setSearchInput(e.target.value); setPage(1) }}
               />
+              {searchInput && (
+                <button
+                  onClick={() => { setSearchInput(''); setPage(1) }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 p-0.5 rounded-md hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
           )}
           {filters}
@@ -167,10 +178,10 @@ export default function DataTable({
                       </div>
                       <div>
                         <p className="font-bold text-gray-500">
-                          {search ? `لا نتائج لـ "${search}"` : emptyMessage}
+                          {searchInput ? `لا نتائج لـ "${searchInput}"` : emptyMessage}
                         </p>
-                        {search && (
-                          <button onClick={() => setSearch('')} className="text-xs text-blue-500 hover:underline mt-1">
+                        {searchInput && (
+                          <button onClick={() => setSearchInput('')} className="text-xs text-blue-500 hover:underline mt-1">
                             مسح البحث
                           </button>
                         )}
@@ -221,7 +232,7 @@ export default function DataTable({
         <div className="p-4 border-t border-gray-100 flex items-center justify-between text-sm">
           <p className="text-gray-400 text-xs">
             {loading ? (
-              <span className="skeleton h-3 w-32 rounded inline-block" />
+              <div className="skeleton h-3 w-36 rounded inline-block" />
             ) : filtered.length > 0 ? (
               `عرض ${Math.min((page - 1) * perPage + 1, filtered.length)}–${Math.min(page * perPage, filtered.length)} من ${filtered.length} سجل`
             ) : null}

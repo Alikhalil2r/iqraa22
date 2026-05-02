@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { studentsApi, busesApi, gradesApi, attendanceApi } from '../../api/client'
 import DataTable from '../../components/DataTable'
@@ -14,6 +15,14 @@ const GENDER_OPTIONS  = [{ value: 'M', label: 'ذكر' }, { value: 'F', label: '
 const STATUS_OPTIONS  = [{ value: 'active', label: 'نشط' }, { value: 'inactive', label: 'غير نشط' }, { value: 'transferred', label: 'محوّل' }]
 const BLOOD_TYPES     = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(v => ({ value: v, label: v }))
 const RELATION_OPTIONS = ['أب', 'أم', 'جد', 'جدة', 'عم', 'خال', 'أخ', 'أخت', 'وصي'].map(v => ({ value: v, label: v }))
+
+const studentSchema = z.object({
+  name:         z.string().min(2, 'الاسم بالعربي مطلوب (حرفان على الأقل)'),
+  className:    z.string().min(1, 'الفصل الدراسي مطلوب'),
+  academicYear: z.string().min(4, 'العام الدراسي مطلوب'),
+  parentPhone:  z.string().regex(/^[+\d\s\-()]{7,}$/, 'رقم الهاتف غير صحيح').or(z.literal('')),
+  parentEmail:  z.string().email('البريد الإلكتروني غير صحيح').or(z.literal('')),
+}).passthrough()
 
 const emptyStudent = {
   name: '', nameEn: '', studentNumber: '', gender: 'M', dateOfBirth: '', nationality: 'عُماني',
@@ -302,7 +311,11 @@ export default function Students() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.name.trim()) return toast.error('الاسم بالعربي مطلوب')
+    const validation = studentSchema.safeParse(form)
+    if (!validation.success) {
+      toast.error(validation.error.errors[0].message)
+      return
+    }
     const d = { ...form, busId: form.busId || null }
     if (editing) updateMut.mutate({ id: editing.id, ...d })
     else createMut.mutate(d)
