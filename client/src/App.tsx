@@ -6,11 +6,20 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { DashboardSkeleton } from './components/Skeleton'
 
 // ─── Lazy‑loaded pages (code splitting per route) ────────────────────────────
-const PublicLayout     = lazy(() => import('./pages/Public/PublicLayout'))
-const HomePage         = lazy(() => import('./pages/Public/HomePage'))
-const NewsPage         = lazy(() => import('./pages/Public/NewsPage'))
-const AboutPage        = lazy(() => import('./pages/Public/AboutPage'))
-const ContactPage      = lazy(() => import('./pages/Public/ContactPage'))
+const PublicLayout        = lazy(() => import('./pages/Public/PublicLayout'))
+const HomePage            = lazy(() => import('./pages/Public/HomePage'))
+const NewsPage            = lazy(() => import('./pages/Public/NewsPage'))
+const AboutPage           = lazy(() => import('./pages/Public/AboutPage'))
+const ContactPage         = lazy(() => import('./pages/Public/ContactPage'))
+const HallOfFamePage      = lazy(() => import('./pages/Public/HallOfFamePage'))
+const AlumniPage          = lazy(() => import('./pages/Public/AlumniPage'))
+const AchievementsPage    = lazy(() => import('./pages/Public/AchievementsPage'))
+const GalleryPage         = lazy(() => import('./pages/Public/GalleryPage'))
+const ArticlesPage        = lazy(() => import('./pages/Public/ArticlesPage'))
+const LearningSupportPage = lazy(() => import('./pages/Public/LearningSupportPage'))
+const CalendarPage        = lazy(() => import('./pages/Public/CalendarPage'))
+const VideosPage          = lazy(() => import('./pages/Public/VideosPage'))
+const JobsPage            = lazy(() => import('./pages/Public/JobsPage'))
 
 const LoginPage        = lazy(() => import('./pages/Auth/LoginPage'))
 const ParentLoginPage  = lazy(() => import('./pages/Auth/ParentLoginPage'))
@@ -98,9 +107,18 @@ function RedirectCheck() {
         {/* Public site */}
         <Route path="/" element={<PublicLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="news" element={<NewsPage />} />
-          <Route path="about" element={<AboutPage />} />
-          <Route path="contact" element={<ContactPage />} />
+          <Route path="about"            element={<AboutPage />} />
+          <Route path="news"             element={<NewsPage />} />
+          <Route path="contact"          element={<ContactPage />} />
+          <Route path="hall-of-fame"     element={<HallOfFamePage />} />
+          <Route path="alumni"           element={<AlumniPage />} />
+          <Route path="achievements"     element={<AchievementsPage />} />
+          <Route path="gallery"          element={<GalleryPage />} />
+          <Route path="articles"         element={<ArticlesPage />} />
+          <Route path="learning-support" element={<LearningSupportPage />} />
+          <Route path="calendar"         element={<CalendarPage />} />
+          <Route path="videos"           element={<VideosPage />} />
+          <Route path="jobs"             element={<JobsPage />} />
         </Route>
 
         {/* Auth */}
