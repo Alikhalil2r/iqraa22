@@ -5,6 +5,7 @@ interface SkeletonProps {
   width?: string | number
   height?: string | number
   rounded?: string
+  style?: React.CSSProperties
 }
 
 export function Skeleton({ className = '', width, height, rounded = 'rounded-xl' }: SkeletonProps) {

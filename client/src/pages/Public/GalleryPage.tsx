@@ -37,7 +37,7 @@ export default function GalleryPage() {
     ? apiData.gallery.map((g: any) => ({ id: g.id, src: g.image_url || g.src || '', caption: g.caption || '', category: g.category || 'عام' }))
     : SAMPLE_GALLERY)
 
-  const categories = useMemo(() => ['all', ...new Set(allGallery.map((g: any) => g.category).filter(Boolean))], [allGallery])
+  const categories = useMemo(() => ['all', ...Array.from(new Set(allGallery.map((g: any) => g.category as string).filter(Boolean)))], [allGallery])
   const filtered = filter === 'all' ? allGallery : allGallery.filter((g: any) => g.category === filter)
 
   const lbIdx = lightbox !== null ? filtered.findIndex((g: any) => g.id === lightbox) : -1
@@ -54,7 +54,7 @@ export default function GalleryPage() {
           <button onClick={() => setFilter('all')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filter === 'all' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             <Grid size={14} /> الكل ({allGallery.length})
           </button>
-          {categories.filter(c => c !== 'all').map(c => (
+          {(categories as string[]).filter(c => c !== 'all').map((c: string) => (
             <button key={c} onClick={() => setFilter(c)} className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${filter === c ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               {c} ({allGallery.filter((g: any) => g.category === c).length})
             </button>

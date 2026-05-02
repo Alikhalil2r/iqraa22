@@ -22,8 +22,8 @@ export default function ParentAttendance() {
 
   const records = data?.attendance || []
   const stats = data?.stats || {}
-  const total = Object.values(stats).reduce((s: number, v: any) => s + parseInt(v||0), 0)
-  const rate = total > 0 ? Math.round((stats.present||0) / total * 100) : 0
+  const total = (Object.values(stats) as number[]).reduce((s: number, v: any) => s + (parseInt(v) || 0), 0)
+  const rate = total > 0 ? Math.round(((stats.present as number) || 0) / total * 100) : 0
 
   const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
 

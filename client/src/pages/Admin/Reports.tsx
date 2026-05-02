@@ -308,7 +308,7 @@ export default function Reports() {
                       outerRadius={85}
                       innerRadius={40}
                       paddingAngle={3}
-                      label={({ department, count }) => `${department}: ${count}`}
+                      label={(props: any) => `${props.department}: ${props.count}`}
                     >
                       {(hrQuery.data?.byDepartment || []).map((_: any, i: number) => (
                         <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
