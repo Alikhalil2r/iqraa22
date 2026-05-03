@@ -569,6 +569,48 @@ router.post('/admin/projects/:id/messages', async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
+// ─── Admin GET routes for content tables ──────────────────────────────────────
+
+// GET /api/platform/admin/services — all services (active + inactive)
+router.get('/admin/services', authenticateToken, async (_req, res) => {
+  try {
+    const rows = await query(`SELECT * FROM platform_services ORDER BY sort_order, created_at`)
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/portfolio — all portfolio items
+router.get('/admin/portfolio', authenticateToken, async (_req, res) => {
+  try {
+    const rows = await query(`SELECT * FROM portfolio_items ORDER BY is_featured DESC, sort_order, created_at DESC`)
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/testimonials — all testimonials
+router.get('/admin/testimonials', authenticateToken, async (_req, res) => {
+  try {
+    const rows = await query(`SELECT * FROM testimonials ORDER BY sort_order, created_at DESC`)
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/faq — all FAQ items
+router.get('/admin/faq', authenticateToken, async (_req, res) => {
+  try {
+    const rows = await query(`SELECT * FROM faq_items ORDER BY sort_order, id`)
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/pricing — all pricing plans
+router.get('/admin/pricing', authenticateToken, async (_req, res) => {
+  try {
+    const rows = await query(`SELECT * FROM pricing_plans ORDER BY sort_order, price`)
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
 // ─── Full CRUD for content tables ─────────────────────────────────────────────
 
 // Services

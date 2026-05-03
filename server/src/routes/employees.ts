@@ -8,7 +8,7 @@ const router = Router()
 const log = createLogger('EMPLOYEES')
 
 const EMP_COLUMNS = `id, employee_number, name, name_en, gender, date_of_birth, nationality,
-  position, department, employment_type, status, join_date, end_date,
+  position, department, employee_type, status, join_date, end_date,
   email, phone, address, qualification, specialization, salary, allowances,
   photo, notes, created_at`
 
@@ -63,12 +63,12 @@ router.post('/', authenticateToken, writeLimiter, requireRole('admin', 'hr_manag
     if (!d.name) return res.status(400).json({ error: 'الاسم مطلوب' })
     const result = await query(`
       INSERT INTO employees (school_id,employee_number,name,name_en,gender,date_of_birth,nationality,
-        position,department,employment_type,status,join_date,end_date,email,phone,address,
+        position,department,employee_type,status,join_date,end_date,email,phone,address,
         qualification,specialization,salary,allowances,photo,notes)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
       RETURNING ${EMP_COLUMNS}`,
       [schoolId, d.employeeNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
-       d.nationality, d.position, d.department, d.employmentType || 'full_time',
+       d.nationality, d.position, d.department, d.employeeType || d.employmentType || 'full-time',
        d.status || 'active', d.joinDate || null, d.endDate || null,
        d.email, d.phone, d.address, d.qualification, d.specialization,
        parseFloat(d.salary) || 0, parseFloat(d.allowances) || 0,
@@ -89,12 +89,12 @@ router.put('/:id', authenticateToken, writeLimiter, requireRole('admin', 'hr_man
     if (!d.name) return res.status(400).json({ error: 'الاسم مطلوب' })
     const result = await query(`
       UPDATE employees SET employee_number=$1,name=$2,name_en=$3,gender=$4,date_of_birth=$5,
-        nationality=$6,position=$7,department=$8,employment_type=$9,status=$10,join_date=$11,
+        nationality=$6,position=$7,department=$8,employee_type=$9,status=$10,join_date=$11,
         end_date=$12,email=$13,phone=$14,address=$15,qualification=$16,specialization=$17,
         salary=$18,allowances=$19,photo=$20,notes=$21
       WHERE id=$22 AND school_id=$23 RETURNING ${EMP_COLUMNS}`,
       [d.employeeNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
-       d.nationality, d.position, d.department, d.employmentType || 'full_time',
+       d.nationality, d.position, d.department, d.employeeType || d.employmentType || 'full-time',
        d.status || 'active', d.joinDate || null, d.endDate || null,
        d.email, d.phone, d.address, d.qualification, d.specialization,
        parseFloat(d.salary) || 0, parseFloat(d.allowances) || 0,

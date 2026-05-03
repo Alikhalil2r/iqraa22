@@ -21,7 +21,9 @@ router.get('/attendance-summary', authenticateToken, async (req: AuthRequest, re
       LEFT JOIN students s ON s.id=a.person_id AND a.person_type='student'
       LEFT JOIN employees e ON e.id=a.person_id AND a.person_type='employee'
       WHERE a.school_id=$1 AND a.person_type=$2 AND a.date BETWEEN $3 AND $4
-      GROUP BY a.person_id, a.person_type, name, group_name
+      GROUP BY a.person_id, a.person_type,
+        CASE WHEN a.person_type='student' THEN s.name ELSE e.name END,
+        CASE WHEN a.person_type='student' THEN s.class_name ELSE e.department END
       ORDER BY attendance_rate ASC`,
       [schoolId, personType||'student', startDate||new Date(Date.now()-30*86400000).toISOString().split('T')[0], endDate||new Date().toISOString().split('T')[0]]
     )

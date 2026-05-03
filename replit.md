@@ -193,6 +193,22 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `@import "tailwindcss"` في index.css (v3 approach)
 - لا حاجة لـ postcss tailwind plugin
 
+## إصلاحات QA الشاملة — أحدث جلسة (35 endpoint ✅)
+
+### إصلاحات Backend الحرجة
+- ✅ **employees.ts** — `employment_type` → `employee_type` (3 مواضع: SELECT/INSERT/UPDATE) + إضافة عمود `allowances numeric(10,2) DEFAULT 0` لقاعدة البيانات
+- ✅ **students.ts** — UUID validation قبل query (معرّف خاطئ يُعيد 400 بدل 500) + إضافة route جديد `GET /students/classes`
+- ✅ **reports.ts** — إصلاح SQL ambiguity في GROUP BY (استبدال aliases بـ CASE expressions كاملة)
+- ✅ **platform.ts** — إضافة 5 admin GET routes مفقودة: `/admin/services`, `/admin/portfolio`, `/admin/testimonials`, `/admin/faq`, `/admin/pricing` (كانت تُعيد 404)
+- ✅ **PlatformContent.tsx** — تحديث الـ queries لاستخدام admin routes بدل public routes (لإظهار جميع العناصر وليس فقط النشطة)
+
+### ميزات T001-T005 جاهزة وموصولة بالباك اند
+- ✅ **T002 PlatformAnalytics** — `/admin/platform-analytics` كاملة مع Recharts + 6 KPIs + 6 charts
+- ✅ **T003 PlatformContent** — `/admin/platform-content` — 6 تبويبات CRUD كاملة موصولة بـ admin endpoints
+- ✅ **T004 ProjectDetail** — `/admin/projects/:id` — Timeline + messages + inline edit + phase tracker
+- ✅ **T005 BlogAdmin** — `/admin/blog` — Drawer editor + search + filter + CRUD + BlogWidget في Dashboard
+- ✅ **Nav** — جميع روابط "منصة الأعمال" في الـ sidebar تعمل
+
 ## الميزات المكتملة — أحدث جلسة (Audit عالمي المستوى — 15 تحسين)
 
 ### الأمان (Security)

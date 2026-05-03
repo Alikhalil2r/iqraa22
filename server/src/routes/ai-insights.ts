@@ -41,7 +41,7 @@ router.get('/', async (req: AuthRequest, res) => {
       // At-risk students (low grades + high absence)
       query(`
         SELECT
-          s.id, s.name, s.student_id as student_code,
+          s.id, s.name, s.student_number as student_code,
           c.name as class_name,
           COALESCE(ROUND(AVG(g.score)::numeric, 1), 0) as avg_grade,
           COUNT(a.id) FILTER (WHERE a.status = 'absent') as absent_days,
@@ -59,7 +59,7 @@ router.get('/', async (req: AuthRequest, res) => {
         LEFT JOIN grades g ON g.student_id = s.id AND g.school_id = $1
         LEFT JOIN attendance a ON a.person_id = s.id AND a.school_id = $1
         WHERE s.school_id = $1 AND s.status = 'active'
-        GROUP BY s.id, s.name, s.student_id, c.name
+        GROUP BY s.id, s.name, s.student_number, c.name
         HAVING
           COALESCE(ROUND(AVG(g.score)::numeric,1),0) < 60
           OR COUNT(a.id) FILTER (WHERE a.status='absent') > 5
@@ -88,13 +88,13 @@ router.get('/', async (req: AuthRequest, res) => {
       query(`
         SELECT
           COUNT(*) FILTER (WHERE status='paid') as paid_count,
-          COUNT(*) FILTER (WHERE status='pending') as pending_count,
-          COUNT(*) FILTER (WHERE status='overdue') as overdue_count,
-          COALESCE(SUM(amount) FILTER (WHERE status='paid'),0) as collected,
-          COALESCE(SUM(amount) FILTER (WHERE status IN ('pending','overdue')),0) as outstanding,
+          COUNT(*) FILTER (WHERE status='unpaid') as pending_count,
+          COUNT(*) FILTER (WHERE status='unpaid' AND due_date < CURRENT_DATE) as overdue_count,
+          COALESCE(SUM(paid_amount),0) as collected,
+          COALESCE(SUM(amount - paid_amount) FILTER (WHERE status != 'paid'),0) as outstanding,
           COALESCE(SUM(amount),0) as total,
           ROUND(
-            100.0 * SUM(amount) FILTER (WHERE status='paid') / NULLIF(SUM(amount),0), 1
+            100.0 * SUM(paid_amount) / NULLIF(SUM(amount),0), 1
           ) as collection_rate
         FROM fees WHERE school_id = $1
       `, [schoolId]),
@@ -152,11 +152,11 @@ router.get('/', async (req: AuthRequest, res) => {
       // Conduct stats
       query(`
         SELECT
-          type,
+          record_type as type,
           COUNT(*) as count
         FROM conduct_records
         WHERE school_id = $1 AND created_at >= NOW() - INTERVAL '90 days'
-        GROUP BY type
+        GROUP BY record_type
         ORDER BY count DESC
       `, [schoolId]),
     ])

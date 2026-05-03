@@ -11,7 +11,7 @@ const STU_COLS = `s.id, s.student_number, s.name, s.name_en, s.gender, s.date_of
   s.nationality, s.class_id, s.class_name, s.academic_year, s.status,
   s.parent_name, s.parent_phone, s.parent_email, s.parent_relation,
   s.address, s.blood_type, s.medical_notes, s.bus_id, s.photo, s.notes,
-  s.is_active, s.created_at, b.bus_number, b.route_name`
+  s.created_at, b.bus_number, b.route_name`
 
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
@@ -39,8 +39,24 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
+router.get('/classes', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const { schoolId } = req.user!
+    const result = await query(
+      `SELECT id, name, level, section, academic_year, capacity FROM classes WHERE school_id=$1 ORDER BY name`,
+      [schoolId]
+    )
+    res.json({ classes: result.rows })
+  } catch (err) {
+    log.error('GET /classes failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'معرّف غير صالح' })
     const result = await query(
       `SELECT ${STU_COLS} FROM students s LEFT JOIN buses b ON b.id=s.bus_id
        WHERE s.id=$1 AND s.school_id=$2`,
@@ -108,7 +124,7 @@ router.delete('/:id', authenticateToken, requireRole('admin'), async (req: AuthR
   try {
     const check = await query('SELECT id FROM students WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
     if (!check.rows[0]) return res.status(404).json({ error: 'Not found' })
-    await query('UPDATE students SET is_active=false, status=$1 WHERE id=$2 AND school_id=$3',
+    await query('UPDATE students SET status=$1 WHERE id=$2 AND school_id=$3',
       ['inactive', req.params.id, req.user!.schoolId])
     log.info('Student soft-deleted', { studentId: req.params.id })
     res.json({ success: true })

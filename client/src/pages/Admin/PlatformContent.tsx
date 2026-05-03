@@ -52,7 +52,7 @@ const btn = (variant: 'primary' | 'danger' | 'ghost' = 'primary') => ({
 function ServicesTab() {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
-  const { data: services = [], isLoading } = useQuery({ queryKey: ['admin-services'], queryFn: () => adminApi.get('/api/platform/services') })
+  const { data: services = [], isLoading } = useQuery({ queryKey: ['admin-services'], queryFn: () => adminApi.get('/api/platform/admin/services') })
 
   const save = useMutation({
     mutationFn: (d: any) => d.id ? adminApi.put(`/api/platform/admin/services/${d.id}`, d) : adminApi.post('/api/platform/admin/services', d),
@@ -138,7 +138,7 @@ function ServicesTab() {
 function PortfolioTab() {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-portfolio'], queryFn: () => adminApi.get('/api/platform/portfolio') })
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-portfolio'], queryFn: () => adminApi.get('/api/platform/admin/portfolio') })
 
   const save = useMutation({
     mutationFn: (d: any) => d.id ? adminApi.put(`/api/platform/admin/portfolio/${d.id}`, d) : adminApi.post('/api/platform/admin/portfolio', d),
@@ -212,7 +212,7 @@ function PortfolioTab() {
 function TestimonialsTab() {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-testimonials'], queryFn: () => adminApi.get('/api/platform/testimonials') })
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-testimonials'], queryFn: () => adminApi.get('/api/platform/admin/testimonials') })
 
   const save = useMutation({
     mutationFn: (d: any) => d.id ? adminApi.put(`/api/platform/admin/testimonials/${d.id}`, d) : adminApi.post('/api/platform/admin/testimonials', d),
@@ -289,7 +289,7 @@ function TestimonialsTab() {
 function FAQTab() {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-faq'], queryFn: () => adminApi.get('/api/platform/faq') })
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-faq'], queryFn: () => adminApi.get('/api/platform/admin/faq') })
 
   const save = useMutation({
     mutationFn: (d: any) => d.id ? adminApi.put(`/api/platform/admin/faq/${d.id}`, d) : adminApi.post('/api/platform/admin/faq', d),
@@ -348,7 +348,7 @@ function FAQTab() {
 function PricingTab() {
   const qc = useQueryClient()
   const [form, setForm] = useState<any>(null)
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-pricing'], queryFn: () => adminApi.get('/api/platform/pricing') })
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['admin-pricing'], queryFn: () => adminApi.get('/api/platform/admin/pricing') })
 
   const save = useMutation({
     mutationFn: (d: any) => d.id ? adminApi.put(`/api/platform/admin/pricing/${d.id}`, d) : adminApi.post('/api/platform/admin/pricing', d),
