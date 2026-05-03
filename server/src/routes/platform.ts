@@ -262,6 +262,180 @@ router.patch('/admin/projects/:id', async (req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
+// GET /api/platform/admin/analytics
+router.get('/admin/analytics', async (_req, res) => {
+  try {
+    const [byService, byStatus, monthly, topClients] = await Promise.all([
+      query(`SELECT service_type, COUNT(*) as count FROM service_requests WHERE service_type IS NOT NULL GROUP BY service_type ORDER BY count DESC`),
+      query(`SELECT status, COUNT(*) as count FROM service_requests GROUP BY status`),
+      query(`
+        SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'MM/YYYY') as month,
+               COUNT(*) as requests
+        FROM service_requests
+        WHERE created_at > NOW() - INTERVAL '6 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at)
+      `),
+      query(`
+        SELECT c.name, c.company,
+               COUNT(DISTINCT r.id) as request_count,
+               COUNT(DISTINCT p.id) as project_count,
+               COALESCE(SUM(p.paid), 0) as total_paid
+        FROM business_clients c
+        LEFT JOIN service_requests r ON r.client_id = c.id
+        LEFT JOIN projects p ON p.client_id = c.id
+        GROUP BY c.id, c.name, c.company
+        ORDER BY total_paid DESC, request_count DESC
+        LIMIT 5
+      `),
+      // Also seed project monthly data combined
+    ])
+    res.json({
+      byService:  byService.rows,
+      byStatus:   byStatus.rows,
+      monthly:    monthly.rows,
+      topClients: topClients.rows,
+    })
+  } catch (err) {
+    log.error('Analytics error', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// GET /api/platform/admin/projects/:id
+router.get('/admin/projects/:id', async (req, res) => {
+  try {
+    const row = await query(
+      `SELECT p.*, c.name as client_name, c.company as client_company, c.email as client_email
+       FROM projects p LEFT JOIN business_clients c ON c.id=p.client_id
+       WHERE p.id=$1`, [req.params.id])
+    if (!row.rows[0]) return res.status(404).json({ error: 'Not found' })
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/projects/:id/messages
+router.get('/admin/projects/:id/messages', async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT * FROM project_messages WHERE project_id=$1 ORDER BY created_at ASC LIMIT 200`,
+      [req.params.id])
+    res.json(rows.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// POST /api/platform/admin/projects/:id/messages
+router.post('/admin/projects/:id/messages', async (req: AuthRequest, res) => {
+  try {
+    const { content, sender_name, is_internal } = req.body
+    if (!content) return res.status(400).json({ error: 'المحتوى مطلوب' })
+    const row = await query(
+      `INSERT INTO project_messages (project_id, content, sender_name, is_internal)
+       VALUES ($1,$2,$3,$4) RETURNING *`,
+      [req.params.id, content, sender_name || req.user?.name || 'Admin', is_internal || false]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// ─── Full CRUD for content tables ─────────────────────────────────────────────
+
+// Services
+router.put('/admin/services/:id', async (req, res) => {
+  try {
+    const { title, title_en, description, icon, color, price_from, duration_days, category, features, is_active } = req.body
+    const row = await query(
+      `UPDATE platform_services SET title=$1,title_en=$2,description=$3,icon=$4,color=$5,price_from=$6,duration_days=$7,category=$8,features=$9,is_active=$10 WHERE id=$11 RETURNING *`,
+      [title, title_en, description, icon, color, price_from||null, duration_days||null, category, JSON.stringify(features||[]), is_active!==false, req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.delete('/admin/services/:id', async (req, res) => {
+  try { await query(`DELETE FROM platform_services WHERE id=$1`, [req.params.id]); res.json({ ok: true }) }
+  catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// Portfolio
+router.put('/admin/portfolio/:id', async (req, res) => {
+  try {
+    const { title, description, image_url, category, client_name, project_url, technologies, is_featured } = req.body
+    const row = await query(
+      `UPDATE portfolio_items SET title=$1,description=$2,image_url=$3,category=$4,client_name=$5,project_url=$6,technologies=$7,is_featured=$8 WHERE id=$9 RETURNING *`,
+      [title, description, image_url, category, client_name, project_url, technologies, is_featured||false, req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.delete('/admin/portfolio/:id', async (req, res) => {
+  try { await query(`DELETE FROM portfolio_items WHERE id=$1`, [req.params.id]); res.json({ ok: true }) }
+  catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// Testimonials
+router.put('/admin/testimonials/:id', async (req, res) => {
+  try {
+    const { client_name, client_position, company, content, rating, is_featured } = req.body
+    const row = await query(
+      `UPDATE testimonials SET client_name=$1,client_position=$2,company=$3,content=$4,rating=$5,is_featured=$6 WHERE id=$7 RETURNING *`,
+      [client_name, client_position, company, content, rating||5, is_featured!==false, req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.delete('/admin/testimonials/:id', async (req, res) => {
+  try { await query(`DELETE FROM testimonials WHERE id=$1`, [req.params.id]); res.json({ ok: true }) }
+  catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// FAQ
+router.post('/admin/faq', async (req, res) => {
+  try {
+    const { question, answer, sort_order, is_active } = req.body
+    const row = await query(
+      `INSERT INTO faq_items (question,answer,sort_order,is_active) VALUES ($1,$2,$3,$4) RETURNING *`,
+      [question, answer, sort_order||0, is_active!==false]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.put('/admin/faq/:id', async (req, res) => {
+  try {
+    const { question, answer, sort_order, is_active } = req.body
+    const row = await query(
+      `UPDATE faq_items SET question=$1,answer=$2,sort_order=$3,is_active=$4 WHERE id=$5 RETURNING *`,
+      [question, answer, sort_order||0, is_active!==false, req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.delete('/admin/faq/:id', async (req, res) => {
+  try { await query(`DELETE FROM faq_items WHERE id=$1`, [req.params.id]); res.json({ ok: true }) }
+  catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// Pricing
+router.post('/admin/pricing', async (req, res) => {
+  try {
+    const { name, price, currency, period, description, features, is_popular, color } = req.body
+    const row = await query(
+      `INSERT INTO pricing_plans (name,price,currency,period,description,features,is_popular,color) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+      [name, price||0, currency||'OMR', period||'مشروع', description, JSON.stringify(features||[]), is_popular||false, color||'#8b5cf6']
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+router.put('/admin/pricing/:id', async (req, res) => {
+  try {
+    const { name, price, currency, period, description, features, is_popular, color } = req.body
+    const row = await query(
+      `UPDATE pricing_plans SET name=$1,price=$2,currency=$3,period=$4,description=$5,features=$6,is_popular=$7,color=$8 WHERE id=$9 RETURNING *`,
+      [name, price||0, currency||'OMR', period||'مشروع', description, JSON.stringify(features||[]), is_popular||false, color||'#8b5cf6', req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
 // ─── Blog admin ───────────────────────────────────────────────────────────────
 
 router.get('/admin/blog', authenticateToken, async (_req, res) => {
@@ -326,6 +500,27 @@ router.post('/admin/portfolio', async (req, res) => {
     )
     res.json(row.rows[0])
   } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// Blog PUT / DELETE
+router.put('/admin/blog/:id', authenticateToken, async (_req, res) => {
+  const req = _req as AuthRequest
+  try {
+    const { title, slug, excerpt, content, image_url, category, tags, status } = req.body
+    const published_at = status === 'published' ? new Date() : null
+    const row = await query(
+      `UPDATE blog_posts SET title=$1,slug=$2,excerpt=$3,content=$4,image_url=$5,category=$6,tags=$7,status=$8,published_at=COALESCE($9,published_at) WHERE id=$10 RETURNING *`,
+      [title, slug, excerpt||null, content||null, image_url||null, category||null, JSON.stringify(tags||[]), status||'draft', published_at, req.params.id]
+    )
+    res.json(row.rows[0])
+  } catch (err: any) {
+    if (err.code === '23505') return res.status(400).json({ error: 'الرابط مستخدم بالفعل' })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+router.delete('/admin/blog/:id', async (req, res) => {
+  try { await query(`DELETE FROM blog_posts WHERE id=$1`, [req.params.id]); res.json({ ok: true }) }
+  catch { res.status(500).json({ error: 'Server error' }) }
 })
 
 // Company settings update

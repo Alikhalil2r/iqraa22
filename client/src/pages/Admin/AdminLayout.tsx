@@ -89,9 +89,12 @@ const menuGroups: MenuGroup[] = [
     labelKey: 'nav.group.platform',
     roles: ADMIN_ONLY,
     items: [
-      { to: '/admin/requests',  icon: Inbox,      labelKey: 'nav.requests',  roles: ADMIN_ONLY },
-      { to: '/admin/clients',   icon: Building2,  labelKey: 'nav.clients',   roles: ADMIN_ONLY },
-      { to: '/admin/projects',  icon: FolderOpen, labelKey: 'nav.projects',  roles: ADMIN_ONLY },
+      { to: '/admin/requests',           icon: Inbox,      labelKey: 'nav.requests',          roles: ADMIN_ONLY },
+      { to: '/admin/clients',            icon: Building2,  labelKey: 'nav.clients',           roles: ADMIN_ONLY },
+      { to: '/admin/projects',           icon: FolderOpen, labelKey: 'nav.projects',           roles: ADMIN_ONLY },
+      { to: '/admin/platform-analytics', icon: BarChart3,  labelKey: 'nav.platformAnalytics', roles: ADMIN_ONLY },
+      { to: '/admin/platform-content',   icon: Globe,      labelKey: 'nav.platformContent',   roles: ADMIN_ONLY },
+      { to: '/admin/blog',               icon: BookOpen,   labelKey: 'nav.blogAdmin',          roles: ADMIN_ONLY },
     ]
   },
   {
@@ -146,9 +149,12 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/ai-insights':   'التحليل الذكي',
   '/admin/audit-log':     'سجل النشاط',
   '/admin/2fa':           'المصادقة الثنائية',
-  '/admin/requests':      'طلبات الخدمة',
-  '/admin/clients':       'إدارة العملاء',
-  '/admin/projects':      'إدارة المشاريع',
+  '/admin/requests':              'طلبات الخدمة',
+  '/admin/clients':               'إدارة العملاء',
+  '/admin/projects':              'إدارة المشاريع',
+  '/admin/platform-analytics':    'تحليلات المنصة',
+  '/admin/platform-content':      'إدارة المحتوى',
+  '/admin/blog':                  'إدارة المدونة',
 }
 
 export default function AdminLayout() {

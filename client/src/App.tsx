@@ -66,10 +66,16 @@ const ParentSchedule        = lazy(() => import('./pages/Parent/ParentSchedule')
 const ParentNotifications   = lazy(() => import('./pages/Parent/ParentNotifications'))
 
 const NotFoundPage     = lazy(() => import('./pages/NotFoundPage'))
-const RequestForm      = lazy(() => import('./pages/Platform/RequestForm'))
-const RequestsAdmin    = lazy(() => import('./pages/Admin/RequestsAdmin'))
-const ClientsAdmin     = lazy(() => import('./pages/Admin/ClientsAdmin'))
-const ProjectsAdmin    = lazy(() => import('./pages/Admin/ProjectsAdmin'))
+const RequestForm         = lazy(() => import('./pages/Platform/RequestForm'))
+const RequestsAdmin       = lazy(() => import('./pages/Admin/RequestsAdmin'))
+const ClientsAdmin        = lazy(() => import('./pages/Admin/ClientsAdmin'))
+const ProjectsAdmin       = lazy(() => import('./pages/Admin/ProjectsAdmin'))
+const ProjectDetail       = lazy(() => import('./pages/Admin/ProjectDetail'))
+const PlatformAnalytics   = lazy(() => import('./pages/Admin/PlatformAnalytics'))
+const PlatformContent     = lazy(() => import('./pages/Admin/PlatformContent'))
+const BlogAdmin           = lazy(() => import('./pages/Admin/BlogAdmin'))
+const BlogPage            = lazy(() => import('./pages/Public/BlogPage'))
+const BlogPostPage        = lazy(() => import('./pages/Public/BlogPostPage'))
 
 // ─── Role-aware admin guard ───────────────────────────────────────────────────
 // (admin roles include: super_admin, admin, teacher, accountant, librarian, hr_manager, guard)
@@ -142,6 +148,8 @@ function RedirectCheck() {
         {/* ── New Tech Company Landing Page (standalone) ── */}
         <Route path="/" element={<HomePage />} />
         <Route path="/request" element={<RequestForm />} />
+        <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
 
         {/* ── School public site (legacy) ── */}
         <Route path="/school" element={<PublicLayout />}>
@@ -199,9 +207,13 @@ function RedirectCheck() {
           <Route path="ai-insights"    element={<AIInsights />} />
           <Route path="audit-log"      element={<AuditLog />} />
           <Route path="2fa"            element={<TwoFactorSetup />} />
-          <Route path="requests"       element={<RequestsAdmin />} />
-          <Route path="clients"        element={<ClientsAdmin />} />
-          <Route path="projects"       element={<ProjectsAdmin />} />
+          <Route path="requests"              element={<RequestsAdmin />} />
+          <Route path="clients"               element={<ClientsAdmin />} />
+          <Route path="projects"              element={<ProjectsAdmin />} />
+          <Route path="projects/:id"          element={<ProjectDetail />} />
+          <Route path="platform-analytics"    element={<PlatformAnalytics />} />
+          <Route path="platform-content"      element={<PlatformContent />} />
+          <Route path="blog"                  element={<BlogAdmin />} />
         </Route>
 
         {/* Parent Portal */}

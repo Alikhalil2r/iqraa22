@@ -193,18 +193,31 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `@import "tailwindcss"` في index.css (v3 approach)
 - لا حاجة لـ postcss tailwind plugin
 
-## الميزات المكتملة — أحدث جلسة (منصة شركة التقنية الكاملة)
+## الميزات المكتملة — أحدث جلسة (إضافات قوية للمنصة)
+- ✅ **مدونة تقنية عامة** (`/blog`) — صفحة مقالات مع بحث + فلتر بالفئة + صور + pagination
+- ✅ **صفحة مقالة كاملة** (`/blog/:slug`) — مقال كامل مع breadcrumb + meta + مشاركة اجتماعية + CTA + مقالات ذات صلة
+- ✅ **6 مقالات عربية احترافية** جاهزة في قاعدة البيانات مع صور Unsplash حقيقية
+- ✅ **تحليلات المنصة** (`/admin/platform-analytics`) — Recharts: اتجاه الطلبات + توزيع الخدمات Pie + حالات Bar + أبرز العملاء + 3 KPI cards
+- ✅ **إدارة المحتوى** (`/admin/platform-content`) — لوحة tabbed كاملة لتعديل: الخدمات + Portfolio + الشهادات + FAQ + الأسعار + إعدادات الشركة
+- ✅ **تفاصيل المشروع** (`/admin/projects/:id`) — Timeline المراحل + Progress bar + تعديل inline + نظام مراسلة داخلي (رسائل عادية + ملاحظات داخلية)
+- ✅ **إدارة المدونة** (`/admin/blog`) — جدول كامل + Drawer تعديل مع HTML editor + تغيير الحالة + حذف
+- ✅ **Backend Analytics API** — `/api/platform/admin/analytics` مع byService/byStatus/monthly/topClients
+- ✅ **Backend Messages API** — GET/POST `/api/platform/admin/projects/:id/messages`
+- ✅ **Full CRUD backend** — PUT+DELETE لكل: services/portfolio/testimonials/faq/pricing/blog
+- ✅ **رابط المدونة في الـ nav والـ footer** — مدمج في الصفحة الرئيسية
+
+## الميزات المكتملة — الجلسة السابقة (منصة شركة التقنية الكاملة)
 - ✅ **Landing Page احترافية** (`/`) — صفحة رئيسية كاملة لشركة تقنية: Hero + Stats + Services + WhyUs + Portfolio + Process + Pricing + Testimonials + FAQ + CTA + Footer
 - ✅ **نظام طلبات الخدمة** (`/request`) — نموذج 4 خطوات: نوع الخدمة → تفاصيل → ميزانية → بيانات التواصل → إنشاء Ticket تلقائي
 - ✅ **إدارة الطلبات** (`/admin/requests`) — Drawer للتفاصيل + تحديث الحالة + الأولوية + ملاحظات داخلية + فلاتر + بحث
 - ✅ **CRM العملاء** (`/admin/clients`) — بطاقات العملاء مع إحصائيات الطلبات والمشاريع والإيرادات
 - ✅ **إدارة المشاريع** (`/admin/projects`) — بطاقات المشاريع مع progress bar تفاعلي + تغيير الحالة + إنشاء مشروع جديد
 - ✅ **Platform Backend Routes** — `/api/platform/*` (services, portfolio, testimonials, faq, pricing, blog, settings, request, admin/*)
-- ✅ **Platform DB Schema** — 9 جداول جديدة: platform_services, portfolio_items, testimonials, faq_items, pricing_plans, business_clients, service_requests, projects, project_messages, blog_posts, company_settings
-- ✅ **Seed Data كامل** — 6 خدمات + 4 شهادات + 8 أسئلة + 3 خطط + 6 portfolio + 11 company settings
+- ✅ **Platform DB Schema** — 11 جداول: platform_services, portfolio_items, testimonials, faq_items, pricing_plans, business_clients, service_requests, projects, project_messages, blog_posts, company_settings
+- ✅ **Seed Data كامل** — 6 خدمات + 4 شهادات + 8 أسئلة + 3 خطط + 6 portfolio + 11 company settings + 6 blog posts
 - ✅ **adminApi helper** — في client.ts: get/post/put/patch/delete مع auth تلقائي
-- ✅ **مجموعة nav جديدة** "منصة الأعمال" في AdminLayout: طلبات الخدمة + العملاء CRM + إدارة المشاريع
-- ✅ **App.tsx routing** — `/` standalone (tech company) + `/request` standalone + `/school/*` للصفحات المدرسية القديمة
+- ✅ **مجموعة nav** "منصة الأعمال" في AdminLayout: طلبات + عملاء + مشاريع + تحليلات + محتوى + مدونة
+- ✅ **App.tsx routing** — `/` + `/request` + `/blog` + `/blog/:slug` standalone + `/admin/*` جميع الصفحات الجديدة
 
 ## الميزات المكتملة — الجلسة السابقة (6 محاور Enterprise)
 - ✅ **إصلاح React Router** — `future={{ v7_startTransition, v7_relativeSplatPath }}` في BrowserRouter

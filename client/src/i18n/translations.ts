@@ -11,6 +11,9 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.requests':            'طلبات الخدمة',
     'nav.clients':             'العملاء (CRM)',
     'nav.projects':            'إدارة المشاريع',
+    'nav.platformAnalytics':   'تحليلات المنصة',
+    'nav.platformContent':     'إدارة المحتوى',
+    'nav.blogAdmin':           'المدونة',
 
     /* ─── Admin Nav Items ─── */
     'nav.dashboard':       'لوحة المعلومات',
