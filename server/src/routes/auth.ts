@@ -37,7 +37,11 @@ router.post('/login',
         return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' })
       }
 
-      if (role && role !== user.role && !(role === 'admin' && user.role === 'teacher')) {
+      const ADMIN_ROLES = ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']
+      if (role === 'parent' && user.role !== 'parent') {
+        return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' })
+      }
+      if (role === 'admin' && !ADMIN_ROLES.includes(user.role)) {
         return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' })
       }
 

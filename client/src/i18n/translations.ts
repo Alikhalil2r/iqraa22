@@ -37,6 +37,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.conduct':         'سجل السلوك',
     'nav.leaves':          'إجازات الموظفين',
     'nav.group.academic':  'الأكاديمي والسلوكي',
+    'nav.pdfReports':      'تقارير الطباعة',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'الرئيسية',
@@ -73,6 +74,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.homework':      'الواجبات المنزلية',
     'breadcrumb.conduct':       'سجل السلوك',
     'breadcrumb.leaves':        'إجازات الموظفين',
+    'breadcrumb.pdfReports':    'تقارير الطباعة',
 
     /* ─── Common Actions ─── */
     'common.save':      'حفظ',
@@ -233,6 +235,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.conduct':         'Behavior Records',
     'nav.leaves':          'Staff Leaves',
     'nav.group.academic':  'Academic & Behavior',
+    'nav.pdfReports':      'Print Reports',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'Home',
@@ -269,6 +272,7 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.homework':      'Homework',
     'breadcrumb.conduct':       'Behavior Records',
     'breadcrumb.leaves':        'Staff Leaves',
+    'breadcrumb.pdfReports':    'Print Reports',
 
     /* ─── Common Actions ─── */
     'common.save':      'Save',

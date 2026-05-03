@@ -540,3 +540,28 @@ CREATE INDEX IF NOT EXISTS idx_grades_school ON grades(school_id);
 CREATE INDEX IF NOT EXISTS idx_messages_from ON messages(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_to ON messages(to_user_id);
 CREATE INDEX IF NOT EXISTS idx_news_school ON news(school_id);
+
+-- ═══════════════════════════════════════════
+-- MIGRATIONS: SuperAdmin + RBAC + Email
+-- ═══════════════════════════════════════════
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active';
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS plan VARCHAR(20) DEFAULT 'basic';
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS max_students INTEGER DEFAULT 500;
+ALTER TABLE schools ADD COLUMN IF NOT EXISTS max_employees INTEGER DEFAULT 100;
+
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_host VARCHAR(200);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_port INTEGER DEFAULT 587;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_user VARCHAR(200);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_pass TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS email_from_name VARCHAR(100) DEFAULT 'نظام المدرسة';
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS email_enabled BOOLEAN DEFAULT false;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS notify_absence BOOLEAN DEFAULT true;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS notify_grades BOOLEAN DEFAULT true;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS notify_fees BOOLEAN DEFAULT true;
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN (
+  'super_admin','admin','teacher','parent','accountant','librarian','hr_manager','guard'
+));

@@ -8,14 +8,23 @@ import { Shield, UserPlus, Lock, CheckCircle, XCircle, Eye, EyeOff, Users, Key }
 import toast from 'react-hot-toast'
 
 const ROLES = [
-  { value: 'admin',   label: 'مدير النظام' },
-  { value: 'teacher', label: 'معلم' },
-  { value: 'parent',  label: 'ولي أمر' },
+  { value: 'admin',      label: 'مدير النظام' },
+  { value: 'teacher',    label: 'معلم' },
+  { value: 'accountant', label: 'محاسب' },
+  { value: 'librarian',  label: 'أمين المكتبة' },
+  { value: 'hr_manager', label: 'مدير الموارد البشرية' },
+  { value: 'guard',      label: 'حارس' },
+  { value: 'parent',     label: 'ولي أمر' },
 ]
 const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  admin:   { label: 'مدير النظام', color: '#8b5cf6', bg: 'bg-purple-50 text-purple-700' },
-  teacher: { label: 'معلم',        color: '#3b82f6', bg: 'bg-blue-50 text-blue-700' },
-  parent:  { label: 'ولي أمر',    color: '#10b981', bg: 'bg-emerald-50 text-emerald-700' },
+  super_admin: { label: 'سوبر أدمن',           color: '#dc2626', bg: 'bg-red-50 text-red-700' },
+  admin:       { label: 'مدير النظام',          color: '#8b5cf6', bg: 'bg-purple-50 text-purple-700' },
+  teacher:     { label: 'معلم',                 color: '#3b82f6', bg: 'bg-blue-50 text-blue-700' },
+  accountant:  { label: 'محاسب',               color: '#f59e0b', bg: 'bg-amber-50 text-amber-700' },
+  librarian:   { label: 'أمين المكتبة',        color: '#06b6d4', bg: 'bg-cyan-50 text-cyan-700' },
+  hr_manager:  { label: 'موارد بشرية',         color: '#ec4899', bg: 'bg-pink-50 text-pink-700' },
+  guard:       { label: 'حارس',                color: '#6b7280', bg: 'bg-gray-100 text-gray-700' },
+  parent:      { label: 'ولي أمر',             color: '#10b981', bg: 'bg-emerald-50 text-emerald-700' },
 }
 const emptyUser = { name: '', username: '', password: '', role: 'teacher', email: '', phone: '', isActive: true }
 

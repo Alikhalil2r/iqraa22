@@ -108,7 +108,7 @@ router.post('/users',
     body('name').trim().isLength({ min: 2, max: 100 }).withMessage('الاسم مطلوب'),
     body('username').trim().isLength({ min: 3, max: 50 }).matches(/^[a-zA-Z0-9_]+$/).withMessage('اسم المستخدم يجب أن يحتوي على حروف وأرقام فقط'),
     body('password').isLength({ min: 8, max: 128 }).withMessage('كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
-    body('role').isIn(['admin', 'teacher', 'parent']).withMessage('نوع المستخدم غير صالح'),
+    body('role').isIn(['admin','teacher','parent','accountant','librarian','hr_manager','guard','super_admin']).withMessage('نوع المستخدم غير صالح'),
   ]),
   async (req: AuthRequest, res) => {
     try {

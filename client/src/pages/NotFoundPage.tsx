@@ -7,7 +7,8 @@ export default function NotFoundPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
 
-  const homeLink = user?.role === 'admin' || user?.role === 'teacher'
+  const ADMIN_ROLES = ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']
+  const homeLink = user?.role && ADMIN_ROLES.includes(user.role)
     ? '/admin'
     : user?.role === 'parent'
     ? '/parent'

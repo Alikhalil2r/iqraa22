@@ -109,7 +109,17 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - ✅ ParentLoginPage — نموذج الدخول + بطاقات الميزات + زر ع|EN في الـ card
 - **التبديل:** `document.dir = 'ltr'/'rtl'` تلقائياً عند التغيير — محفوظ في localStorage
 
-## الميزات المكتملة — أحدث جلسة (4 وحدات ضخمة جديدة)
+## الميزات المكتملة — أحدث جلسة (4 وحدات تعزيز: SuperAdmin + PDF + RBAC + Email)
+- ✅ **SuperAdmin Portal** (`/admin/super`) — لوحة إدارة المدارس: شارات الخطة (basic/pro/enterprise)، تبديل الحالة، تغيير الخطة، بيانات دخول تلقائية عند إنشاء مدرسة
+- ✅ **PDF Reports** (`/admin/pdf-reports`) — 4 قوالب طباعة: شهادة نتائج طالب، كشف حضور، قائمة فصل، قائمة موظفين — window.print() + @media print CSS
+- ✅ **RBAC دور-صلاحية** — 7 أدوار جديدة: super_admin, accountant, librarian, hr_manager, guard + قيود قائمة جانبية حسب الدور في AdminLayout
+- ✅ **Email Notifications** — خدمة nodemailer في `server/src/services/email.ts`: sendAbsenceAlert, sendGradeNotification, sendFeeReminder, testEmailConfig مع قوالب HTML عربية
+- ✅ **Schema migrations** — schools: status/plan/plan_expires_at/notes/max_students/max_employees; school_settings: smtp_*/email_*/notify_*
+- ✅ **ROLE_PERMISSIONS map** في AuthContext + middleware backend — hasPermission() للتحقق الدقيق
+- ✅ **UsersAdmin** محدَّث — 7 أدوار في dropdown مع ألوان مميّزة لكل دور
+- ✅ **RequireAuth** محدَّث — يقبل جميع أدوار الإدارة (accountant/librarian/hr_manager/guard/super_admin)
+
+## الميزات المكتملة — الجلسة السابقة (4 وحدات ضخمة جديدة)
 - ✅ **نظام المكتبة** (`/admin/library`) — كتالوج كتب، إعارة، إرجاع، غرامات، تنبيه كتب متأخرة، إحصائيات
 - ✅ **إدارة إجازات الموظفين** (`/admin/leaves`) — طلبات إجازة، موافقة/رفض، رصيد، أنواع (6 أنواع) مع seed تلقائي
 - ✅ **الواجبات المنزلية** (`/admin/homework`) — تعيين، تتبع تسليم، تقييم، ProgressRing، عرض مقارنة التسليمات

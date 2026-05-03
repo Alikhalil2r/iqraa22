@@ -52,6 +52,7 @@ const LibraryAdmin     = lazy(() => import('./pages/Admin/LibraryAdmin'))
 const LeavesAdmin      = lazy(() => import('./pages/Admin/LeavesAdmin'))
 const HomeworkAdmin    = lazy(() => import('./pages/Admin/HomeworkAdmin'))
 const ConductAdmin     = lazy(() => import('./pages/Admin/ConductAdmin'))
+const PDFReports       = lazy(() => import('./pages/Admin/PDFReports'))
 
 const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -62,6 +63,9 @@ const ParentSchedule        = lazy(() => import('./pages/Parent/ParentSchedule')
 const ParentNotifications   = lazy(() => import('./pages/Parent/ParentNotifications'))
 
 const NotFoundPage     = lazy(() => import('./pages/NotFoundPage'))
+
+// ─── Role-aware admin guard ───────────────────────────────────────────────────
+// (admin roles include: super_admin, admin, teacher, accountant, librarian, hr_manager, guard)
 
 // ─── Suspense fallback ────────────────────────────────────────────────────────
 function PageLoader() {
@@ -92,9 +96,12 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: str
     const loginPath = role === 'parent' ? '/parent-login' : '/login'
     return <Navigate to={loginPath} replace />
   }
-  if (role && user.role !== role && !(role === 'admin' && (user.role === 'teacher' || user.role === 'admin'))) {
-    const homePath = user.role === 'parent' ? '/parent' : '/admin'
-    return <Navigate to={homePath} replace />
+  const ADMIN_ROLES = ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']
+  if (role === 'admin' && !ADMIN_ROLES.includes(user.role)) {
+    return <Navigate to="/parent" replace />
+  }
+  if (role === 'parent' && user.role !== 'parent') {
+    return <Navigate to="/admin" replace />
   }
   return <>{children}</>
 }
@@ -102,8 +109,9 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: str
 function RedirectIfAuthed() {
   const { user, isLoading } = useAuth()
   if (isLoading) return <PageLoader />
+  const ADMIN_ROLES = ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']
   if (user?.role === 'parent') return <Navigate to="/parent" replace />
-  if (user?.role === 'admin' || user?.role === 'teacher') return <Navigate to="/admin" replace />
+  if (user?.role && ADMIN_ROLES.includes(user.role)) return <Navigate to="/admin" replace />
   return null
 }
 
@@ -177,6 +185,7 @@ function RedirectCheck() {
           <Route path="leaves"         element={<LeavesAdmin />} />
           <Route path="homework"       element={<HomeworkAdmin />} />
           <Route path="conduct"        element={<ConductAdmin />} />
+          <Route path="pdf-reports"    element={<PDFReports />} />
         </Route>
 
         {/* Parent Portal */}
