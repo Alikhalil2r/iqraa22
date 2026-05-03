@@ -25,6 +25,11 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.theme':           'تخصيص التصميم',
     'nav.settings':        'إعدادات المدرسة',
     'nav.users':           'إدارة المستخدمين',
+    'nav.gallery':         'معرض الصور',
+    'nav.exams':           'جدول الامتحانات',
+    'nav.billing':         'الاشتراك والفواتير',
+    'nav.superAdmin':      'الإدارة العليا',
+    'nav.group.content':   'المحتوى والإدارة',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'الرئيسية',
@@ -51,6 +56,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.theme':         'تخصيص التصميم',
     'breadcrumb.settings':      'إعدادات المدرسة',
     'breadcrumb.users':         'إدارة المستخدمين',
+    'breadcrumb.gallery':       'معرض الصور',
+    'breadcrumb.exams':         'جدول الامتحانات',
+    'breadcrumb.billing':       'الاشتراك والفواتير',
+    'breadcrumb.superAdmin':    'الإدارة العليا',
 
     /* ─── Common Actions ─── */
     'common.save':      'حفظ',
@@ -199,6 +208,11 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.theme':           'Customize Theme',
     'nav.settings':        'School Settings',
     'nav.users':           'User Management',
+    'nav.gallery':         'Photo Gallery',
+    'nav.exams':           'Exam Schedule',
+    'nav.billing':         'Billing & Plans',
+    'nav.superAdmin':      'Super Admin',
+    'nav.group.content':   'Content & Admin',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'Home',
@@ -225,6 +239,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.theme':         'Customize Theme',
     'breadcrumb.settings':      'School Settings',
     'breadcrumb.users':         'User Management',
+    'breadcrumb.gallery':       'Photo Gallery',
+    'breadcrumb.exams':         'Exam Schedule',
+    'breadcrumb.billing':       'Billing & Plans',
+    'breadcrumb.superAdmin':    'Super Admin',
 
     /* ─── Common Actions ─── */
     'common.save':      'Save',

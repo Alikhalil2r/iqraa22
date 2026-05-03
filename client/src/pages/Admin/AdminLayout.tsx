@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, UserCheck, ClipboardCheck, GraduationCap, Bus,
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
-  DollarSign, CalendarDays, Home, Globe, Moon, Sun
+  DollarSign, CalendarDays, Home, Globe, Moon, Sun, Image, FileText, CreditCard
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
@@ -47,11 +47,20 @@ const menuGroups = [
     ]
   },
   {
+    labelKey: 'nav.group.content',
+    items: [
+      { to: '/admin/gallery', icon: Image,    labelKey: 'nav.gallery' },
+      { to: '/admin/exams',   icon: FileText, labelKey: 'nav.exams' },
+    ]
+  },
+  {
     labelKey: 'nav.group.settings',
     items: [
-      { to: '/admin/theme',    icon: Palette,  labelKey: 'nav.theme' },
-      { to: '/admin/settings', icon: Settings, labelKey: 'nav.settings' },
-      { to: '/admin/users',    icon: Shield,   labelKey: 'nav.users' },
+      { to: '/admin/theme',    icon: Palette,      labelKey: 'nav.theme' },
+      { to: '/admin/settings', icon: Settings,     labelKey: 'nav.settings' },
+      { to: '/admin/users',    icon: Shield,        labelKey: 'nav.users' },
+      { to: '/admin/billing',  icon: CreditCard,   labelKey: 'nav.billing' },
+      { to: '/admin/super',    icon: Globe,         labelKey: 'nav.superAdmin' },
     ]
   },
 ]
@@ -73,6 +82,10 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/theme':         'breadcrumb.theme',
   '/admin/settings':      'breadcrumb.settings',
   '/admin/users':         'breadcrumb.users',
+  '/admin/gallery':       'breadcrumb.gallery',
+  '/admin/exams':         'breadcrumb.exams',
+  '/admin/billing':       'breadcrumb.billing',
+  '/admin/super':         'breadcrumb.superAdmin',
 }
 
 export default function AdminLayout() {

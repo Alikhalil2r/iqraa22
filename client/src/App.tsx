@@ -42,6 +42,10 @@ const FeesAdmin        = lazy(() => import('./pages/Admin/FeesAdmin'))
 const ScheduleAdmin    = lazy(() => import('./pages/Admin/ScheduleAdmin'))
 
 const Announcements    = lazy(() => import('./pages/Admin/Announcements'))
+const GalleryAdmin     = lazy(() => import('./pages/Admin/GalleryAdmin'))
+const ExamsAdmin       = lazy(() => import('./pages/Admin/ExamsAdmin'))
+const SuperAdmin       = lazy(() => import('./pages/Admin/SuperAdmin'))
+const BillingAdmin     = lazy(() => import('./pages/Admin/BillingAdmin'))
 
 const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -158,6 +162,10 @@ function RedirectCheck() {
           <Route path="fees"          element={<FeesAdmin />} />
           <Route path="schedule"      element={<ScheduleAdmin />} />
           <Route path="announcements" element={<Announcements />} />
+          <Route path="gallery"       element={<GalleryAdmin />} />
+          <Route path="exams"         element={<ExamsAdmin />} />
+          <Route path="super"         element={<SuperAdmin />} />
+          <Route path="billing"       element={<BillingAdmin />} />
         </Route>
 
         {/* Parent Portal */}

@@ -23,6 +23,9 @@ import reportsRouter from './routes/reports'
 import feesRouter from './routes/fees'
 import scheduleRouter from './routes/schedule'
 import usersRouter from './routes/users'
+import galleryRouter from './routes/gallery'
+import examsRouter from './routes/exams'
+import superadminRouter from './routes/superadmin'
 
 dotenv.config()
 
@@ -115,6 +118,9 @@ app.use('/api/reports', reportsRouter)
 app.use('/api/fees', feesRouter)
 app.use('/api/schedule', scheduleRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/gallery', galleryRouter)
+app.use('/api/exams', examsRouter)
+app.use('/api/super-admin', superadminRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 

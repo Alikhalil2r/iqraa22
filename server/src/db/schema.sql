@@ -369,6 +369,26 @@ CREATE TABLE IF NOT EXISTS broadcasts (
 );
 CREATE INDEX IF NOT EXISTS idx_broadcasts_school ON broadcasts(school_id);
 
+-- Exam Schedule
+CREATE TABLE IF NOT EXISTS exams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  subject_name VARCHAR(200) NOT NULL,
+  class_name VARCHAR(200),
+  exam_date DATE NOT NULL,
+  start_time TIME,
+  end_time TIME,
+  room VARCHAR(100),
+  exam_type VARCHAR(50) DEFAULT 'written',
+  academic_year VARCHAR(20) DEFAULT '2024-2025',
+  term VARCHAR(50),
+  notes TEXT,
+  max_score INTEGER DEFAULT 100,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_exams_school ON exams(school_id);
+CREATE INDEX IF NOT EXISTS idx_exams_date ON exams(exam_date);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_fees_student ON fees(student_id);
 CREATE INDEX IF NOT EXISTS idx_fees_school ON fees(school_id);

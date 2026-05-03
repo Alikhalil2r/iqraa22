@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, CartesianGrid, Legend } from 'recharts'
-import { BarChart3, Users, GraduationCap, Download, TrendingUp, Award, CheckCircle, AlertTriangle, Activity, Briefcase, BookOpen } from 'lucide-react'
+import { BarChart3, Users, GraduationCap, Download, TrendingUp, Award, CheckCircle, AlertTriangle, Activity, Briefcase, BookOpen, Printer } from 'lucide-react'
 import { exportToCSV } from '../../components/ExportButton'
+import { printTable } from '../../utils/printExport'
 
 const API = (path: string) =>
   fetch(`/api${path}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
@@ -88,14 +89,41 @@ export default function Reports() {
           </h1>
           <p className="text-sm text-gray-400 mt-1">تحليل شامل لأداء المدرسة والبيانات الإدارية</p>
         </div>
-        <button
-          onClick={tab === 'attendance' ? exportAttendance : tab === 'grades' ? exportGrades : tab === 'hr' ? exportHR : () => {}}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition-all"
-          disabled={tab === 'overview'}
-        >
-          <Download size={15} className="text-green-600" />
-          تصدير CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (tab === 'attendance') {
+                printTable('تقرير الحضور والغياب', `${startDate} — ${endDate}`, [
+                  { header: 'الاسم', key: 'name' }, { header: 'المجموعة', key: 'group_name' },
+                  { header: 'أيام الحضور', key: 'present_days' }, { header: 'أيام الغياب', key: 'absent_days' },
+                  { header: 'نسبة الحضور %', key: 'attendance_rate' },
+                ], attQuery.data?.report || [])
+              } else if (tab === 'grades') {
+                printTable('تقرير النتائج الدراسية', 'تقرير الدرجات', [
+                  { header: 'الطالب', key: 'student_name' }, { header: 'الفصل', key: 'class_name' },
+                  { header: 'متوسط الدرجات %', key: 'avg_grade' }, { header: 'ناجح', key: 'passed' }, { header: 'راسب', key: 'failed' },
+                ], gradesQuery.data?.report || [])
+              } else if (tab === 'hr') {
+                printTable('تقرير الموارد البشرية', 'توزيع الموظفين', [
+                  { header: 'القسم', key: 'department' }, { header: 'عدد الموظفين', key: 'count' },
+                ], hrQuery.data?.byDepartment || [])
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition-all"
+            disabled={tab === 'overview'}
+          >
+            <Printer size={15} className="text-red-500" />
+            طباعة PDF
+          </button>
+          <button
+            onClick={tab === 'attendance' ? exportAttendance : tab === 'grades' ? exportGrades : tab === 'hr' ? exportHR : () => {}}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-bold hover:bg-gray-50 transition-all"
+            disabled={tab === 'overview'}
+          >
+            <Download size={15} className="text-green-600" />
+            تصدير CSV
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}

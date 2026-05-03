@@ -1,13 +1,15 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-
-const JWT_SECRET = process.env.JWT_SECRET
-if (!JWT_SECRET) {
-  console.error('FATAL: JWT_SECRET environment variable is not set. Server will not start.')
-  process.exit(1)
-}
+import dotenv from 'dotenv'
+dotenv.config()
 
 const ACCESS_TOKEN_EXPIRY = '2h'
+
+function getSecret(): string {
+  const secret = process.env.JWT_SECRET
+  if (!secret) throw new Error('JWT_SECRET not set')
+  return secret
+}
 
 export interface AuthRequest extends Request {
   user?: {
@@ -29,7 +31,7 @@ export function authenticateToken(req: AuthRequest, res: Response, next: NextFun
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET!) as any
+    const decoded = jwt.verify(token, getSecret()) as any
 
     if (decoded.tokenType !== 'access') {
       return res.status(401).json({ error: 'نوع الرمز غير صالح' })
@@ -66,7 +68,7 @@ export function generateToken(payload: {
 }): string {
   return jwt.sign(
     { ...payload, tokenType: 'access' },
-    JWT_SECRET!,
+    getSecret(),
     { expiresIn: ACCESS_TOKEN_EXPIRY }
   )
 }
