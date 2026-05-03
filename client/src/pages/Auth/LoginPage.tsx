@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Shield, Eye, EyeOff, GraduationCap, Users, BarChart3, BookOpen, Lock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
+import DevSignature from '../../components/DevSignature'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -165,6 +166,10 @@ export default function LoginPage() {
             <Link to="/" className="text-white/70 text-sm hover:text-white transition-colors">
               ← {t('auth.backToSite')}
             </Link>
+          </div>
+
+          <div className="mt-6">
+            <DevSignature variant="dark" />
           </div>
         </div>
       </div>

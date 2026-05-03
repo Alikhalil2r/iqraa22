@@ -7,6 +7,7 @@ import {
   Phone, Mail, MessageCircle, Shield, Zap, Award, Users,
   BarChart3, Code2, Layers, Rocket, ExternalLink, Quote, Menu, X
 } from 'lucide-react'
+import DevSignature from '../../components/DevSignature'
 
 const API = (p: string) => fetch(`/api${p}`).then(r => r.json())
 
@@ -548,9 +549,12 @@ export default function HomePage() {
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+          <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs">
             <p>© {new Date().getFullYear()} {companyName}. جميع الحقوق محفوظة.</p>
-            <p>{address}</p>
+            <p className="hidden md:block text-gray-500">{address}</p>
+          </div>
+          <div className="mt-5 pt-4 border-t border-white/5">
+            <DevSignature variant="dark" />
           </div>
         </div>
       </footer>

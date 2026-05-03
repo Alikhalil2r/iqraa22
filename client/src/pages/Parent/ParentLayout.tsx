@@ -7,6 +7,7 @@ import {
   Home, BookOpen, CalendarCheck, MessageSquare, Clock,
   LogOut, Menu, X, Bell, GraduationCap, Moon, Sun
 } from 'lucide-react'
+import DevSignature from '../../components/DevSignature'
 import toast from 'react-hot-toast'
 import { useDarkMode } from '../../hooks/useDarkMode'
 import { useLanguage } from '../../context/LanguageContext'
@@ -172,6 +173,11 @@ export default function ParentLayout() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 pb-24 md:pb-6">
         <Outlet />
       </main>
+
+      {/* Dev Signature — desktop only (hidden on mobile to avoid overlap with bottom nav) */}
+      <div className="hidden md:block pb-4">
+        <DevSignature variant="light" />
+      </div>
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.08)] safe-area-pb">

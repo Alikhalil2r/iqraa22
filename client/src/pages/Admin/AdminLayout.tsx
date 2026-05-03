@@ -11,6 +11,7 @@ import {
   School, BookMarked, ClipboardList, Printer, Brain, ShieldCheck, Lock,
   Inbox, FolderOpen, Building2
 } from 'lucide-react'
+import DevSignature from '../../components/DevSignature'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
 import SessionWarning from '../../components/SessionWarning'
@@ -361,6 +362,7 @@ export default function AdminLayout() {
             </>
           )}
         </div>
+        {sidebarOpen && <DevSignature variant="sidebar" className="mt-1" />}
       </div>
     </div>
   )
