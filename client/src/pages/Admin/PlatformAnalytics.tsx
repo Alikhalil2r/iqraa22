@@ -68,31 +68,45 @@ export default function PlatformAnalytics() {
     refetchInterval: 60000
   })
 
-  const reqByService = analytics?.byService || []
-  const reqByStatus  = analytics?.byStatus  || []
-  const monthlyTrend = analytics?.monthly   || []
-  const topClients   = analytics?.topClients || []
+  const reqByService    = analytics?.byService      || []
+  const reqByStatus     = analytics?.byStatus       || []
+  const monthlyTrend    = analytics?.monthly        || []
+  const topClients      = analytics?.topClients     || []
+  const avgResponseHrs  = analytics?.avgResponseHrs || 0
+  const revenueByMonth  = analytics?.revenueByMonth || []
 
   const kpis = [
     {
       icon: Inbox,      label: 'إجمالي الطلبات',   color: '#8b5cf6',
       value: stats?.requests?.total || 0,
-      sub: `${stats?.requests?.new_count || 0} جديد`
+      sub: `${stats?.requests?.new_count || 0} جديد · ${stats?.requests?.in_progress || 0} قيد العمل`
     },
     {
       icon: Users,      label: 'العملاء النشطون',  color: '#06b6d4',
       value: stats?.clients || 0,
-      sub: 'عميل مسجل'
+      sub: 'عميل مسجل في المنصة'
     },
     {
       icon: Target,     label: 'المشاريع النشطة',  color: '#10b981',
       value: stats?.projects?.active || 0,
-      sub: `من ${stats?.projects?.total || 0} مشروع`
+      sub: `${stats?.projects?.total || 0} إجمالي · ${stats?.requests?.completed || 0} مكتمل`
     },
     {
       icon: DollarSign, label: 'إجمالي الإيرادات', color: '#f59e0b',
       value: `${Number(stats?.revenue?.total || 0).toLocaleString()} ﷼`,
-      sub: `${Number(stats?.revenue?.paid || 0).toLocaleString()} ﷼ محصّل`
+      sub: `محصّل: ${Number(stats?.revenue?.paid || 0).toLocaleString()} ﷼`
+    },
+    {
+      icon: Clock,      label: 'متوسط وقت الاستجابة', color: '#3b82f6',
+      value: avgResponseHrs > 0 ? `${avgResponseHrs} س` : '—',
+      sub: 'من الاستلام للتحديث الأول'
+    },
+    {
+      icon: Zap,        label: 'معدل التحويل',      color: '#ec4899',
+      value: stats?.requests?.total > 0
+        ? `${Math.round((parseInt(stats?.projects?.total || 0) / parseInt(stats?.requests?.total)) * 100)}%`
+        : '0%',
+      sub: 'من الطلبات إلى مشاريع فعلية'
     },
   ]
 
@@ -112,7 +126,7 @@ export default function PlatformAnalytics() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {kpis.map((k, i) => <KpiCard key={i} {...k}/>)}
       </div>
 
@@ -241,6 +255,32 @@ export default function PlatformAnalytics() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Revenue Chart Row */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <h3 className="font-black text-gray-800 mb-4 flex items-center gap-2">
+          <DollarSign size={18} className="text-amber-500"/> الإيرادات الشهرية (ميزانية vs محصّل)
+        </h3>
+        {revenueByMonth.length > 0 ? (
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={revenueByMonth}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6"/>
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false}/>
+              <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false}/>
+              <Tooltip content={<CustomTooltip/>}/>
+              <Bar dataKey="budget" name="الميزانية" fill="#e0e7ff" radius={[6,6,0,0]}/>
+              <Bar dataKey="paid"   name="المحصّل"   fill="#10b981" radius={[6,6,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="h-48 flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <DollarSign size={36} className="mx-auto mb-2 opacity-30"/>
+              <p className="text-sm">ستظهر بيانات الإيرادات بعد إنشاء المشاريع</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth, AppRole, ROLE_LABELS } from '../../context/AuthContext'
 import { useQuery } from '@tanstack/react-query'
-import { messagesApi } from '../../api/client'
+import { messagesApi, adminApi } from '../../api/client'
 import {
   LayoutDashboard, Users, UserCheck, ClipboardCheck, GraduationCap, Bus,
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
@@ -176,6 +176,14 @@ export default function AdminLayout() {
   })
   const unreadCount = unreadData?.count || 0
 
+  const { data: newTicketsData } = useQuery({
+    queryKey:       ['new-tickets-count'],
+    queryFn:        () => adminApi.get('/api/platform/admin/new-count'),
+    refetchInterval: 30000,
+    enabled: ['super_admin', 'admin'].includes(userRole || '')
+  })
+  const newTicketsCount = (newTicketsData as any)?.count || 0
+
   const handleLogout = () => {
     logout()
     navigate('/login')
@@ -276,6 +284,12 @@ export default function AdminLayout() {
             {group.items.filter(canSeeItem).map(item => {
               const label = t(item.labelKey)
               const isMessages = item.labelKey === 'nav.messages'
+              const isRequests = item.labelKey === 'nav.requests'
+              const msgBadge  = isMessages && unreadCount > 0 ? unreadCount : 0
+              const reqBadge  = isRequests && newTicketsCount > 0 ? newTicketsCount : 0
+              const hasBadge  = msgBadge > 0 || reqBadge > 0
+              const badgeVal  = msgBadge || reqBadge
+              const badgeColor = isRequests ? '#7c3aed' : '#ef4444'
               return (
                 <NavLink
                   key={item.to}
@@ -296,16 +310,18 @@ export default function AdminLayout() {
                   {sidebarOpen && (
                     <>
                       <span className="flex-1 truncate">{label}</span>
-                      {isMessages && unreadCount > 0 && (
-                        <span className="w-5 h-5 rounded-full bg-red-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse flex-shrink-0">
-                          {unreadCount > 9 ? '9+' : unreadCount}
+                      {hasBadge && (
+                        <span className="w-5 h-5 rounded-full text-white text-[9px] font-black flex items-center justify-center animate-pulse flex-shrink-0"
+                          style={{ background: badgeColor }}>
+                          {badgeVal > 9 ? '9+' : badgeVal}
                         </span>
                       )}
                     </>
                   )}
-                  {!sidebarOpen && isMessages && unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center animate-pulse">
-                      {unreadCount}
+                  {!sidebarOpen && hasBadge && (
+                    <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-white text-[8px] font-black flex items-center justify-center animate-pulse"
+                      style={{ background: badgeColor }}>
+                      {badgeVal}
                     </span>
                   )}
                 </NavLink>

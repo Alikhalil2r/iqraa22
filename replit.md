@@ -193,18 +193,42 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `@import "tailwindcss"` في index.css (v3 approach)
 - لا حاجة لـ postcss tailwind plugin
 
-## الميزات المكتملة — أحدث جلسة (إضافات قوية للمنصة)
-- ✅ **مدونة تقنية عامة** (`/blog`) — صفحة مقالات مع بحث + فلتر بالفئة + صور + pagination
-- ✅ **صفحة مقالة كاملة** (`/blog/:slug`) — مقال كامل مع breadcrumb + meta + مشاركة اجتماعية + CTA + مقالات ذات صلة
-- ✅ **6 مقالات عربية احترافية** جاهزة في قاعدة البيانات مع صور Unsplash حقيقية
-- ✅ **تحليلات المنصة** (`/admin/platform-analytics`) — Recharts: اتجاه الطلبات + توزيع الخدمات Pie + حالات Bar + أبرز العملاء + 3 KPI cards
-- ✅ **إدارة المحتوى** (`/admin/platform-content`) — لوحة tabbed كاملة لتعديل: الخدمات + Portfolio + الشهادات + FAQ + الأسعار + إعدادات الشركة
-- ✅ **تفاصيل المشروع** (`/admin/projects/:id`) — Timeline المراحل + Progress bar + تعديل inline + نظام مراسلة داخلي (رسائل عادية + ملاحظات داخلية)
-- ✅ **إدارة المدونة** (`/admin/blog`) — جدول كامل + Drawer تعديل مع HTML editor + تغيير الحالة + حذف
-- ✅ **Backend Analytics API** — `/api/platform/admin/analytics` مع byService/byStatus/monthly/topClients
-- ✅ **Backend Messages API** — GET/POST `/api/platform/admin/projects/:id/messages`
-- ✅ **Full CRUD backend** — PUT+DELETE لكل: services/portfolio/testimonials/faq/pricing/blog
-- ✅ **رابط المدونة في الـ nav والـ footer** — مدمج في الصفحة الرئيسية
+## الميزات المكتملة — أحدث جلسة (Audit عالمي المستوى — 15 تحسين)
+
+### الأمان (Security)
+- ✅ **Rate Limiting للمنصة العامة** — `platformPublicLimiter` (30 req/15min) على `/api/platform/request`
+- ✅ **Rate Limiting للرسائل** — `ticketMsgLimiter` (10 msg/5min) على رسائل التذاكر
+- ✅ **Input Sanitization** — `sanitize()` و `sanitizeEmail()` تُعقّم جميع المدخلات العامة (تزيل HTML/XSS/control chars)
+- ✅ **Email Validation** — تحقق من صحة البريد بـ regex قبل قبول الطلب
+
+### الأداء (Performance)
+- ✅ **14 فهرس قاعدة بيانات** جديد على جداول: ticket_messages, ticket_history, service_requests (status/email/ticket/updated_at), business_clients (email/created_at), blog_posts (status+published_at/category), users (email)
+- ✅ **Monthly Analytics** بـ `generate_series` لضمان 6 أشهر متواصلة حتى بدون بيانات
+- ✅ **Parallel queries** — 6 queries تُنفَّذ بـ `Promise.all()` في analytics endpoint
+
+### SEO
+- ✅ **index.html** محدّث كلياً: title + description + keywords + author + OG (FB/WA/LI) + Twitter Card + JSON-LD Schema.org Organization
+- ✅ **meta robots** = `index, follow` (كان noindex من قبل)
+- ✅ **og:image + twitter:image** مُضافَتان
+
+### UX / لوحة التحكم
+- ✅ **Badge طلبات جديدة** — الـ sidebar يُظهر badge بنفسجي متحرك على "طلبات الخدمة" عند وجود طلبات جديدة
+- ✅ **Endpoint `/admin/new-count`** — lightweight endpoint لعدد الطلبات الجديدة (بدون تحميل كل البيانات)
+- ✅ **PlatformWidget** — ودجت جديد في Dashboard: طلبات جديدة + مشاريع نشطة + عملاء + إيرادات + روابط سريعة
+- ✅ **Analytics 6 KPIs** — توسّع من 4 إلى 6: أُضيف متوسط وقت الاستجابة + معدل التحويل
+- ✅ **مخطط الإيرادات الشهرية** — BarChart جديد (ميزانية vs محصّل) في صفحة التحليلات
+- ✅ **BlogAdmin filter tabs** — تبويبات تصفية (الكل/منشور/مسودة/مؤرشف) مع عدّاد لكل حالة
+
+### الميزات المكتملة — الجلسة السابقة (منصة التذاكر الكاملة)
+- ✅ **مدونة تقنية عامة** (`/blog`) + **صفحة مقالة كاملة** (`/blog/:slug`)
+- ✅ **6 مقالات عربية احترافية** في قاعدة البيانات مع صور Unsplash
+- ✅ **تحليلات المنصة** (`/admin/platform-analytics`) — Recharts charts كاملة
+- ✅ **إدارة المحتوى** (`/admin/platform-content`) — 6 تبويبات CRUD كاملة
+- ✅ **تفاصيل المشروع** (`/admin/projects/:id`) — Timeline + messages + inline edit
+- ✅ **إدارة المدونة** (`/admin/blog`) — Drawer + HTML editor + CRUD
+- ✅ **نظام التذاكر العام** (`/track`, `/track/:ticket`) — stepper + محادثة + تقييم
+- ✅ **ticket_messages + ticket_history** — جدولان جديدان مع indexes
+- ✅ **Badge "تتبع طلبك"** في navbar + footer مع نقطة خضراء
 
 ## الميزات المكتملة — الجلسة السابقة (منصة شركة التقنية الكاملة)
 - ✅ **Landing Page احترافية** (`/`) — صفحة رئيسية كاملة لشركة تقنية: Hero + Stats + Services + WhyUs + Portfolio + Process + Pricing + Testimonials + FAQ + CTA + Footer
@@ -247,6 +271,17 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - **audit_logs** — سجل النشاط الكامل (Enterprise Audit)
 - **user_sessions** — جلسات المستخدمين
 - **invoices** — فواتير الاشتراك
+- **platform_services, portfolio_items, testimonials, faq_items, pricing_plans** — محتوى المنصة
+- **business_clients, service_requests, projects, project_messages** — CRM + إدارة مشاريع
+- **blog_posts, company_settings** — مدونة + إعدادات الشركة
+- **ticket_messages, ticket_history** — نظام التذاكر ثنائي الاتجاه + سجل التغييرات
+
+## فهارس قاعدة البيانات (112 فهرس)
+- **Platform**: idx_tmsg_request_time, idx_thist_request_time, idx_sreq_status_created, idx_sreq_email, idx_sreq_ticket, idx_sreq_updated, idx_bclients_email, idx_bclients_created, idx_blog_pub, idx_blog_category, idx_users_email
+- **School**: idx_attendance_*, idx_grades_*, idx_fees_*, idx_employees_*, إلخ
+
+## المكونات الجديدة
+- `PlatformWidget` — ودجت منصة الأعمال في Dashboard (طلبات/مشاريع/عملاء/إيرادات)
 
 ## Workflows
 - `Backend Server`: `cd server && npm start` (port 3001)
@@ -277,3 +312,6 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - أخطاء TypeScript في lucide-react (`TS2786`) موجودة مسبقاً — تتعلق بـ React types version mismatch ولا تؤثر على runtime
 - CSS Dark Mode يعمل عبر `[data-theme="dark"]` على `document.documentElement`
 - Server compression يعمل بعد `helmet` مباشرة في server/src/index.ts
+- `adminApi` في client.ts يُعيد `r.data` مباشرة (axios unwrapped) — لا تُضيف `.data` مرة ثانية
+- Rate limiters: globalLimiter (300/15min) + authLimiter (10/15min) + writeLimiter (30/min) + platformPublicLimiter (30/15min) + ticketMsgLimiter (10/5min)
+- Input sanitization functions في platform.ts: `sanitize(v, maxLen)` + `sanitizeEmail(v)` — يجب استخدامهما في جميع public endpoints

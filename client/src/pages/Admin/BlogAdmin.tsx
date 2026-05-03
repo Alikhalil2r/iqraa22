@@ -56,9 +56,16 @@ export default function BlogAdmin() {
     onSuccess: () => { toast.success('تم الحذف'); qc.invalidateQueries({ queryKey: ['admin-blog'] }) }
   })
 
+  const [filterStatus, setFilterStatus] = useState('all')
+
+  const displayPosts = filtered.filter((p: any) =>
+    filterStatus === 'all' || p.status === filterStatus
+  )
+
   const openNew = () => setDrawer({
     title: '', slug: '', excerpt: '', content: '', image_url: '',
-    category: 'تقنية', tags: '', status: 'draft', author_name: user?.name || 'Admin'
+    category: 'تقنية', tags: '', status: 'draft', author_name: user?.name || 'Admin',
+    read_time: 5
   })
 
   return (
@@ -74,10 +81,20 @@ export default function BlogAdmin() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400"/>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث في المقالات..." className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"/>
+      {/* Search + Filter Bar */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400"/>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="بحث في المقالات..." className="w-full pr-10 pl-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"/>
+        </div>
+        <div className="flex gap-1 bg-gray-100 rounded-xl p-1">
+          {[{ v: 'all', l: 'الكل' }, { v: 'published', l: 'منشور' }, { v: 'draft', l: 'مسودة' }, { v: 'archived', l: 'مؤرشف' }].map(({ v, l }) => (
+            <button key={v} onClick={() => setFilterStatus(v)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterStatus === v ? 'bg-white shadow text-violet-700' : 'text-gray-500 hover:text-gray-700'}`}>
+              {l} {v !== 'all' && `(${posts.filter((p:any)=>p.status===v).length})`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Table */}
@@ -105,7 +122,7 @@ export default function BlogAdmin() {
                 <BookOpen size={32} className="mx-auto mb-2 opacity-30"/>
                 <p>لا توجد مقالات</p>
               </td></tr>
-            ) : filtered.map((post: any) => (
+            ) : displayPosts.map((post: any) => (
               <tr key={post.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                 <td className="p-3.5">
                   <p className="font-bold text-gray-800 line-clamp-1">{post.title}</p>

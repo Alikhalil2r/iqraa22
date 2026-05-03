@@ -2,6 +2,7 @@ import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { dashboardApi, feesApi as feesApiClient, eventsApi } from '../../api/client'
 import PerformanceWidget from './PerformanceWidget'
+import PlatformWidget from '../../components/PlatformWidget'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Link } from 'react-router-dom'
@@ -436,6 +437,9 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Platform Business Widget */}
+      <PlatformWidget />
 
       {/* Performance Widget */}
       <PerformanceWidget />

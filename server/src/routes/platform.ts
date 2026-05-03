@@ -3,6 +3,13 @@ import { query } from '../db'
 import { withTransaction } from '../db/transaction'
 import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth'
 import { createLogger } from '../utils/logger'
+import { platformPublicLimiter, ticketMsgLimiter } from '../middleware/rateLimiter'
+
+// ── Input sanitizer (strip HTML tags, trim, limit length) ─────────────────
+const sanitize = (v: unknown, maxLen = 2000): string =>
+  String(v ?? '').replace(/<[^>]*>/g, '').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim().slice(0, maxLen)
+const sanitizeEmail = (v: unknown): string =>
+  String(v ?? '').toLowerCase().trim().replace(/[^a-z0-9@._+-]/g, '').slice(0, 254)
 
 const router = Router()
 const log = createLogger('Platform')
@@ -124,9 +131,13 @@ router.get('/track/:ticket', async (req, res) => {
 })
 
 // POST /api/platform/track/:ticket/message — client adds a message
-router.post('/track/:ticket/message', async (req, res) => {
+router.post('/track/:ticket/message', ticketMsgLimiter, async (req, res) => {
   try {
-    const { email, name, content } = req.body
+    const email   = sanitizeEmail(req.body.email)
+    const name    = sanitize(req.body.name, 200)
+    const content = sanitize(req.body.content, 3000)
+    // re-assign for downstream use
+    req.body = { email, name, content }
     if (!content?.trim()) return res.status(400).json({ error: 'المحتوى مطلوب' })
     const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
     if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
@@ -164,10 +175,18 @@ router.post('/track/:ticket/rate', async (req, res) => {
 })
 
 // POST /api/platform/request — submit service request (PUBLIC, no auth)
-router.post('/request', async (req, res) => {
+router.post('/request', platformPublicLimiter, async (req, res) => {
   try {
-    const { client_name, client_email, client_phone, client_company, service_type, title, description, budget_min, budget_max, expected_date } = req.body
+    const client_name    = sanitize(req.body.client_name, 200)
+    const client_email   = sanitizeEmail(req.body.client_email)
+    const client_phone   = sanitize(req.body.client_phone, 50)
+    const client_company = sanitize(req.body.client_company, 200)
+    const service_type   = sanitize(req.body.service_type, 50)
+    const title          = sanitize(req.body.title, 300)
+    const description    = sanitize(req.body.description, 5000)
+    const { budget_min, budget_max, expected_date } = req.body
     if (!client_name || !client_email || !title) return res.status(400).json({ error: 'الاسم والبريد والعنوان مطلوبة' })
+    if (!/\S+@\S+\.\S+/.test(client_email)) return res.status(400).json({ error: 'البريد الإلكتروني غير صحيح' })
 
     const year = new Date().getFullYear()
     const seq  = Date.now().toString().slice(-5)
@@ -389,19 +408,45 @@ router.patch('/admin/projects/:id', async (req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
+// GET /api/platform/admin/new-count — lightweight badge endpoint
+router.get('/admin/new-count', async (_req, res) => {
+  try {
+    const row = await query(`SELECT COUNT(*) as count FROM service_requests WHERE status='new'`)
+    res.json({ count: parseInt(row.rows[0].count) })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
 // GET /api/platform/admin/analytics
 router.get('/admin/analytics', async (_req, res) => {
   try {
-    const [byService, byStatus, monthly, topClients] = await Promise.all([
+    const [byService, byStatus, monthly, topClients, avgResponse, revenueByMonth] = await Promise.all([
       query(`SELECT service_type, COUNT(*) as count FROM service_requests WHERE service_type IS NOT NULL GROUP BY service_type ORDER BY count DESC`),
       query(`SELECT status, COUNT(*) as count FROM service_requests GROUP BY status`),
       query(`
-        SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'MM/YYYY') as month,
-               COUNT(*) as requests
-        FROM service_requests
-        WHERE created_at > NOW() - INTERVAL '6 months'
-        GROUP BY DATE_TRUNC('month', created_at)
-        ORDER BY DATE_TRUNC('month', created_at)
+        SELECT
+          TO_CHAR(m.month, 'MM/YYYY') as month,
+          TO_CHAR(m.month, 'Mon YYYY') as month_label,
+          COALESCE(r.requests, 0) as requests,
+          COALESCE(p.projects, 0) as projects,
+          COALESCE(r.completed, 0) as completed
+        FROM (
+          SELECT generate_series(
+            DATE_TRUNC('month', NOW() - INTERVAL '5 months'),
+            DATE_TRUNC('month', NOW()),
+            '1 month'
+          ) as month
+        ) m
+        LEFT JOIN (
+          SELECT DATE_TRUNC('month', created_at) as month,
+                 COUNT(*) as requests,
+                 COUNT(*) FILTER (WHERE status='completed') as completed
+          FROM service_requests GROUP BY 1
+        ) r ON r.month = m.month
+        LEFT JOIN (
+          SELECT DATE_TRUNC('month', created_at) as month, COUNT(*) as projects
+          FROM projects GROUP BY 1
+        ) p ON p.month = m.month
+        ORDER BY m.month
       `),
       query(`
         SELECT c.name, c.company,
@@ -415,13 +460,29 @@ router.get('/admin/analytics', async (_req, res) => {
         ORDER BY total_paid DESC, request_count DESC
         LIMIT 5
       `),
-      // Also seed project monthly data combined
+      query(`
+        SELECT
+          AVG(EXTRACT(EPOCH FROM (updated_at - created_at))/3600)::int as avg_hours
+        FROM service_requests
+        WHERE status != 'new' AND updated_at > created_at
+      `),
+      query(`
+        SELECT TO_CHAR(DATE_TRUNC('month', created_at), 'MM/YYYY') as month,
+               COALESCE(SUM(budget), 0) as budget,
+               COALESCE(SUM(paid), 0) as paid
+        FROM projects
+        WHERE created_at > NOW() - INTERVAL '6 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY DATE_TRUNC('month', created_at)
+      `),
     ])
     res.json({
-      byService:  byService.rows,
-      byStatus:   byStatus.rows,
-      monthly:    monthly.rows,
-      topClients: topClients.rows,
+      byService:      byService.rows,
+      byStatus:       byStatus.rows,
+      monthly:        monthly.rows,
+      topClients:     topClients.rows,
+      avgResponseHrs: avgResponse.rows[0]?.avg_hours || 0,
+      revenueByMonth: revenueByMonth.rows,
     })
   } catch (err) {
     log.error('Analytics error', { error: (err as Error).message })
