@@ -7,6 +7,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.group.school':        'إدارة المدرسة',
     'nav.group.communication': 'التواصل والمحتوى',
     'nav.group.settings':      'الإعدادات',
+    'nav.group.platform':      'منصة الأعمال',
+    'nav.requests':            'طلبات الخدمة',
+    'nav.clients':             'العملاء (CRM)',
+    'nav.projects':            'إدارة المشاريع',
 
     /* ─── Admin Nav Items ─── */
     'nav.dashboard':       'لوحة المعلومات',

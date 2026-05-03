@@ -193,7 +193,20 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `@import "tailwindcss"` في index.css (v3 approach)
 - لا حاجة لـ postcss tailwind plugin
 
-## الميزات المكتملة — أحدث جلسة (6 محاور Enterprise)
+## الميزات المكتملة — أحدث جلسة (منصة شركة التقنية الكاملة)
+- ✅ **Landing Page احترافية** (`/`) — صفحة رئيسية كاملة لشركة تقنية: Hero + Stats + Services + WhyUs + Portfolio + Process + Pricing + Testimonials + FAQ + CTA + Footer
+- ✅ **نظام طلبات الخدمة** (`/request`) — نموذج 4 خطوات: نوع الخدمة → تفاصيل → ميزانية → بيانات التواصل → إنشاء Ticket تلقائي
+- ✅ **إدارة الطلبات** (`/admin/requests`) — Drawer للتفاصيل + تحديث الحالة + الأولوية + ملاحظات داخلية + فلاتر + بحث
+- ✅ **CRM العملاء** (`/admin/clients`) — بطاقات العملاء مع إحصائيات الطلبات والمشاريع والإيرادات
+- ✅ **إدارة المشاريع** (`/admin/projects`) — بطاقات المشاريع مع progress bar تفاعلي + تغيير الحالة + إنشاء مشروع جديد
+- ✅ **Platform Backend Routes** — `/api/platform/*` (services, portfolio, testimonials, faq, pricing, blog, settings, request, admin/*)
+- ✅ **Platform DB Schema** — 9 جداول جديدة: platform_services, portfolio_items, testimonials, faq_items, pricing_plans, business_clients, service_requests, projects, project_messages, blog_posts, company_settings
+- ✅ **Seed Data كامل** — 6 خدمات + 4 شهادات + 8 أسئلة + 3 خطط + 6 portfolio + 11 company settings
+- ✅ **adminApi helper** — في client.ts: get/post/put/patch/delete مع auth تلقائي
+- ✅ **مجموعة nav جديدة** "منصة الأعمال" في AdminLayout: طلبات الخدمة + العملاء CRM + إدارة المشاريع
+- ✅ **App.tsx routing** — `/` standalone (tech company) + `/request` standalone + `/school/*` للصفحات المدرسية القديمة
+
+## الميزات المكتملة — الجلسة السابقة (6 محاور Enterprise)
 - ✅ **إصلاح React Router** — `future={{ v7_startTransition, v7_relativeSplatPath }}` في BrowserRouter
 - ✅ **PWA + Push Notifications** — `client/public/manifest.webmanifest` + `client/public/sw.js` (SW registration في main.tsx)، push handler، `<link rel="manifest">` في index.html
 - ✅ **Excel Export** — `exportToExcel()` مع `xlsx` (dynamic import) في ExportButton.tsx — تصدير CSV / Excel / JSON

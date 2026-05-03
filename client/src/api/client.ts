@@ -253,3 +253,12 @@ export const conductApi = {
   delete: (id: string) => api.delete(`/conduct/${id}`),
   studentSummary: (studentId: string) => api.get(`/conduct/student/${studentId}`),
 }
+
+// Generic admin API helper (for platform routes)
+export const adminApi = {
+  get:    (url: string, params?: any) => api.get(url.replace('/api',''), { params }).then(r => r.data),
+  post:   (url: string, data?: any)   => api.post(url.replace('/api',''), data).then(r => r.data),
+  put:    (url: string, data?: any)   => api.put(url.replace('/api',''), data).then(r => r.data),
+  patch:  (url: string, data?: any)   => api.patch(url.replace('/api',''), data).then(r => r.data),
+  delete: (url: string)               => api.delete(url.replace('/api','')).then(r => r.data),
+}

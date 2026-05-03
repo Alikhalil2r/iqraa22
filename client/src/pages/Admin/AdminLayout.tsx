@@ -8,7 +8,8 @@ import {
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
   DollarSign, CalendarDays, Home, Globe, Moon, Sun, Image, FileText, CreditCard,
-  School, BookMarked, ClipboardList, Printer, Brain, ShieldCheck, Lock
+  School, BookMarked, ClipboardList, Printer, Brain, ShieldCheck, Lock,
+  Inbox, FolderOpen, Building2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
@@ -85,6 +86,15 @@ const menuGroups: MenuGroup[] = [
     ]
   },
   {
+    labelKey: 'nav.group.platform',
+    roles: ADMIN_ONLY,
+    items: [
+      { to: '/admin/requests',  icon: Inbox,      labelKey: 'nav.requests',  roles: ADMIN_ONLY },
+      { to: '/admin/clients',   icon: Building2,  labelKey: 'nav.clients',   roles: ADMIN_ONLY },
+      { to: '/admin/projects',  icon: FolderOpen, labelKey: 'nav.projects',  roles: ADMIN_ONLY },
+    ]
+  },
+  {
     labelKey: 'nav.group.analytics',
     roles: ['super_admin','admin','teacher','accountant','hr_manager'],
     items: [
@@ -136,6 +146,9 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/ai-insights':   'التحليل الذكي',
   '/admin/audit-log':     'سجل النشاط',
   '/admin/2fa':           'المصادقة الثنائية',
+  '/admin/requests':      'طلبات الخدمة',
+  '/admin/clients':       'إدارة العملاء',
+  '/admin/projects':      'إدارة المشاريع',
 }
 
 export default function AdminLayout() {

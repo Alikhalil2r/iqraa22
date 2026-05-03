@@ -1,332 +1,316 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { publicApi } from '../../api/client'
-import { useTheme } from '../../context/ThemeContext'
+import React, { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
-  GraduationCap, Target, Award, Heart, Lightbulb, Rocket, Play, Pause,
-  ChevronLeft, ChevronRight, MessageCircle, Star, Briefcase, Video,
-  Users, X, BookOpen, Microscope, Calculator, Globe, Music, Dumbbell,
-  Shield, Cpu, Trophy, ArrowLeft
+  Globe, Smartphone, Palette, TrendingUp, Brain, Cloud,
+  ChevronDown, ChevronUp, ArrowLeft, Star, CheckCircle,
+  Phone, Mail, MessageCircle, Shield, Zap, Award, Users,
+  BarChart3, Code2, Layers, Rocket, ExternalLink, Quote, Menu, X
 } from 'lucide-react'
 
-const DEFAULT_SLIDES = [
-  { image: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=1600&q=90', title: 'بيئة تعليمية محفزة ومتطورة', subtitle: 'مرافق حديثة ومختبرات مجهزة وكادر تدريسي من الطراز الأول', cta: 'اكتشف المزيد' },
-  { image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=1600&q=90', title: 'نصنع قادة المستقبل', subtitle: 'من الصف الأول وحتى الثاني عشر، نبني الشخصية القيادية', cta: 'تعرف على رؤيتنا' },
-  { image: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1600&q=90', title: 'أنشطة لاصفية متنوعة', subtitle: 'نادي الروبوت، المسرح، الرياضة، الفنون... وأكثر', cta: 'شاهد مشاركاتنا' },
-]
+const API = (p: string) => fetch(`/api${p}`).then(r => r.json())
 
-const DEFAULT_TESTIMONIALS = [
-  { id: 1, text: 'مدرسة متميزة، لاحظت فرقاً كبيراً في شخصية ابنتي وانتمائها لمدرستها.', name: 'أم خديجة', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80' },
-  { id: 2, text: 'الاهتمام بالجانب القيمي يوازي الاهتمام بالأكاديمي، وهذا نادر في مدارسنا.', name: 'أبو سلطان', relation: 'ولي أمر', rating: 5, image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80' },
-  { id: 3, text: 'الكادر التدريسي متعاون جداً والتواصل مع الإدارة سهل وسلس.', name: 'أم يوسف', relation: 'ولية أمر', rating: 5, image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&q=80' },
-  { id: 4, text: 'ابني تطور كثيراً في مهارات التفكير النقدي والقيادة منذ انتسابه للمدرسة.', name: 'أبو حمد', relation: 'ولي أمر', rating: 5, image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&q=80' },
-]
-
-const DEFAULT_VIDEOS = [
-  { id: 1, title: 'فعاليات اليوم المفتوح 2025', url: 'https://www.youtube.com/watch?v=ScMzIvxBSi4', category: 'فعاليات', desc: 'جولة شاملة في فعاليات اليوم المفتوح' },
-  { id: 2, title: 'مسابقة الروبوت التعليمية', url: 'https://www.youtube.com/watch?v=LXb3EKWsInQ', category: 'مسابقات', desc: 'تغطية مشاركة فريق المدرسة' },
-  { id: 3, title: 'حفل تكريم المتفوقين', url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', category: 'حفلات', desc: 'حفل تكريم الطلاب المتميزين أكاديمياً' },
-]
-
-const PROGRAMS = [
-  { icon: <Calculator size={24} />, title: 'العلوم والرياضيات', desc: 'مسار علمي متكامل بمختبرات ذكية ومناهج أولمبياد', color: '#3b82f6', bg: 'bg-blue-50', border: 'border-blue-200' },
-  { icon: <Globe size={24} />, title: 'اللغات والأدب', desc: 'برنامج اللغة العربية والإنجليزية مع التواصل الدولي', color: '#10b981', bg: 'bg-emerald-50', border: 'border-emerald-200' },
-  { icon: <Cpu size={24} />, title: 'التقنية والروبوت', desc: 'نادي البرمجة والروبوت والذكاء الاصطناعي للطلاب', color: '#8b5cf6', bg: 'bg-purple-50', border: 'border-purple-200' },
-  { icon: <Trophy size={24} />, title: 'الأنشطة الرياضية', desc: 'كرة القدم والسلة والألعاب الفردية والجماعية', color: '#f59e0b', bg: 'bg-amber-50', border: 'border-amber-200' },
-  { icon: <Music size={24} />, title: 'الفنون والإبداع', desc: 'مسرح، رسم، خط عربي، وفعاليات إبداعية طلابية', color: '#ec4899', bg: 'bg-pink-50', border: 'border-pink-200' },
-  { icon: <Shield size={24} />, title: 'التربية الإسلامية', desc: 'حفظ القرآن الكريم، السيرة، والقيم الإسلامية الأصيلة', color: '#0ea5e9', bg: 'bg-sky-50', border: 'border-sky-200' },
-]
-
-function useCountUp(target: number, duration = 2000, start = false) {
-  const [count, setCount] = useState(0)
-  useEffect(() => {
-    if (!start || !target) return
-    let startTime: number | null = null
-    const step = (ts: number) => {
-      if (!startTime) startTime = ts
-      const progress = Math.min((ts - startTime) / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * target))
-      if (progress < 1) requestAnimationFrame(step)
-    }
-    requestAnimationFrame(step)
-  }, [target, start, duration])
-  return count
+const ICON_MAP: Record<string, React.ElementType> = {
+  Globe, Smartphone, Palette, TrendingUp, Brain, Cloud, Shield, Zap, Award, Users, BarChart3, Code2, Layers, Rocket
 }
+const PORTFOLIO_CATEGORIES = ['all', 'web', 'mobile', 'ai', 'design', 'cloud']
+const CATEGORY_LABELS: Record<string, string> = { all:'الكل', web:'مواقع', mobile:'تطبيقات', ai:'ذكاء اصطناعي', design:'تصميم', cloud:'سحابي' }
 
-function AnimatedStat({ icon, num, label, color, suffix = '+', delay = 0 }: any) {
-  const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.3 })
-    if (ref.current) obs.observe(ref.current)
-    return () => obs.disconnect()
-  }, [])
-  const count = useCountUp(parseInt(num) || 0, 2000, visible)
+function Particles() {
   return (
-    <div ref={ref} className="text-center group cursor-default" style={{ animation: visible ? `fadeUp .6s ${delay}s both` : 'none' }}>
-      <div className={`${color} mb-2 flex justify-center group-hover:scale-110 transition-transform duration-300`}>{icon}</div>
-      <p className="text-2xl md:text-3xl font-black text-gray-900">
-        <span>{count}</span><span className="text-amber-500">{suffix}</span>
-      </p>
-      <p className="text-xs font-bold text-gray-400">{label}</p>
-    </div>
-  )
-}
-
-function HeroSlider({ slides }: { slides: typeof DEFAULT_SLIDES }) {
-  const [cur, setCur] = useState(0)
-  const [progress, setProgress] = useState(0)
-  const [paused, setPaused] = useState(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const goTo = useCallback((idx: number) => { setCur(idx); setProgress(0) }, [])
-
-  useEffect(() => {
-    if (paused) return
-    progressRef.current = setInterval(() => setProgress(p => p < 100 ? p + 100 / 50 : 100), 100)
-    intervalRef.current = setInterval(() => { setCur(c => (c + 1) % slides.length); setProgress(0) }, 5000)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-      if (progressRef.current) clearInterval(progressRef.current)
-    }
-  }, [slides.length, paused])
-
-  const slide = slides[cur]
-
-  return (
-    <div className="relative h-[480px] md:h-[600px] overflow-hidden group" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-      {slides.map((s, i) => (
-        <div key={s.image} className={`absolute inset-0 transition-opacity duration-1000 ${i === cur ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
-          <img src={s.image} alt="" className="w-full h-full object-cover animate-kenburns" style={{ animationPlayState: paused ? 'paused' : 'running' }} />
-          <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/40 to-transparent" />
-        </div>
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {[...Array(18)].map((_, i) => (
+        <div key={i} className="absolute rounded-full animate-pulse" style={{
+          width: 4 + (i % 4) * 2, height: 4 + (i % 4) * 2,
+          left: `${(i * 17 + 5) % 100}%`, top: `${(i * 23 + 10) % 100}%`,
+          background: ['#7c3aed','#2563eb','#06b6d4','#10b981'][i % 4],
+          opacity: 0.25 + (i % 4) * 0.1,
+          animationDelay: `${(i % 4) * 0.7}s`, animationDuration: `${2 + (i % 3)}s`,
+        }} />
       ))}
-      <div className="absolute inset-0 z-20 flex items-center max-w-7xl mx-auto px-6">
-        <div className="max-w-2xl text-right" style={{ animation: 'fadeUp .8s ease' }}>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="bg-amber-500 text-gray-900 text-[10px] font-black px-3 py-1.5 rounded-xl">{cur + 1} / {slides.length}</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-black text-white leading-tight mb-4">{slide.title}</h2>
-          <p className="text-lg text-white/80 leading-relaxed mb-8">{slide.subtitle}</p>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/about" className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-2xl font-bold transition-all shadow-xl hover:scale-105">{slide.cta}</Link>
-            <Link to="/parent-login" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white px-8 py-3.5 rounded-2xl font-bold transition-all border border-white/20">بوابة الأولياء</Link>
-          </div>
-        </div>
-      </div>
-      <button onClick={() => setPaused(p => !p)} className="absolute top-6 right-6 z-30 w-10 h-10 bg-black/30 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-black/50 transition">
-        {paused ? <Play size={16} fill="white" /> : <Pause size={16} />}
-      </button>
-      <button onClick={() => goTo((cur - 1 + slides.length) % slides.length)} className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100">
-        <ChevronRight size={20} />
-      </button>
-      <button onClick={() => goTo((cur + 1) % slides.length)} className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center text-white hover:bg-white/20 transition opacity-0 group-hover:opacity-100">
-        <ChevronLeft size={20} />
-      </button>
-      <div className="absolute bottom-6 right-0 left-0 z-30 flex justify-center gap-2 px-6">
-        {slides.map((_, i) => (
-          <button key={`slide-dot-${i}`} onClick={() => goTo(i)} className="flex-1 max-w-[80px] h-1 rounded-full overflow-hidden bg-white/20 cursor-pointer">
-            <div className={`h-full rounded-full transition-all ${i === cur ? 'bg-amber-500' : i < cur ? 'bg-white/60' : 'bg-transparent'}`}
-              style={i === cur ? { width: `${progress}%` } : { width: i < cur ? '100%' : '0%' }} />
-          </button>
-        ))}
-      </div>
     </div>
   )
 }
 
-function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_TESTIMONIALS }) {
-  const [cur, setCur] = useState(0)
-  useEffect(() => {
-    const iv = setInterval(() => setCur(p => (p + 1) % testimonials.length), 5000)
-    return () => clearInterval(iv)
-  }, [testimonials.length])
-  const t = testimonials[cur]
+function FaqItem({ q, a, open: defaultOpen }: { q: string; a: string; open?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen || false)
   return (
-    <section className="py-16 bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-900 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-5" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23fff' stroke-width='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E\")" }} />
-      <div className="max-w-4xl mx-auto px-4 relative z-10">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl mb-3">
-            <MessageCircle size={16} className="text-amber-400" />
-            <span className="text-amber-300 text-xs font-black">آراء أولياء الأمور</span>
-          </div>
-          <h2 className="text-2xl md:text-3xl font-black text-white">ماذا يقول <span className="text-amber-400">أولياء الأمور</span> عنّا</h2>
+    <div className={`border rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer ${open ? 'border-purple-300 bg-purple-50/60' : 'border-gray-200 bg-white hover:border-purple-200'}`}>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-6 py-4 text-right gap-4">
+        <span className={`font-bold text-sm md:text-base transition-colors ${open ? 'text-purple-700' : 'text-gray-800'}`}>{q}</span>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${open ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+          {open ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
         </div>
-        <div key={cur} className="bg-white/10 backdrop-blur-md rounded-3xl p-8 md:p-10 border border-white/10 text-center animate-fadeUp">
-          <div className="text-6xl text-amber-400/30 font-serif leading-none mb-4">"</div>
-          <p className="text-white text-lg md:text-xl leading-relaxed font-bold max-w-2xl mx-auto mb-6">{t.text}</p>
-          <div className="flex justify-center gap-1 mb-4">
-            {[...Array(5)].map((_, i) => <Star key={`star-${i}`} size={16} fill={i < t.rating ? '#fbbf24' : 'transparent'} className={i < t.rating ? 'text-amber-400' : 'text-white/20'} />)}
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50"
-              onError={e => { (e.currentTarget as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(t.name)}&size=100&background=065f46&color=fbbf24` }} />
-            <div className="text-right">
-              <p className="text-white font-bold text-sm">{t.name}</p>
-              <p className="text-emerald-300 text-[11px]">{t.relation}</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex justify-center gap-2 mt-6">
-          {testimonials.map((_, i) => (
-            <button key={`testi-dot-${i}`} onClick={() => setCur(i)} className={`h-2 rounded-full transition-all ${i === cur ? 'w-8 bg-amber-400' : 'w-2 bg-white/30 hover:bg-white/50'}`} />
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function HomeVideos({ videos }: { videos: typeof DEFAULT_VIDEOS }) {
-  const [activeVideo, setActiveVideo] = useState<any>(null)
-  const getYtId = (url: string) => { const m = url?.match(/(?:youtu\.be\/|v\/|embed\/|watch\?v=|&v=)([^#&?]*)/); return m ? m[1] : null }
-  const featured = videos[0]
-  const rest = videos.slice(1)
-  const featuredYtId = featured ? getYtId(featured.url) : null
-
-  return (
-    <section className="py-20 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-600/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-amber-500/5 rounded-full blur-3xl" />
-      <div className="max-w-6xl mx-auto px-4 relative z-10">
-        <div className="flex justify-between items-end mb-12">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center"><Play size={14} fill="white" className="text-white" /></div>
-              <span className="text-red-400 font-black text-[10px] tracking-[0.25em] uppercase">المكتبة المرئية</span>
-            </div>
-            <h2 className="text-3xl font-black text-white">شاهد <span className="text-red-400">فعالياتنا</span> وأنشطتنا</h2>
-            <p className="text-gray-500 text-sm mt-2">لحظات مميزة من حياتنا المدرسية</p>
-          </div>
-          <Link to="/videos" className="text-red-400 font-bold text-sm hover:text-red-300 flex items-center gap-1 bg-white/5 px-4 py-2 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm border border-white/10">
-            عرض الكل <ChevronLeft size={14} />
-          </Link>
-        </div>
-        {activeVideo && (() => {
-          const ytId = getYtId(activeVideo.url)
-          return ytId ? (
-            <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10">
-              <div className="relative pb-[56.25%] bg-black">
-                <iframe src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0`} className="absolute inset-0 w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
-              </div>
-              <div className="bg-gray-900/80 backdrop-blur-sm p-4 flex items-center justify-between">
-                <h4 className="font-bold text-white text-sm">{activeVideo.title}</h4>
-                <button onClick={() => setActiveVideo(null)} className="text-xs text-red-400 hover:text-red-300 bg-white/5 px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold"><X size={12} /> إغلاق</button>
-              </div>
-            </div>
-          ) : null
-        })()}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {featured && (
-            <div className="lg:col-span-3 group cursor-pointer" onClick={() => setActiveVideo(featured)}>
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
-                {featuredYtId ? (
-                  <div className="relative h-64 md:h-80 overflow-hidden">
-                    <img src={`https://img.youtube.com/vi/${featuredYtId}/maxresdefault.jpg`} alt={featured.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onError={e => { (e.currentTarget as HTMLImageElement).src = `https://img.youtube.com/vi/${featuredYtId}/hqdefault.jpg` }} />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-20 h-20 bg-red-600/90 rounded-full flex items-center justify-center shadow-2xl shadow-red-600/40 group-hover:scale-110 group-hover:bg-red-600 transition-all duration-300 ring-4 ring-white/20">
-                        <Play size={30} fill="white" className="text-white" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-0 right-0 left-0 p-6">
-                      {featured.category && <span className="text-[9px] bg-red-600 text-white px-2.5 py-0.5 rounded-md font-black">{featured.category}</span>}
-                      <h3 className="text-xl font-black text-white leading-snug mt-2">{featured.title}</h3>
-                    </div>
-                  </div>
-                ) : <div className="h-80 bg-gray-800 flex items-center justify-center"><Video size={48} className="text-gray-600" /></div>}
-              </div>
-            </div>
-          )}
-          <div className="lg:col-span-2 flex flex-col gap-4">
-            {rest.map((v, idx) => {
-              const ytId = getYtId(v.url)
-              return (
-                <div key={v.id} className="group cursor-pointer flex gap-3 bg-white/[0.04] hover:bg-white/[0.08] rounded-xl p-2.5 transition-all border border-white/5 hover:border-white/10" onClick={() => setActiveVideo(v)}>
-                  <div className="relative w-36 h-20 flex-shrink-0 rounded-lg overflow-hidden">
-                    {ytId ? (<>
-                      <img src={`https://img.youtube.com/vi/${ytId}/mqdefault.jpg`} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                        <div className="w-9 h-9 bg-red-600/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                          <Play size={14} fill="white" className="text-white" />
-                        </div>
-                      </div>
-                    </>) : <div className="w-full h-full bg-gray-800 flex items-center justify-center"><Video size={18} className="text-gray-600" /></div>}
-                  </div>
-                  <div className="flex-1 min-w-0 flex flex-col justify-center">
-                    <h4 className="font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">{v.title}</h4>
-                    {v.category && <span className="text-[8px] bg-white/10 text-gray-400 px-1.5 py-0.5 rounded font-bold mt-1.5 inline-block">{v.category}</span>}
-                  </div>
-                  <div className="flex-shrink-0 w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-gray-600 text-xs font-black self-center">{idx + 2}</div>
-                </div>
-              )
-            })}
-            <Link to="/videos" className="mt-auto bg-red-600/10 hover:bg-red-600/20 border border-red-500/20 text-red-400 rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition-all group">
-              <Video size={15} /> شاهد المكتبة الكاملة <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            </Link>
-          </div>
-        </div>
-      </div>
-    </section>
+      </button>
+      {open && <div className="px-6 pb-5 text-gray-600 text-sm leading-relaxed border-t border-purple-100 pt-4">{a}</div>}
+    </div>
   )
 }
 
 export default function HomePage() {
-  const { theme } = useTheme()
-  const { data: schoolData } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
-  const { data: newsData } = useQuery({ queryKey: ['public-news'], queryFn: () => publicApi.news().then(r => r.data) })
+  const [portfolioCat, setPortfolioCat] = useState('all')
+  const [menuOpen, setMenuOpen] = useState(false)
 
-  const school = schoolData?.school
-  const featuredNews = (newsData?.news || []).slice(0, 3)
+  const { data: services = [] }     = useQuery({ queryKey: ['plat-services'],       queryFn: () => API('/platform/services'),    staleTime: 600_000 })
+  const { data: portfolio = [] }    = useQuery({ queryKey: ['plat-portfolio', portfolioCat], queryFn: () => API(`/platform/portfolio?category=${portfolioCat}`), staleTime: 300_000 })
+  const { data: testimonials = [] } = useQuery({ queryKey: ['plat-testimonials'],   queryFn: () => API('/platform/testimonials'), staleTime: 600_000 })
+  const { data: faq = [] }          = useQuery({ queryKey: ['plat-faq'],            queryFn: () => API('/platform/faq'),          staleTime: 600_000 })
+  const { data: pricing = [] }      = useQuery({ queryKey: ['plat-pricing'],        queryFn: () => API('/platform/pricing'),      staleTime: 600_000 })
+  const { data: cfg = {} as Record<string,string> } = useQuery({ queryKey: ['plat-settings'], queryFn: () => API('/platform/settings'), staleTime: 600_000 })
+
+  const scrollTo = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false) }
+
+  const defaultServices = [
+    { id:'s1', title:'تطوير المواقع',     icon:'Globe',       color:'#7c3aed', description:'مواقع احترافية بأحدث التقنيات وأعلى معايير الأداء', features:['تصميم متجاوب','سرعة فائقة','SEO محسّن','لوحة تحكم كاملة'], price_from:299 },
+    { id:'s2', title:'تطبيقات الجوال',   icon:'Smartphone',  color:'#2563eb', description:'تطبيقات iOS وAndroid بتجربة مستخدم استثنائية',       features:['iOS & Android','UI/UX احترافي','تحديثات مجانية','دعم فني'], price_from:499 },
+    { id:'s3', title:'تصميم UI/UX',      icon:'Palette',     color:'#059669', description:'تصاميم تحوّل الزوار لعملاء وترفع معدل التحويل',       features:['تصميم احترافي','Figma/Adobe XD','Prototype كامل','تسليم سريع'], price_from:199 },
+    { id:'s4', title:'التسويق الرقمي',   icon:'TrendingUp',  color:'#dc2626', description:'استراتيجيات تسويق رقمي شاملة لرفع مبيعاتك',          features:['SEO/SEM','إدارة السوشيال','إعلانات مدفوعة','تقارير تفصيلية'], price_from:149 },
+    { id:'s5', title:'الذكاء الاصطناعي', icon:'Brain',       color:'#9333ea', description:'دمج الذكاء الاصطناعي في عمليات عملك لتحسين الكفاءة',  features:['Chatbots ذكية','تحليل البيانات','أتمتة العمليات','دعم API'], price_from:799 },
+    { id:'s6', title:'الحوسبة السحابية', icon:'Cloud',       color:'#0284c7', description:'بنية تحتية سحابية آمنة وقابلة للتوسع',                features:['AWS/Azure/GCP','نسخ احتياطي','حماية متقدمة','مراقبة 24/7'], price_from:399 },
+  ]
+  const defaultPortfolio = [
+    { id:'p1', title:'منصة تجارة إلكترونية متكاملة', description:'منصة تسوق كاملة مع إدارة المخزون والمدفوعات', category:'web', client_name:'سوق العرب', technologies:['Next.js','Node.js','PostgreSQL'], is_featured:true },
+    { id:'p2', title:'تطبيق إدارة المطاعم',           description:'تطبيق iOS/Android لإدارة الطلبات والطاولات',  category:'mobile', client_name:'مطاعم الفخر', technologies:['Flutter','Firebase'], is_featured:true },
+    { id:'p3', title:'نظام CRM للعيادات الطبية',       description:'إدارة المرضى والمواعيد والفواتير الطبية',      category:'web', client_name:'مركز الشفاء', technologies:['React','Express','PostgreSQL'], is_featured:true },
+    { id:'p4', title:'منصة تعليمية تفاعلية',           description:'e-learning كامل مع دروس مباشرة وامتحانات',     category:'web', client_name:'أكاديمية المستقبل', technologies:['React','WebRTC','Node.js'], is_featured:false },
+    { id:'p5', title:'تطبيق التوصيل الذكي',            description:'توصيل مع تتبع GPS وإدارة السائقين',            category:'mobile', client_name:'برق للتوصيل', technologies:['React Native','Google Maps'], is_featured:false },
+    { id:'p6', title:'لوحة تحليلات الأعمال',           description:'لوحة ذكاء اصطناعي لدعم قرارات الأعمال',       category:'ai', client_name:'مجموعة الخليج', technologies:['Python','React','TensorFlow'], is_featured:false },
+  ]
+  const defaultTestimonials = [
+    { id:'t1', client_name:'أحمد الكندي',    client_position:'المدير التنفيذي', company:'شركة النجوم',    content:'الفريق المحترف أنجز موقعنا في وقت قياسي. نسبة التحويل ارتفعت 340% بعد الإطلاق.', rating:5 },
+    { id:'t2', client_name:'سارة البلوشية',  client_position:'مؤسسة',           company:'متجر سارة',      content:'تطبيق الجوال غيّر طريقة عمل متجرنا كلياً. المبيعات تضاعفت وتجربة العملاء أصبحت استثنائية.', rating:5 },
+    { id:'t3', client_name:'محمد الريامي',   client_position:'مدير التسويق',    company:'مجموعة الريامي', content:'استراتيجية التسويق الرقمي أحدثت فارقاً هائلاً. ROI وصل 800% خلال 6 أشهر فقط.', rating:5 },
+  ]
+  const defaultFaq = [
+    { id:'f1', question:'كم يستغرق تطوير موقع إلكتروني؟', answer:'يعتمد على الحجم: البسيطة 2-4 أسابيع، المتوسطة 1-3 أشهر، الكبيرة 3-6 أشهر. نلتزم بالجدول الزمني المتفق عليه.' },
+    { id:'f2', question:'ما هي تقنيات التطوير التي تستخدمونها؟', answer:'نستخدم أحدث التقنيات: React, Next.js, Node.js, Python, Flutter للجوال، وقواعد بيانات PostgreSQL, MongoDB, Redis.' },
+    { id:'f3', question:'هل تقدمون ضماناً بعد التسليم؟', answer:'نعم، ضمان مجاني 3 أشهر يشمل إصلاح الأخطاء والتحديثات الأمنية بعد التسليم.' },
+    { id:'f4', question:'كيف أتابع تقدم مشروعي؟', answer:'نوفر بوابة إلكترونية للعملاء تتيح متابعة التقدم والتواصل مع الفريق واستلام الملفات لحظةً بلحظة.' },
+    { id:'f5', question:'هل تدعمون اللغة العربية والـ RTL؟', answer:'نعم، لدينا خبرة واسعة في بناء منصات عربية احترافية بدعم كامل للغة العربية واتجاه RTL.' },
+    { id:'f6', question:'ما هي خيارات الدفع المتاحة؟', answer:'نقبل الدفع بالتحويل البنكي، البطاقات الائتمانية، والدفع على مراحل حسب تقدم المشروع.' },
+  ]
+
+  const svcList  = services.length  ? services  : defaultServices
+  const portList = portfolio.length ? portfolio : defaultPortfolio
+  const testList = testimonials.length ? testimonials : defaultTestimonials
+  const faqList  = faq.length ? faq : defaultFaq
+  const pricList = pricing.length ? pricing : [
+    { id:'pr1', name:'الأساسي',  price:299, currency:'OMR', period:'لكل مشروع', description:'للشركات الناشئة',    features:['موقع 5 صفحات','تصميم احترافي','متجاوب مع الجوال','SEO أساسي','استضافة شهر مجاني','دعم 30 يوم'], is_popular:false },
+    { id:'pr2', name:'الأعمال', price:799, currency:'OMR', period:'لكل مشروع', description:'للشركات المتوسطة',   features:['موقع 15 صفحة','تصميم مخصص بالكامل','لوحة تحكم CMS','متكامل مع الدفع','SEO متقدم','دعم 6 أشهر'], is_popular:true },
+    { id:'pr3', name:'المؤسسي', price:0,   currency:'OMR', period:'حسب المشروع', description:'للمؤسسات الكبيرة', features:['حل مخصص بالكامل','هندسة معمارية متقدمة','تكامل API كامل','ذكاء اصطناعي مدمج','SLA مضمون','دعم 24/7'], is_popular:false },
+  ]
+
+  const companyName = cfg.company_name_ar || 'اكسبو التقنية'
+  const phone       = cfg.company_phone    || '+968 9999 9999'
+  const email       = cfg.company_email    || 'info@expo-tech.com'
+  const whatsapp    = cfg.company_whatsapp || '96899999999'
+  const address     = cfg.company_address  || 'مسقط، سلطنة عُمان'
 
   return (
-    <div>
-      <HeroSlider slides={DEFAULT_SLIDES} />
+    <div className="font-['Cairo',sans-serif] bg-white overflow-x-hidden" dir="rtl">
 
-      {/* Animated Stats */}
-      <div className="relative z-30 -mt-14 mx-4 md:mx-auto max-w-5xl bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-6 md:p-8 border border-gray-100">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <AnimatedStat icon={<GraduationCap size={26} />} num="10" label="سنوات من التميز" color="text-emerald-600" delay={0} />
-          <AnimatedStat icon={<Target size={26} />} num="98" label="نسبة النجاح" color="text-sky-600" suffix="%" delay={0.15} />
-          <AnimatedStat icon={<Award size={26} />} num="50" label="جائزة ومشاركة" color="text-amber-600" delay={0.3} />
-          <AnimatedStat icon={<Heart size={26} />} num="95" label="رضا أولياء الأمور" color="text-rose-600" suffix="%" delay={0.45} />
+      {/* ───── NAV ───────────────────────────────────────────── */}
+      <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+              <Code2 size={18} className="text-white"/>
+            </div>
+            <span className="text-lg font-black text-gray-900">{companyName}</span>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm font-bold text-gray-600">
+            {[['services','خدماتنا'],['portfolio','أعمالنا'],['process','كيف نعمل'],['pricing','الأسعار'],['faq','الأسئلة']].map(([id,lbl]) => (
+              <button key={id} onClick={() => scrollTo(id)} className="hover:text-purple-600 transition-colors">{lbl}</button>
+            ))}
+          </div>
+          <div className="hidden md:flex items-center gap-3">
+            <a href="/login" className="text-sm font-bold text-gray-500 hover:text-purple-600 transition-colors">دخول الإدارة</a>
+            <button onClick={() => scrollTo('contact')} className="text-sm font-black text-white px-5 py-2 rounded-xl hover:opacity-90 hover:shadow-lg transition-all" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>ابدأ مشروعك</button>
+          </div>
+          <button className="md:hidden p-2 rounded-lg text-gray-600" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X size={22}/> : <Menu size={22}/>}
+          </button>
         </div>
-      </div>
+        {menuOpen && (
+          <div className="md:hidden bg-white border-t px-4 py-3 space-y-1">
+            {[['services','خدماتنا'],['portfolio','أعمالنا'],['process','كيف نعمل'],['pricing','الأسعار'],['faq','الأسئلة'],['contact','تواصل معنا']].map(([id,lbl]) => (
+              <button key={id} onClick={() => scrollTo(id)} className="block w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-purple-50 transition-colors">{lbl}</button>
+            ))}
+            <a href="/login" className="block text-center bg-purple-600 text-white font-black py-2.5 rounded-xl text-sm mt-2">دخول الإدارة</a>
+          </div>
+        )}
+      </nav>
 
-      {/* Welcome Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="text-amber-600 font-black text-xs tracking-[0.2em] uppercase mb-3 block">مرحباً بكم</span>
-              <h2 className="text-3xl md:text-4xl font-black leading-tight mb-5 text-gray-900">
-                نبني <span className="text-emerald-600">أجيالاً</span> قادرة على <span className="text-amber-600">صناعة المستقبل</span>
-              </h2>
-              <p className="text-base leading-[1.9] mb-6 text-gray-600">
-                {school?.aboutText
-                  ? school.aboutText.substring(0, 200) + '...'
-                  : 'في مدرستنا، نؤمن بأن التعليم رحلة بناء متكاملة للعقل والروح والشخصية. نمزج بين عراقة القيم الإسلامية وحداثة المناهج العالمية لنصنع جيلاً متميزاً.'}
+      {/* ───── HERO ──────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center pt-16 overflow-hidden" style={{ background:'linear-gradient(135deg,#0f0c29 0%,#302b63 45%,#24243e 75%,#0f0c29 100%)' }}>
+        <Particles/>
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full blur-3xl opacity-20" style={{ background:'radial-gradient(circle,#7c3aed,transparent)' }}/>
+        <div className="absolute bottom-1/3 left-1/4 w-72 h-72 rounded-full blur-3xl opacity-15" style={{ background:'radial-gradient(circle,#2563eb,transparent)' }}/>
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 py-24 w-full">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-center lg:text-right">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-black mb-6">
+                <Zap size={13} className="text-yellow-400"/> شريك نموّك الرقمي الموثوق
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
+                نبني{' '}
+                <span style={{ background:'linear-gradient(90deg,#a78bfa,#60a5fa,#34d399)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>المستقبل</span>
+                <br/>الرقمي معاً
+              </h1>
+              <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
+                من المواقع الاحترافية إلى تطبيقات الجوال والذكاء الاصطناعي — نحوّل أفكارك إلى منتجات رقمية تُحدث فارقاً حقيقياً في سوقك.
               </p>
-              <div className="flex gap-3 flex-wrap">
-                <Link to="/about" className="bg-emerald-700 hover:bg-emerald-800 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg">تعرف علينا</Link>
-                <Link to="/contact" className="px-6 py-3 rounded-2xl font-bold text-sm border-2 border-gray-200 text-gray-600 hover:border-amber-500 transition-all">تواصل معنا</Link>
+              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
+                <Link to="/request" className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-black text-white text-sm hover:shadow-2xl hover:-translate-y-0.5 transition-all" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                  ابدأ مشروعك الآن <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/>
+                </Link>
+                <button onClick={() => scrollTo('portfolio')} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-black text-white text-sm border border-white/20 hover:bg-white/10 transition-all">
+                  استعرض أعمالنا
+                </button>
+              </div>
+              <div className="mt-10 flex items-center gap-5 justify-center lg:justify-start">
+                <div className="flex -space-x-2 space-x-reverse">
+                  {['#7c3aed','#2563eb','#059669','#dc2626'].map((c,i) => (
+                    <div key={i} className="w-9 h-9 rounded-full border-2 border-white/20 flex items-center justify-center text-white text-xs font-black" style={{ background:c }}>
+                      {['أ','م','ف','س'][i]}
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <div className="flex">{[...Array(5)].map((_,i) => <Star key={i} size={11} className="text-yellow-400 fill-yellow-400"/>)}</div>
+                  <p className="text-gray-400 text-xs mt-0.5">200+ عميل راضٍ</p>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            {/* Floating visual */}
+            <div className="hidden lg:block relative">
+              <div className="relative w-full max-w-md mx-auto aspect-square">
+                <div className="absolute inset-10 rounded-3xl border border-white/10 bg-white/5 backdrop-blur flex items-center justify-center">
+                  <div className="text-center p-8">
+                    <div className="w-20 h-20 rounded-3xl mx-auto mb-4 flex items-center justify-center" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                      <Rocket size={36} className="text-white"/>
+                    </div>
+                    <p className="text-white font-black text-xl">{cfg.stats_projects || '500+'}  مشروع</p>
+                    <p className="text-gray-400 text-sm">مكتمل بنجاح</p>
+                  </div>
+                </div>
+                {[
+                  { lbl:'مواقع احترافية', Icon:Globe,       color:'#7c3aed', cls:'top-2 right-2' },
+                  { lbl:'تطبيقات جوال',   Icon:Smartphone,  color:'#2563eb', cls:'top-10 left-0' },
+                  { lbl:'ذكاء اصطناعي',  Icon:Brain,        color:'#059669', cls:'bottom-10 right-0' },
+                  { lbl:'تسويق رقمي',    Icon:TrendingUp,   color:'#dc2626', cls:'bottom-2 left-10' },
+                ].map(({ lbl, Icon, color, cls }) => (
+                  <div key={lbl} className={`absolute ${cls} flex items-center gap-2 px-3 py-2 rounded-2xl border border-white/10 bg-white/10 backdrop-blur text-white text-xs font-bold shadow-lg`}>
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background:color }}><Icon size={13}/></div>
+                    {lbl}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-gray-400 animate-bounce">
+          <span className="text-xs font-bold">اسحب للأسفل</span>
+          <ChevronDown size={18}/>
+        </div>
+      </section>
+
+      {/* ───── STATS BAR ─────────────────────────────────────── */}
+      <section className="py-14" style={{ background:'linear-gradient(135deg,#7c3aed,#4f46e5,#2563eb)' }}>
+        <div className="max-w-5xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { val: cfg.stats_projects  || '500+', lbl:'مشروع منجز', Icon:Rocket },
+            { val: cfg.stats_clients   || '200+', lbl:'عميل راضٍ',  Icon:Users  },
+            { val: cfg.stats_experience|| '8+',   lbl:'سنة خبرة',   Icon:Award  },
+            { val: cfg.stats_team      || '50+',  lbl:'خبير متخصص', Icon:Zap    },
+          ].map(({ val, lbl, Icon }) => (
+            <div key={lbl} className="text-center group">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
+                <Icon size={22} className="text-white"/>
+              </div>
+              <div className="text-3xl font-black text-white mb-1">{val}</div>
+              <div className="text-purple-200 text-sm font-medium">{lbl}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ───── SERVICES ──────────────────────────────────────── */}
+      <section id="services" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-black mb-4">خدماتنا</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">ماذا نقدم لك؟</h2>
+            <p className="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed">حلول رقمية شاملة مصمّمة لتحقيق أهداف عملك وتعزيز تنافسيتك في السوق</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {svcList.map((svc: any) => {
+              const Icon = ICON_MAP[svc.icon] || Globe
+              const features: string[] = Array.isArray(svc.features) ? svc.features : JSON.parse(svc.features || '[]')
+              return (
+                <div key={svc.id} className="group bg-white rounded-3xl p-6 border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
+                  <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-5 transition-opacity" style={{ background:svc.color }}/>
+                  <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-lg" style={{ background:`linear-gradient(135deg,${svc.color},${svc.color}bb)` }}>
+                    <Icon size={26} className="text-white"/>
+                  </div>
+                  <h3 className="font-black text-gray-900 text-lg mb-2">{svc.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed mb-5">{svc.description}</p>
+                  <ul className="space-y-2">
+                    {features.slice(0,4).map((f,i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                        <CheckCircle size={13} style={{ color:svc.color }} className="flex-shrink-0"/>{f}
+                      </li>
+                    ))}
+                  </ul>
+                  {svc.price_from && (
+                    <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                      <span className="text-xs text-gray-400">يبدأ من</span>
+                      <span className="font-black text-sm" style={{ color:svc.color }}>{svc.price_from} {cfg.currency || 'ريال'}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── WHY US ────────────────────────────────────────── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div>
+              <span className="inline-block px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black mb-4">لماذا نحن؟</span>
+              <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-5 leading-tight">نبني علاقات طويلة الأمد، لا مجرد مشاريع</h2>
+              <p className="text-gray-500 text-sm leading-loose mb-8">نؤمن بأن نجاح عميلنا هو نجاحنا. نستثمر وقتنا في فهم أعمالك عمقاً قبل كتابة أي سطر كود.</p>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { Icon:Shield,    title:'جودة مضمونة',        desc:'ضمان 3 أشهر بعد التسليم',     color:'#7c3aed' },
+                  { Icon:Zap,       title:'تسليم سريع',          desc:'نلتزم بالمواعيد دائماً',      color:'#2563eb' },
+                  { Icon:Users,     title:'فريق خبراء',          desc:'50+ متخصص محترف',              color:'#059669' },
+                  { Icon:BarChart3, title:'نتائج قابلة للقياس', desc:'تحليلات وتقارير شاملة',        color:'#dc2626' },
+                ].map(({ Icon, title, desc, color }) => (
+                  <div key={title} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-gray-200 transition-all">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background:color+'15', color }}>
+                      <Icon size={18}/>
+                    </div>
+                    <p className="font-black text-gray-800 text-sm mb-1">{title}</p>
+                    <p className="text-gray-400 text-xs">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: <Lightbulb size={24} />, title: 'تفكير إبداعي', desc: 'تنمية مهارات الابتكار والتفكير النقدي', bg: 'bg-emerald-50', color: 'text-emerald-600' },
-                { icon: <Target size={24} />, title: 'تميز أكاديمي', desc: 'نتائج متقدمة محلياً وطنياً', bg: 'bg-amber-50', color: 'text-amber-600' },
-                { icon: <Heart size={24} />, title: 'قيم أصيلة', desc: 'تربية على الهوية والانتماء العُماني', bg: 'bg-rose-50', color: 'text-rose-600' },
-                { icon: <Rocket size={24} />, title: 'تقنية حديثة', desc: 'مختبرات ذكية وفصول رقمية متكاملة', bg: 'bg-sky-50', color: 'text-sky-600' },
-              ].map((c, i) => (
-                <div key={c.title} className={`${c.bg} p-5 rounded-2xl hover:-translate-y-1 transition-all group border border-gray-100`}>
-                  <div className={`${c.color} mb-3 group-hover:scale-110 transition-transform`}>{c.icon}</div>
-                  <h4 className="font-bold text-sm mb-1 text-gray-800">{c.title}</h4>
-                  <p className="text-[11px] text-gray-500 leading-relaxed">{c.desc}</p>
+                { num:'98%',  lbl:'رضا العملاء',        sub:'بناءً على 200+ تقييم', color:'#7c3aed' },
+                { num:'3x',   lbl:'متوسط نمو العملاء', sub:'مشاريعنا المنجزة',      color:'#2563eb' },
+                { num:'<2s',  lbl:'سرعة التحميل',       sub:'معيارنا الأدنى',       color:'#059669' },
+                { num:'24/7', lbl:'دعم فني',             sub:'للمشاريع النشطة',      color:'#dc2626' },
+              ].map(({ num, lbl, sub, color }) => (
+                <div key={num} className="p-6 rounded-3xl text-white text-center hover:scale-105 transition-transform" style={{ background:`linear-gradient(135deg,${color},${color}cc)` }}>
+                  <p className="text-4xl font-black mb-1">{num}</p>
+                  <p className="font-bold text-sm">{lbl}</p>
+                  <p className="text-white/70 text-xs mt-1">{sub}</p>
                 </div>
               ))}
             </div>
@@ -334,91 +318,237 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Programs Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-4 py-2 rounded-xl mb-4">
-              <BookOpen size={16} className="text-emerald-600" />
-              <span className="text-emerald-700 font-black text-xs tracking-wider">مسارات التعلم</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">برامجنا <span className="text-emerald-600">الأكاديمية</span> واللاصفية</h2>
-            <p className="text-gray-500 max-w-xl mx-auto text-sm leading-relaxed">تنوع في المسارات يضمن لكل طالب اكتشاف موهبته وتطوير مهاراته بطريقة شاملة ومتكاملة</p>
+      {/* ───── PORTFOLIO ─────────────────────────────────────── */}
+      <section id="portfolio" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-10">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-black mb-4">أعمالنا</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">مشاريع تتحدث عن نفسها</h2>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-            {PROGRAMS.map((p, i) => (
-              <div key={p.title} className={`bg-white rounded-2xl p-5 border ${p.border} hover:shadow-lg hover:-translate-y-1 transition-all group cursor-default`}>
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ background: p.color + '15', color: p.color }}>
-                  {p.icon}
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {PORTFOLIO_CATEGORIES.map(cat => (
+              <button key={cat} onClick={() => setPortfolioCat(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${portfolioCat===cat ? 'text-white shadow-lg' : 'bg-white text-gray-600 border border-gray-200 hover:border-purple-200'}`}
+                style={portfolioCat===cat ? { background:'linear-gradient(135deg,#7c3aed,#2563eb)' } : {}}>
+                {CATEGORY_LABELS[cat]}
+              </button>
+            ))}
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {portList.map((item: any) => {
+              const techs: string[] = Array.isArray(item.technologies) ? item.technologies : (item.technologies || [])
+              return (
+                <div key={item.id} className="group bg-white rounded-3xl overflow-hidden border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                  <div className="h-44 relative overflow-hidden flex items-center justify-center" style={{ background:'linear-gradient(135deg,#1e1b4b,#312e81,#4338ca)' }}>
+                    {item.image_url
+                      ? <img src={item.image_url} alt={item.title} className="w-full h-full object-cover"/>
+                      : <div className="text-center text-white opacity-60"><Layers size={38} className="mx-auto mb-2"/><p className="text-sm font-bold">{item.title}</p></div>
+                    }
+                    {item.is_featured && <div className="absolute top-3 right-3 px-2 py-1 bg-yellow-400 text-yellow-900 text-[10px] font-black rounded-lg">⭐ مميز</div>}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      {item.project_url && <a href={item.project_url} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-800 hover:bg-purple-600 hover:text-white transition-colors"><ExternalLink size={16}/></a>}
+                    </div>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="font-black text-gray-800 text-sm">{item.title}</h3>
+                      <span className="text-[10px] px-2 py-1 bg-purple-100 text-purple-700 rounded-lg font-bold flex-shrink-0">{CATEGORY_LABELS[item.category] || item.category}</span>
+                    </div>
+                    <p className="text-gray-500 text-xs mb-3">{item.description}</p>
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-wrap gap-1">{techs.slice(0,3).map(t => <span key={t} className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full font-bold">{t}</span>)}</div>
+                      {item.client_name && <span className="text-[10px] text-gray-400">{item.client_name}</span>}
+                    </div>
+                  </div>
                 </div>
-                <h4 className="font-black text-gray-800 text-sm mb-2">{p.title}</h4>
-                <p className="text-xs text-gray-500 leading-relaxed">{p.desc}</p>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── PROCESS ───────────────────────────────────────── */}
+      <section id="process" className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-green-100 text-green-700 text-xs font-black mb-4">كيف نعمل</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">من الفكرة إلى الإطلاق</h2>
+            <p className="text-gray-500 text-sm max-w-lg mx-auto">منهجية عمل واضحة ومجربة تضمن تسليم مشروعك في الوقت المحدد وبالجودة المطلوبة</p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { step:'01', title:'الاستشارة', desc:'نفهم أهدافك واحتياجات عملك بعمق', Icon:MessageCircle, color:'#7c3aed' },
+              { step:'02', title:'التصميم',   desc:'نضع الخطة والتصميم ونعرضها عليك',  Icon:Palette,       color:'#2563eb' },
+              { step:'03', title:'التطوير',   desc:'نبني المشروع بأعلى معايير الجودة', Icon:Code2,         color:'#059669' },
+              { step:'04', title:'الإطلاق',   desc:'نطلق المشروع ونتابعه معك باستمرار',Icon:Rocket,        color:'#dc2626' },
+            ].map(({ step, title, desc, Icon, color }) => (
+              <div key={step} className="text-center group">
+                <div className="w-16 h-16 rounded-3xl mx-auto mb-4 flex items-center justify-center text-white shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all" style={{ background:`linear-gradient(135deg,${color},${color}cc)` }}>
+                  <Icon size={24}/>
+                </div>
+                <div className="text-xs font-black mb-1" style={{ color }}>{step}</div>
+                <h3 className="font-black text-gray-800 mb-1">{title}</h3>
+                <p className="text-gray-500 text-xs leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
-          <div className="text-center">
-            <Link to="/articles" className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-7 py-3.5 rounded-2xl font-bold text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-              استكشف إبداعات طلابنا <ChevronLeft size={16} />
-            </Link>
+        </div>
+      </section>
+
+      {/* ───── PRICING ───────────────────────────────────────── */}
+      <section id="pricing" className="py-20" style={{ background:'linear-gradient(135deg,#0f0c29,#302b63)' }}>
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-purple-500/20 text-purple-300 text-xs font-black mb-4">الأسعار</span>
+            <h2 className="text-3xl md:text-4xl font-black text-white mb-3">شفافية كاملة في التسعير</h2>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto">اختر الخطة التي تناسب مشروعك. لا توجد تكاليف خفية.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6 items-center">
+            {pricList.map((plan: any) => {
+              const features: string[] = Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
+              return (
+                <div key={plan.id} className={`rounded-3xl p-7 relative transition-all hover:scale-105 ${plan.is_popular ? 'scale-105 shadow-2xl shadow-purple-900/50' : 'bg-white/5 backdrop-blur border border-white/10'}`}
+                  style={plan.is_popular ? { background:'linear-gradient(160deg,#7c3aed,#4f46e5,#2563eb)' } : {}}>
+                  {plan.is_popular && <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-1.5 bg-yellow-400 text-yellow-900 text-xs font-black rounded-full shadow-lg">⭐ الأكثر طلباً</div>}
+                  <div className="mb-6">
+                    <h3 className="font-black text-white text-xl mb-1">{plan.name}</h3>
+                    <p className="text-gray-300 text-xs mb-4">{plan.description}</p>
+                    <div className="flex items-baseline gap-2">
+                      {plan.price > 0
+                        ? <><span className="text-4xl font-black text-white">{plan.price}</span><span className="text-gray-300 text-sm">{plan.currency}</span><span className="text-gray-400 text-xs">/ {plan.period}</span></>
+                        : <span className="text-2xl font-black text-white">تواصل معنا</span>
+                      }
+                    </div>
+                  </div>
+                  <ul className="space-y-3 mb-7">
+                    {features.map((f,i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs text-gray-200">
+                        <CheckCircle size={13} className={plan.is_popular ? 'text-yellow-300' : 'text-green-400'}/>{f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/request" className={`block text-center w-full py-3 rounded-2xl font-black text-sm transition-all ${plan.is_popular ? 'bg-white text-purple-700 hover:bg-yellow-50' : 'border border-white/30 text-white hover:bg-white/10'}`}>
+                    {plan.price > 0 ? 'ابدأ الآن' : 'احصل على عرض سعر'}
+                  </Link>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* News Section */}
-      {featuredNews.length > 0 && (
-        <section className="py-16 bg-white">
-          <div className="max-w-6xl mx-auto px-4">
-            <div className="flex justify-between items-end mb-10">
-              <div>
-                <span className="text-amber-600 font-black text-[10px] tracking-[0.2em] uppercase">آخر المستجدات</span>
-                <h2 className="text-2xl font-black mt-1 text-gray-900">أحدث الأخبار والفعاليات</h2>
-              </div>
-              <Link to="/news" className="text-emerald-600 font-bold text-sm hover:underline flex items-center gap-1">عرض الكل <ChevronLeft size={14} /></Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredNews.map((n: any, idx: number) => (
-                <div key={n.id} className={`rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all hover:-translate-y-2 bg-white group ${idx === 0 ? 'md:row-span-1' : ''}`}>
-                  <div className="h-52 overflow-hidden relative">
-                    {n.image_url && <img src={n.image_url} alt={n.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" loading="lazy"
-                      onError={e => { (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/800x400/064e3b/fff?text=خبر' }} />}
-                    {!n.image_url && <div className="w-full h-full bg-gradient-to-br from-emerald-100 to-emerald-200 flex items-center justify-center"><BookOpen size={40} className="text-emerald-400" /></div>}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                    <span className="absolute bottom-3 right-3 text-white text-[10px] font-bold bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg">
-                      {new Date(n.publish_date).toLocaleDateString('ar-OM')}
-                    </span>
-                    {n.category && <span className="absolute top-3 right-3 text-[9px] bg-emerald-600/80 text-white px-2 py-0.5 rounded-md font-black">{n.category}</span>}
+      {/* ───── TESTIMONIALS ──────────────────────────────────── */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-14">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-yellow-100 text-yellow-700 text-xs font-black mb-4">آراء العملاء</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">ماذا يقول عملاؤنا؟</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testList.map((t: any) => (
+              <div key={t.id} className="bg-white p-6 rounded-3xl border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all">
+                <Quote size={26} className="text-purple-200 mb-4"/>
+                <p className="text-gray-700 text-sm leading-loose mb-6 min-h-16">{t.content}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-white font-black text-base flex-shrink-0" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                    {t.client_name[0]}
                   </div>
-                  <div className="p-5">
-                    <h3 className="font-bold mb-2 line-clamp-2 text-gray-800">{n.title}</h3>
-                    {n.summary && <p className="text-sm leading-relaxed line-clamp-2 text-gray-500">{n.summary}</p>}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-gray-800 text-sm">{t.client_name}</p>
+                    <p className="text-gray-400 text-xs truncate">{t.client_position} · {t.company}</p>
+                  </div>
+                  <div className="flex gap-0.5 flex-shrink-0">
+                    {[...Array(t.rating||5)].map((_,i) => <Star key={i} size={11} className="text-yellow-400 fill-yellow-400"/>)}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      <HomeVideos videos={DEFAULT_VIDEOS} />
-      <TestimonialsCarousel testimonials={DEFAULT_TESTIMONIALS} />
-
-      {/* CTA */}
-      <section className="py-16 bg-gradient-to-l from-amber-500 to-amber-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23000' stroke-width='1' stroke-opacity='0.5'%3E%3Cpath d='M0 40L40 0M0 0l40 40'/%3E%3C/g%3E%3C/svg%3E\")" }} />
-        <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-5">
-            <Briefcase size={28} className="text-gray-900" />
-          </div>
-          <h2 className="text-3xl font-black text-gray-900 mb-3">انضم إلى عائلتنا التعليمية</h2>
-          <p className="text-gray-800/80 mb-8 max-w-xl mx-auto text-sm leading-relaxed">نرحب بالكوادر التعليمية المتميزة وأولياء الأمور الراغبين في تسجيل أبنائهم. اكتشف الوظائف الشاغرة أو تواصل مع الإدارة.</p>
-          <div className="flex gap-3 justify-center flex-wrap">
-            <Link to="/jobs" className="bg-gray-900 text-white px-8 py-3.5 rounded-2xl font-bold text-sm shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2">
-              <Briefcase size={16} /> الوظائف الشاغرة
-            </Link>
-            <Link to="/contact" className="bg-white/30 text-gray-900 px-8 py-3.5 rounded-2xl font-bold text-sm hover:bg-white/50 transition-all border border-gray-900/20">تواصل معنا</Link>
+              </div>
+            ))}
           </div>
         </div>
       </section>
+
+      {/* ───── FAQ ───────────────────────────────────────────── */}
+      <section id="faq" className="py-20 bg-white">
+        <div className="max-w-3xl mx-auto px-4 md:px-6">
+          <div className="text-center mb-12">
+            <span className="inline-block px-4 py-1.5 rounded-full bg-blue-100 text-blue-700 text-xs font-black mb-4">الأسئلة الشائعة</span>
+            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">لديك سؤال؟</h2>
+          </div>
+          <div className="space-y-3">
+            {faqList.map((item: any, i: number) => <FaqItem key={item.id} q={item.question} a={item.answer} open={i===0}/>)}
+          </div>
+        </div>
+      </section>
+
+      {/* ───── CTA / CONTACT ─────────────────────────────────── */}
+      <section id="contact" className="py-20 relative overflow-hidden" style={{ background:'linear-gradient(135deg,#7c3aed,#4f46e5,#2563eb)' }}>
+        <Particles/>
+        <div className="relative max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">جاهز لبدء مشروعك؟</h2>
+          <p className="text-purple-200 text-base mb-10 max-w-xl mx-auto leading-relaxed">
+            تواصل معنا اليوم واحصل على استشارة مجانية. سنساعدك على تحويل فكرتك إلى واقع رقمي ناجح.
+          </p>
+          <div className="grid sm:grid-cols-3 gap-4 mb-10 max-w-xl mx-auto">
+            {[
+              { href:`tel:${phone.replace(/\s/g,'')}`, Icon:Phone, lbl:phone },
+              { href:`mailto:${email}`, Icon:Mail, lbl:email },
+              { href:`https://wa.me/${whatsapp}`, Icon:MessageCircle, lbl:'واتساب' },
+            ].map(({ href, Icon, lbl }) => (
+              <a key={lbl} href={href} target="_blank" rel="noreferrer"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 transition-all text-white text-sm font-bold backdrop-blur border border-white/20">
+                <Icon size={16}/>{lbl}
+              </a>
+            ))}
+          </div>
+          <Link to="/request" className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-white text-purple-700 font-black text-base hover:shadow-2xl hover:-translate-y-1 transition-all">
+            <Rocket size={18}/> ابدأ مشروعك الآن <ArrowLeft size={16}/>
+          </Link>
+        </div>
+      </section>
+
+      {/* ───── FOOTER ────────────────────────────────────────── */}
+      <footer style={{ background:'#0a0a0f' }} className="text-gray-400 py-14">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-10">
+            <div className="md:col-span-2">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                  <Code2 size={18} className="text-white"/>
+                </div>
+                <span className="text-xl font-black text-white">{companyName}</span>
+              </div>
+              <p className="text-sm leading-loose mb-5 max-w-xs">{cfg.company_tagline || 'نبني المستقبل الرقمي — شريكك الموثوق في التحول الرقمي'}</p>
+              <div className="flex gap-3">
+                {[{ href:`tel:${phone.replace(/\s/g,'')}`, Icon:Phone }, { href:`mailto:${email}`, Icon:Mail }, { href:`https://wa.me/${whatsapp}`, Icon:MessageCircle }].map(({ href, Icon }, i) => (
+                  <a key={i} href={href} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-xl bg-white/5 hover:bg-purple-600/30 flex items-center justify-center transition-all text-gray-400 hover:text-white border border-white/10">
+                    <Icon size={15}/>
+                  </a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-white font-black text-sm mb-4">خدماتنا</h4>
+              <ul className="space-y-2 text-xs">
+                {['تطوير المواقع','تطبيقات الجوال','تصميم UI/UX','التسويق الرقمي','حلول الذكاء الاصطناعي','الحوسبة السحابية'].map(l => (
+                  <li key={l}><button onClick={() => scrollTo('services')} className="hover:text-white transition-colors text-right">{l}</button></li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-white font-black text-sm mb-4">روابط سريعة</h4>
+              <ul className="space-y-2 text-xs">
+                {[['#portfolio','أعمالنا'],['#pricing','الأسعار'],['#faq','الأسئلة الشائعة'],['#contact','تواصل معنا'],['/request','ابدأ مشروعك'],['/login','دخول الإدارة']].map(([to,lbl]) => (
+                  <li key={lbl}><Link to={to} className="hover:text-white transition-colors">{lbl}</Link></li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+            <p>© {new Date().getFullYear()} {companyName}. جميع الحقوق محفوظة.</p>
+            <p>{address}</p>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }

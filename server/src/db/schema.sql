@@ -632,3 +632,188 @@ CREATE TABLE IF NOT EXISTS invoices (
 );
 
 CREATE INDEX IF NOT EXISTS idx_invoices_school ON invoices(school_id);
+
+-- ═══════════════════════════════════════════════════════════════════
+-- PLATFORM: Tech Company Business Engine
+-- ═══════════════════════════════════════════════════════════════════
+
+-- Services catalog
+CREATE TABLE IF NOT EXISTS platform_services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(200) NOT NULL,
+  title_en VARCHAR(200),
+  description TEXT,
+  icon VARCHAR(100),
+  color VARCHAR(30) DEFAULT '#7c3aed',
+  price_from DECIMAL(10,2),
+  duration_days INTEGER,
+  category VARCHAR(100),
+  features JSONB DEFAULT '[]',
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Portfolio / Previous work
+CREATE TABLE IF NOT EXISTS portfolio_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  category VARCHAR(100),
+  client_name VARCHAR(200),
+  project_url TEXT,
+  technologies TEXT[],
+  is_featured BOOLEAN DEFAULT false,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Client testimonials
+CREATE TABLE IF NOT EXISTS testimonials (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  client_name VARCHAR(200) NOT NULL,
+  client_position VARCHAR(200),
+  company VARCHAR(200),
+  avatar_url TEXT,
+  content TEXT NOT NULL,
+  rating INTEGER DEFAULT 5,
+  is_featured BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- FAQ
+CREATE TABLE IF NOT EXISTS faq_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  category VARCHAR(100) DEFAULT 'general',
+  sort_order INTEGER DEFAULT 0,
+  is_active BOOLEAN DEFAULT true
+);
+
+-- Pricing plans
+CREATE TABLE IF NOT EXISTS pricing_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(100) NOT NULL,
+  name_en VARCHAR(100),
+  price DECIMAL(10,2),
+  currency VARCHAR(10) DEFAULT 'OMR',
+  period VARCHAR(50) DEFAULT 'شهرياً',
+  description TEXT,
+  features JSONB DEFAULT '[]',
+  is_popular BOOLEAN DEFAULT false,
+  is_active BOOLEAN DEFAULT true,
+  sort_order INTEGER DEFAULT 0
+);
+
+-- Business clients (CRM)
+CREATE TABLE IF NOT EXISTS business_clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name VARCHAR(200) NOT NULL,
+  email VARCHAR(200),
+  phone VARCHAR(50),
+  company VARCHAR(200),
+  avatar_url TEXT,
+  status VARCHAR(30) DEFAULT 'active',
+  client_type VARCHAR(30) DEFAULT 'individual',
+  source VARCHAR(100),
+  notes TEXT,
+  user_id UUID REFERENCES users(id),
+  total_projects INTEGER DEFAULT 0,
+  total_revenue DECIMAL(12,2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Service requests / Tickets
+CREATE TABLE IF NOT EXISTS service_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ticket_number VARCHAR(50) UNIQUE,
+  client_id UUID REFERENCES business_clients(id),
+  client_name VARCHAR(200) NOT NULL,
+  client_email VARCHAR(200),
+  client_phone VARCHAR(50),
+  client_company VARCHAR(200),
+  service_type VARCHAR(100),
+  title VARCHAR(300) NOT NULL,
+  description TEXT,
+  budget_min DECIMAL(10,2),
+  budget_max DECIMAL(10,2),
+  expected_date DATE,
+  priority VARCHAR(20) DEFAULT 'medium',
+  status VARCHAR(30) DEFAULT 'new',
+  assigned_to UUID REFERENCES users(id),
+  admin_notes TEXT,
+  attachments JSONB DEFAULT '[]',
+  source VARCHAR(50) DEFAULT 'website',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Projects (approved from requests or direct)
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_number VARCHAR(50) UNIQUE,
+  request_id UUID REFERENCES service_requests(id),
+  client_id UUID REFERENCES business_clients(id),
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  status VARCHAR(30) DEFAULT 'planning',
+  progress INTEGER DEFAULT 0,
+  start_date DATE,
+  end_date DATE,
+  budget DECIMAL(12,2),
+  paid DECIMAL(12,2) DEFAULT 0,
+  technologies TEXT[],
+  milestones JSONB DEFAULT '[]',
+  team_members JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Project messages (client <-> team chat)
+CREATE TABLE IF NOT EXISTS project_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  sender_name VARCHAR(200),
+  sender_role VARCHAR(50),
+  content TEXT NOT NULL,
+  is_from_client BOOLEAN DEFAULT false,
+  is_read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Blog posts
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title VARCHAR(300) NOT NULL,
+  slug VARCHAR(300) UNIQUE,
+  excerpt TEXT,
+  content TEXT,
+  image_url TEXT,
+  category VARCHAR(100),
+  tags JSONB DEFAULT '[]',
+  author_name VARCHAR(200),
+  status VARCHAR(20) DEFAULT 'draft',
+  views INTEGER DEFAULT 0,
+  published_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Company settings (site config / CMS)
+CREATE TABLE IF NOT EXISTS company_settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key VARCHAR(100) UNIQUE NOT NULL,
+  value TEXT,
+  type VARCHAR(30) DEFAULT 'text'
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_requests_status ON service_requests(status);
+CREATE INDEX IF NOT EXISTS idx_requests_created ON service_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
+CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
+CREATE INDEX IF NOT EXISTS idx_blog_slug ON blog_posts(slug);
+CREATE INDEX IF NOT EXISTS idx_blog_status ON blog_posts(status);
+

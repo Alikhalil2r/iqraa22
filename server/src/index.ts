@@ -35,6 +35,7 @@ import auditRouter    from './routes/audit'
 import twofaRouter    from './routes/twofa'
 import aiInsightsRouter from './routes/ai-insights'
 import billingRouter  from './routes/billing'
+import platformRouter from './routes/platform'
 
 dotenv.config()
 
@@ -139,6 +140,7 @@ app.use('/api/audit',        auditRouter)
 app.use('/api/2fa',          twofaRouter)
 app.use('/api/ai-insights',  aiInsightsRouter)
 app.use('/api/billing',      billingRouter)
+app.use('/api/platform',    platformRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 

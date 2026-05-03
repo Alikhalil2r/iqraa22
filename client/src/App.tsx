@@ -66,6 +66,10 @@ const ParentSchedule        = lazy(() => import('./pages/Parent/ParentSchedule')
 const ParentNotifications   = lazy(() => import('./pages/Parent/ParentNotifications'))
 
 const NotFoundPage     = lazy(() => import('./pages/NotFoundPage'))
+const RequestForm      = lazy(() => import('./pages/Platform/RequestForm'))
+const RequestsAdmin    = lazy(() => import('./pages/Admin/RequestsAdmin'))
+const ClientsAdmin     = lazy(() => import('./pages/Admin/ClientsAdmin'))
+const ProjectsAdmin    = lazy(() => import('./pages/Admin/ProjectsAdmin'))
 
 // ─── Role-aware admin guard ───────────────────────────────────────────────────
 // (admin roles include: super_admin, admin, teacher, accountant, librarian, hr_manager, guard)
@@ -135,10 +139,13 @@ function RedirectCheck() {
   return (
     <Suspense fallback={<PageLoader />}>
       <Routes>
-        {/* Public site */}
-        <Route path="/" element={<PublicLayout />}>
-          <Route index element={<HomePage />} />
-          <Route path="about"            element={<AboutPage />} />
+        {/* ── New Tech Company Landing Page (standalone) ── */}
+        <Route path="/" element={<HomePage />} />
+        <Route path="/request" element={<RequestForm />} />
+
+        {/* ── School public site (legacy) ── */}
+        <Route path="/school" element={<PublicLayout />}>
+          <Route index element={<AboutPage />} />
           <Route path="news"             element={<NewsPage />} />
           <Route path="contact"          element={<ContactPage />} />
           <Route path="hall-of-fame"     element={<HallOfFamePage />} />
@@ -192,6 +199,9 @@ function RedirectCheck() {
           <Route path="ai-insights"    element={<AIInsights />} />
           <Route path="audit-log"      element={<AuditLog />} />
           <Route path="2fa"            element={<TwoFactorSetup />} />
+          <Route path="requests"       element={<RequestsAdmin />} />
+          <Route path="clients"        element={<ClientsAdmin />} />
+          <Route path="projects"       element={<ProjectsAdmin />} />
         </Route>
 
         {/* Parent Portal */}
