@@ -231,7 +231,7 @@ export default function Dashboard() {
       {/* Alerts */}
       {alerts.length > 0 && (
         <div className="space-y-2">
-          {alerts.map((a, i) => <AlertBanner key={i} {...a} />)}
+          {alerts.map((a) => <AlertBanner key={a.message} {...a} />)}
         </div>
       )}
 
@@ -388,7 +388,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
                   <Pie data={pieData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} paddingAngle={3} dataKey="value">
-                    {pieData.map((entry, index) => <Cell key={index} fill={entry.color} />)}
+                    {pieData.map((entry) => <Cell key={entry.name} fill={entry.color} />)}
                   </Pie>
                   <Tooltip contentStyle={{ fontFamily: 'Cairo', fontSize: 12, borderRadius: 12, border: 'none' }} />
                 </PieChart>
@@ -456,7 +456,7 @@ export default function Dashboard() {
                 info:    { bg:'#eff6ff', border:'#93c5fd', icon:'#3b82f6', text:'#1e3a8a' },
               }[ins.type]
               return (
-                <Link key={i} to={ins.href}
+                <Link key={ins.href} to={ins.href}
                   className="flex items-start gap-3 p-3 rounded-xl border transition-all hover:shadow-sm group"
                   style={{ background: colors.bg, borderColor: colors.border }}>
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: colors.icon + '20' }}>
@@ -488,7 +488,7 @@ export default function Dashboard() {
               const bg        = isNews ? '#e0f2fe' : isEvent ? '#ede9fe' : '#fef3c7'
               const iconColor = isNews ? 'text-sky-600' : isEvent ? 'text-purple-600' : 'text-amber-600'
               return (
-                <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                <div key={item.title + item.created_at} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
                     {isNews  ? <Newspaper     size={15} className={iconColor} /> :
                      isEvent ? <Calendar      size={15} className={iconColor} /> :

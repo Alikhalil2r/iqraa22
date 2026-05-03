@@ -114,7 +114,7 @@ export default function PerformanceWidget() {
       {subjectAvgs.length > 0 && (
         <div className="space-y-2.5">
           {subjectAvgs.map((s, i) => (
-            <MiniBar key={i} label={s.subject} value={s.avg} max={100}
+            <MiniBar key={s.subject} label={s.subject} value={s.avg} max={100}
               color={s.avg >= 80 ? '#10b981' : s.avg >= 60 ? '#3b82f6' : '#f59e0b'} />
           ))}
         </div>

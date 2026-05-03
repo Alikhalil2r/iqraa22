@@ -167,7 +167,7 @@ async function start() {
     await initDB()
     const { seedDatabase } = await import('./db/seed')
     await seedDatabase()
-    app.listen(PORT, '0.0.0.0', () => {
+    app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`)
       console.log(`🔒 Helmet ✓ | Rate Limiting ✓ | CORS ✓ | JWT ✓`)
     })

@@ -63,11 +63,11 @@ export default function ShortcutsModal({ open, onClose }: Props) {
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-2 px-2">{section.title}</p>
               <div className="space-y-0.5">
                 {section.items.map((item, i) => (
-                  <div key={i} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                  <div key={item.desc} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-gray-50 transition-colors">
                     <span className="text-sm text-gray-700 font-bold">{item.desc}</span>
                     <div className="flex items-center gap-1">
                       {item.keys.map((k, j) => (
-                        <React.Fragment key={j}>
+                        <React.Fragment key={`${item.desc}-key-${j}`}>
                           {j > 0 && <span className="text-gray-300 text-[10px] mx-0.5">+</span>}
                           <kbd className="min-w-[28px] px-2 py-1 bg-gray-100 text-gray-600 text-[11px] font-mono rounded-md border border-gray-200 font-bold shadow-sm text-center">
                             {k}

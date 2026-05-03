@@ -72,7 +72,7 @@ export default function AchievementsPage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 divide-x md:divide-x rtl:divide-x-reverse divide-gray-100">
             {stats.map((s, i) => (
-              <div key={i} className="text-center py-6 px-4">
+              <div key={s.l} className="text-center py-6 px-4">
                 <div className="flex justify-center mb-2" style={{ color: s.color }}>{s.icon}</div>
                 <p className="text-3xl font-black text-gray-900">{s.n}</p>
                 <p className="text-xs text-gray-400 font-bold mt-1">{s.l}</p>

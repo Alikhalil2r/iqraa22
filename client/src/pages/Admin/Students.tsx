@@ -69,17 +69,17 @@ function AttendanceHeatmap({ attendance }: { attendance: any[] }) {
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">آخر 10 أسابيع</p>
       <div className="flex gap-1 mb-1">
         {['ح','ن','ث','ر','خ','ج','س'].map((d,i) => (
-          <div key={i} className="w-7 text-[9px] text-gray-400 text-center font-bold">{d}</div>
+          <div key={d} className="w-7 text-[9px] text-gray-400 text-center font-bold">{d}</div>
         ))}
       </div>
       <div className="space-y-1">
         {weeks.arr.map((week, wi) => (
-          <div key={wi} className="flex gap-1">
+          <div key={`week-${wi}`} className="flex gap-1">
             {week.map((day, di) => {
               const status = statusMap[day.date]
               const isFuture = day.date > weeks.todayStr
               return (
-                <div key={di}
+                <div key={day.date}
                   className="w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-black transition-all hover:scale-110"
                   style={{
                     background: status ? COLORS[status] || '#e2e8f0' : '#f1f5f9',

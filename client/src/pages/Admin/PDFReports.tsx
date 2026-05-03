@@ -359,7 +359,7 @@ function StudentResultCard({ student, grades, totalScore, maxScore, avgPct, grad
               const pct = g.max_score > 0 ? Math.round((g.score / g.max_score) * 100) : 0
               const gi = GRADE_LABEL(pct)
               return (
-                <tr key={i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
+                <tr key={g.id ?? g.subject_name ?? i} style={{ background: i % 2 === 0 ? '#ffffff' : '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
                   <td style={{ padding: '10px 14px', fontWeight: 700 }}>{g.subject_name || g.subject_id}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'center' }}>{g.score}</td>
                   <td style={{ padding: '10px 14px', textAlign: 'center' }}>—</td>

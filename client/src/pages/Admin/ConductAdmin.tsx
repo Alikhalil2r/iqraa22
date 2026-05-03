@@ -164,7 +164,7 @@ export default function ConductAdmin() {
             </h3>
             <div className="space-y-2">
               {topStudents.map((s:any, i:number) => (
-                <div key={i} className="flex items-center gap-2">
+                <div key={s.name} className="flex items-center gap-2">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-black flex-shrink-0 ${i===0?'bg-amber-400':i===1?'bg-gray-400':i===2?'bg-amber-700':'bg-gray-200'}`}>
                     {i+1}
                   </div>

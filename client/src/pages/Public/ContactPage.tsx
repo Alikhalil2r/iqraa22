@@ -84,7 +84,7 @@ export default function ContactPage() {
               { icon: <Mail size={18}/>, label: 'البريد الإلكتروني', value: school?.email || 'info@school.edu.om', href: `mailto:${school?.email || 'info@school.edu.om'}` },
               { icon: <Clock size={18}/>, label: 'أوقات الدوام', value: 'الأحد – الخميس | 7:00 ص – 2:30 م', href: '#' },
             ].map((item, i) => (
-              <a key={i} href={item.href} className="flex items-center gap-4 px-6 py-4 text-white hover:bg-emerald-600 transition-colors">
+              <a key={item.label} href={item.href} className="flex items-center gap-4 px-6 py-4 text-white hover:bg-emerald-600 transition-colors">
                 <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center flex-shrink-0">{item.icon}</div>
                 <div>
                   <p className="text-emerald-200 text-[10px] font-bold">{item.label}</p>
@@ -230,7 +230,7 @@ export default function ContactPage() {
             <p className="text-gray-500 text-sm mt-2">إجابات على أبرز الاستفسارات المتكررة</p>
           </div>
           <div className="max-w-3xl mx-auto space-y-3">
-            {FAQS.map((faq, i) => <FaqItem key={i} {...faq} />)}
+            {FAQS.map((faq) => <FaqItem key={faq.q} {...faq} />)}
           </div>
           <p className="text-center text-sm text-gray-500 mt-8">
             لم تجد إجابة لسؤالك؟{' '}

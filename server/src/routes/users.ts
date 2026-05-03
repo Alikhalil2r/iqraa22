@@ -59,7 +59,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
 
 router.delete('/:id', async (req: AuthRequest, res) => {
   try {
-    const { schoolId, userId } = req.user!
+    const { schoolId, id: userId } = req.user!
     if (req.params.id === userId) return res.status(400).json({ error: 'لا يمكنك حذف حسابك الحالي' })
     await query('DELETE FROM users WHERE id=$1 AND school_id=$2', [req.params.id, schoolId])
     res.json({ ok: true })

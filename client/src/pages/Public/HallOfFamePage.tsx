@@ -39,7 +39,7 @@ function SparkleEffect() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {[...Array(6)].map((_, i) => (
-        <div key={i} className="absolute animate-ping opacity-20"
+        <div key={`sparkle-${i}`} className="absolute animate-ping opacity-20"
           style={{
             top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`,
             animationDelay: `${i * 0.5}s`, animationDuration: `${2 + i * 0.3}s`

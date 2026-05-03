@@ -40,7 +40,7 @@ export default function ParentSchedule() {
           {DAYS.map((day, i) => {
             const dayItems = byDay[i] || []
             return (
-              <div key={i} className="card">
+              <div key={day} className="card">
                 <h3 className="font-black text-gray-700 mb-3 flex items-center gap-2">
                   <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-black" style={{background:'var(--color-primary)'}}>
                     {i+1}

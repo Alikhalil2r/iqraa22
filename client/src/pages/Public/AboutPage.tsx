@@ -143,7 +143,7 @@ export default function AboutPage() {
               { icon: MapPin,    label: 'الموقع',        value: school?.address || 'سلطنة عُمان' },
               { icon: Award,     label: 'الاعتماد',      value: 'وزارة التربية' },
             ].map((x, i) => (
-              <div key={i} className="text-center py-5 px-4">
+              <div key={x.label} className="text-center py-5 px-4">
                 <div className="text-emerald-600 mb-1.5 flex justify-center"><x.icon size={20} /></div>
                 <p className="text-[10px] text-gray-400 font-bold mb-0.5">{x.label}</p>
                 <p className="font-black text-sm text-gray-800">{x.value}</p>
@@ -190,7 +190,7 @@ export default function AboutPage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
             {VALUES.map((v, i) => (
-              <div key={i} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:-translate-y-1 transition-all hover:shadow-md group">
+              <div key={v.title} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:-translate-y-1 transition-all hover:shadow-md group">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
                   style={{ background: v.color + '15' }}>
                   <v.icon size={22} style={{ color: v.color }} />
@@ -215,7 +215,7 @@ export default function AboutPage() {
             <div className="absolute right-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-300 to-amber-300 hidden md:block" />
             <div className="space-y-6">
               {TIMELINE.map((item, i) => (
-                <div key={i} className={`flex items-center gap-6 md:gap-0 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
+                <div key={item.year} className={`flex items-center gap-6 md:gap-0 ${i % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'}`}>
                   <div className="flex-1 md:px-8">
                     <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all ${i % 2 === 0 ? 'md:text-left' : 'md:text-right'}`}>
                       <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">{item.year}</span>

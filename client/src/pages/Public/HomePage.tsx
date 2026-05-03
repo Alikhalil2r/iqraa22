@@ -99,7 +99,7 @@ function HeroSlider({ slides }: { slides: typeof DEFAULT_SLIDES }) {
   return (
     <div className="relative h-[480px] md:h-[600px] overflow-hidden group" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
       {slides.map((s, i) => (
-        <div key={i} className={`absolute inset-0 transition-opacity duration-1000 ${i === cur ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
+        <div key={s.image} className={`absolute inset-0 transition-opacity duration-1000 ${i === cur ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}>
           <img src={s.image} alt="" className="w-full h-full object-cover animate-kenburns" style={{ animationPlayState: paused ? 'paused' : 'running' }} />
           <div className="absolute inset-0 bg-gradient-to-l from-black/70 via-black/40 to-transparent" />
         </div>
@@ -128,7 +128,7 @@ function HeroSlider({ slides }: { slides: typeof DEFAULT_SLIDES }) {
       </button>
       <div className="absolute bottom-6 right-0 left-0 z-30 flex justify-center gap-2 px-6">
         {slides.map((_, i) => (
-          <button key={i} onClick={() => goTo(i)} className="flex-1 max-w-[80px] h-1 rounded-full overflow-hidden bg-white/20 cursor-pointer">
+          <button key={`slide-dot-${i}`} onClick={() => goTo(i)} className="flex-1 max-w-[80px] h-1 rounded-full overflow-hidden bg-white/20 cursor-pointer">
             <div className={`h-full rounded-full transition-all ${i === cur ? 'bg-amber-500' : i < cur ? 'bg-white/60' : 'bg-transparent'}`}
               style={i === cur ? { width: `${progress}%` } : { width: i < cur ? '100%' : '0%' }} />
           </button>
@@ -160,7 +160,7 @@ function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_T
           <div className="text-6xl text-amber-400/30 font-serif leading-none mb-4">"</div>
           <p className="text-white text-lg md:text-xl leading-relaxed font-bold max-w-2xl mx-auto mb-6">{t.text}</p>
           <div className="flex justify-center gap-1 mb-4">
-            {[...Array(5)].map((_, i) => <Star key={i} size={16} fill={i < t.rating ? '#fbbf24' : 'transparent'} className={i < t.rating ? 'text-amber-400' : 'text-white/20'} />)}
+            {[...Array(5)].map((_, i) => <Star key={`star-${i}`} size={16} fill={i < t.rating ? '#fbbf24' : 'transparent'} className={i < t.rating ? 'text-amber-400' : 'text-white/20'} />)}
           </div>
           <div className="flex items-center justify-center gap-3">
             <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border-2 border-amber-400/50"
@@ -173,7 +173,7 @@ function TestimonialsCarousel({ testimonials }: { testimonials: typeof DEFAULT_T
         </div>
         <div className="flex justify-center gap-2 mt-6">
           {testimonials.map((_, i) => (
-            <button key={i} onClick={() => setCur(i)} className={`h-2 rounded-full transition-all ${i === cur ? 'w-8 bg-amber-400' : 'w-2 bg-white/30 hover:bg-white/50'}`} />
+            <button key={`testi-dot-${i}`} onClick={() => setCur(i)} className={`h-2 rounded-full transition-all ${i === cur ? 'w-8 bg-amber-400' : 'w-2 bg-white/30 hover:bg-white/50'}`} />
           ))}
         </div>
       </div>
@@ -323,7 +323,7 @@ export default function HomePage() {
                 { icon: <Heart size={24} />, title: 'قيم أصيلة', desc: 'تربية على الهوية والانتماء العُماني', bg: 'bg-rose-50', color: 'text-rose-600' },
                 { icon: <Rocket size={24} />, title: 'تقنية حديثة', desc: 'مختبرات ذكية وفصول رقمية متكاملة', bg: 'bg-sky-50', color: 'text-sky-600' },
               ].map((c, i) => (
-                <div key={i} className={`${c.bg} p-5 rounded-2xl hover:-translate-y-1 transition-all group border border-gray-100`}>
+                <div key={c.title} className={`${c.bg} p-5 rounded-2xl hover:-translate-y-1 transition-all group border border-gray-100`}>
                   <div className={`${c.color} mb-3 group-hover:scale-110 transition-transform`}>{c.icon}</div>
                   <h4 className="font-bold text-sm mb-1 text-gray-800">{c.title}</h4>
                   <p className="text-[11px] text-gray-500 leading-relaxed">{c.desc}</p>
@@ -347,7 +347,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
             {PROGRAMS.map((p, i) => (
-              <div key={i} className={`bg-white rounded-2xl p-5 border ${p.border} hover:shadow-lg hover:-translate-y-1 transition-all group cursor-default`}>
+              <div key={p.title} className={`bg-white rounded-2xl p-5 border ${p.border} hover:shadow-lg hover:-translate-y-1 transition-all group cursor-default`}>
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ background: p.color + '15', color: p.color }}>
                   {p.icon}
                 </div>

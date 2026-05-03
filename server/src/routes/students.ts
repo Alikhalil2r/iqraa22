@@ -1,43 +1,60 @@
 import { Router } from 'express'
 import { query } from '../db'
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { writeLimiter } from '../middleware/rateLimiter'
+import { createLogger } from '../utils/logger'
 
 const router = Router()
+const log = createLogger('STUDENTS')
+
+const STU_COLS = `s.id, s.student_number, s.name, s.name_en, s.gender, s.date_of_birth,
+  s.nationality, s.class_id, s.class_name, s.academic_year, s.status,
+  s.parent_name, s.parent_phone, s.parent_email, s.parent_relation,
+  s.address, s.blood_type, s.medical_notes, s.bus_id, s.photo, s.notes,
+  s.is_active, s.created_at, b.bus_number, b.route_name`
 
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
-    const { search, classId, status, busId } = req.query
-    let sql = `SELECT s.*, b.bus_number, b.route_name,
-               c.name as class_display FROM students s
-               LEFT JOIN buses b ON b.id = s.bus_id
-               LEFT JOIN classes c ON c.id = s.class_id
-               WHERE s.school_id = $1`
-    const params: any[] = [schoolId]
+    const { search, classId, status, busId, page = '1', limit = '200' } = req.query
+    const offset = (parseInt(String(page)) - 1) * parseInt(String(limit))
+
+    let sql = `SELECT ${STU_COLS}
+               FROM students s LEFT JOIN buses b ON b.id=s.bus_id
+               WHERE s.school_id=$1`
+    const params: unknown[] = [schoolId]
     let i = 2
-    if (search) { sql += ` AND (s.name ILIKE $${i} OR s.student_number ILIKE $${i})`; params.push(`%${String(search).slice(0, 100)}%`); i++ }
-    if (classId) { sql += ` AND s.class_id = $${i}`; params.push(classId); i++ }
-    if (status) { sql += ` AND s.status = $${i}`; params.push(String(status).slice(0, 20)); i++ }
-    if (busId) { sql += ` AND s.bus_id = $${i}`; params.push(busId); i++ }
-    sql += ' ORDER BY s.name'
+    if (search)  { sql += ` AND (s.name ILIKE $${i} OR s.student_number ILIKE $${i})`; params.push(`%${String(search).slice(0, 100)}%`); i++ }
+    if (classId) { sql += ` AND s.class_id=$${i}`;                                      params.push(classId); i++ }
+    if (status)  { sql += ` AND s.status=$${i}`;                                         params.push(String(status).slice(0, 20)); i++ }
+    if (busId)   { sql += ` AND s.bus_id=$${i}`;                                         params.push(busId); i++ }
+    sql += ` ORDER BY s.name LIMIT $${i} OFFSET $${i + 1}`
+    params.push(parseInt(String(limit)), offset)
+
     const result = await query(sql, params)
     res.json({ students: result.rows, total: result.rowCount })
-  } catch (err: any) { console.error(err); res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('GET / failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const result = await query(
-      `SELECT s.*, b.bus_number, b.route_name FROM students s
-       LEFT JOIN buses b ON b.id = s.bus_id WHERE s.id=$1 AND s.school_id=$2`,
+      `SELECT ${STU_COLS} FROM students s LEFT JOIN buses b ON b.id=s.bus_id
+       WHERE s.id=$1 AND s.school_id=$2`,
       [req.params.id, req.user!.schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })
     res.json({ student: result.rows[0] })
-  } catch { res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('GET /:id failed', { id: req.params.id, error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
-router.post('/', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, writeLimiter, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const d = req.body
@@ -48,76 +65,77 @@ router.post('/', authenticateToken, requireRole('admin'), async (req: AuthReques
         address,blood_type,medical_notes,bus_id,photo,notes)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
       RETURNING *`,
-      [schoolId, d.studentNumber, d.name, d.nameEn, d.gender, d.dateOfBirth, d.nationality,
-       d.classId, d.className, d.academicYear, d.status || 'active', d.parentName, d.parentPhone,
-       d.parentEmail, d.parentRelation, d.address, d.bloodType,
-       d.medicalNotes?.slice(0, 1000), d.busId, d.photo, d.notes?.slice(0, 1000)]
+      [schoolId, d.studentNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
+       d.nationality, d.classId || null, d.className, d.academicYear, d.status || 'active',
+       d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
+       d.bloodType, d.medicalNotes?.slice(0, 1000), d.busId || null,
+       d.photo, d.notes?.slice(0, 1000)]
     )
+    log.info('Student created', { studentId: result.rows[0].id, name: d.name })
     res.status(201).json({ student: result.rows[0] })
-  } catch (err: any) { console.error(err); res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('POST / failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
-router.put('/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, writeLimiter, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
+    const { schoolId } = req.user!
     const d = req.body
+    if (!d.name) return res.status(400).json({ error: 'اسم الطالب مطلوب' })
     const result = await query(`
-      UPDATE students SET name=$1,name_en=$2,gender=$3,date_of_birth=$4,nationality=$5,
-        class_id=$6,class_name=$7,academic_year=$8,status=$9,parent_name=$10,parent_phone=$11,
-        parent_email=$12,parent_relation=$13,address=$14,blood_type=$15,medical_notes=$16,
-        bus_id=$17,photo=$18,notes=$19,student_number=$20
+      UPDATE students SET student_number=$1,name=$2,name_en=$3,gender=$4,date_of_birth=$5,
+        nationality=$6,class_id=$7,class_name=$8,academic_year=$9,status=$10,parent_name=$11,
+        parent_phone=$12,parent_email=$13,parent_relation=$14,address=$15,blood_type=$16,
+        medical_notes=$17,bus_id=$18,photo=$19,notes=$20
       WHERE id=$21 AND school_id=$22 RETURNING *`,
-      [d.name, d.nameEn, d.gender, d.dateOfBirth, d.nationality, d.classId, d.className, d.academicYear,
-       d.status, d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address, d.bloodType,
-       d.medicalNotes?.slice(0, 1000), d.busId, d.photo, d.notes?.slice(0, 1000),
-       d.studentNumber, req.params.id, req.user!.schoolId]
+      [d.studentNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
+       d.nationality, d.classId || null, d.className, d.academicYear, d.status || 'active',
+       d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
+       d.bloodType, d.medicalNotes?.slice(0, 1000), d.busId || null,
+       d.photo, d.notes?.slice(0, 1000), req.params.id, schoolId]
     )
+    if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })
     res.json({ student: result.rows[0] })
-  } catch (err: any) { console.error(err); res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('PUT /:id failed', { id: req.params.id, error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 router.delete('/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
-    await query('DELETE FROM students WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
+    const check = await query('SELECT id FROM students WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
+    if (!check.rows[0]) return res.status(404).json({ error: 'Not found' })
+    await query('UPDATE students SET is_active=false, status=$1 WHERE id=$2 AND school_id=$3',
+      ['inactive', req.params.id, req.user!.schoolId])
+    log.info('Student soft-deleted', { studentId: req.params.id })
     res.json({ success: true })
-  } catch { res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('DELETE /:id failed', { id: req.params.id, error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
-// Grades for student — school isolation enforced
-router.get('/:id/grades', authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const studentCheck = await query(
-      'SELECT id FROM students WHERE id=$1 AND school_id=$2',
-      [req.params.id, req.user!.schoolId]
-    )
-    if (!studentCheck.rows[0]) return res.status(404).json({ error: 'الطالب غير موجود' })
-    const result = await query(
-      `SELECT * FROM grades WHERE student_id=$1 AND school_id=$2 ORDER BY academic_year DESC, term`,
-      [req.params.id, req.user!.schoolId]
-    )
-    res.json({ grades: result.rows })
-  } catch { res.status(500).json({ error: 'Server error' }) }
-})
-
-// Attendance for student — school isolation enforced
 router.get('/:id/attendance', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const studentCheck = await query(
-      'SELECT id FROM students WHERE id=$1 AND school_id=$2',
-      [req.params.id, req.user!.schoolId]
+    const { schoolId } = req.user!
+    const { startDate, endDate } = req.query
+    const result = await query(`
+      SELECT date, status, check_in_time, check_out_time, notes FROM attendance
+      WHERE person_id=$1 AND school_id=$2 AND person_type='student'
+        AND date BETWEEN $3 AND $4
+      ORDER BY date DESC LIMIT 60`,
+      [req.params.id, schoolId,
+       startDate || new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0],
+       endDate   || new Date().toISOString().split('T')[0]]
     )
-    if (!studentCheck.rows[0]) return res.status(404).json({ error: 'الطالب غير موجود' })
-
-    const { month, year } = req.query
-    let sql = `SELECT * FROM attendance WHERE person_id=$1 AND person_type='student' AND school_id=$2`
-    const params: any[] = [req.params.id, req.user!.schoolId]
-    if (month && year) {
-      sql += ` AND EXTRACT(MONTH FROM date)=$3 AND EXTRACT(YEAR FROM date)=$4`
-      params.push(month, year)
-    }
-    sql += ' ORDER BY date DESC'
-    const result = await query(sql, params)
     res.json({ attendance: result.rows })
-  } catch { res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('GET /:id/attendance failed', { id: req.params.id, error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 export default router

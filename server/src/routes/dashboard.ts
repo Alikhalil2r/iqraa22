@@ -1,76 +1,66 @@
 import { Router } from 'express'
 import { query } from '../db'
 import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { createLogger } from '../utils/logger'
 
 const router = Router()
+const log = createLogger('DASHBOARD')
 
 router.get('/stats', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const schoolId = req.user!.schoolId
+    const { schoolId } = req.user!
     const today = new Date().toISOString().split('T')[0]
 
-    const [
-      studentsResult, employeesResult, busesResult,
-      studentsAttResult, employeesAttResult,
-      messagesResult, newsResult, eventsResult
-    ] = await Promise.all([
-      query('SELECT COUNT(*) FROM students WHERE school_id=$1 AND status=$2', [schoolId,'active']),
-      query('SELECT COUNT(*) FROM employees WHERE school_id=$1 AND status=$2', [schoolId,'active']),
-      query('SELECT COUNT(*) FROM buses WHERE school_id=$1 AND is_active=$2', [schoolId,true]),
-      query(`SELECT status, COUNT(*) FROM attendance WHERE school_id=$1 AND date=$2 AND person_type='student' GROUP BY status`, [schoolId,today]),
-      query(`SELECT status, COUNT(*) FROM attendance WHERE school_id=$1 AND date=$2 AND person_type='employee' GROUP BY status`, [schoolId,today]),
+    const [students, employees, buses, fees, attendance, unreadMsgs, events] = await Promise.all([
+      query('SELECT COUNT(*) FROM students WHERE school_id=$1 AND is_active=true', [schoolId]),
+      query('SELECT COUNT(*), COALESCE(SUM(salary + allowances),0) as total_salary FROM employees WHERE school_id=$1 AND status=$2', [schoolId, 'active']),
+      query('SELECT COUNT(*) FROM buses WHERE school_id=$1 AND is_active=true', [schoolId]),
+      query(`SELECT COALESCE(SUM(amount),0) as total, COALESCE(SUM(paid_amount),0) as collected FROM fees WHERE school_id=$1`, [schoolId]),
+      query(`SELECT status, COUNT(*) as count FROM attendance WHERE school_id=$1 AND date=$2 AND person_type='student' GROUP BY status`, [schoolId, today]),
       query(`SELECT COUNT(*) FROM messages WHERE school_id=$1 AND to_user_id=(SELECT id FROM users WHERE school_id=$1 AND role='admin' LIMIT 1) AND is_read=false`, [schoolId]),
-      query('SELECT COUNT(*) FROM news WHERE school_id=$1 AND is_published=true', [schoolId]),
-      query('SELECT COUNT(*) FROM events WHERE school_id=$1 AND start_date >= NOW()', [schoolId]),
+      query(`SELECT COUNT(*) FROM events WHERE school_id=$1 AND start_date >= CURRENT_DATE AND start_date <= CURRENT_DATE + INTERVAL '30 days'`, [schoolId]),
     ])
 
-    const attS = studentsAttResult.rows.reduce((a: any, r: any) => { a[r.status] = parseInt(r.count); return a }, {})
-    const attE = employeesAttResult.rows.reduce((a: any, r: any) => { a[r.status] = parseInt(r.count); return a }, {})
-
-    // Weekly attendance trend (last 7 days)
-    const weeklyAtt = await query(`
-      SELECT date, person_type, status, COUNT(*) as count
-      FROM attendance WHERE school_id=$1 AND date >= NOW()-INTERVAL '7 days'
-      GROUP BY date, person_type, status ORDER BY date
-    `, [schoolId])
-
-    // Salary total
-    const salaryResult = await query('SELECT SUM(salary) as total FROM employees WHERE school_id=$1 AND status=$2', [schoolId,'active'])
+    const attMap = Object.fromEntries(
+      attendance.rows.map((r: any) => [r.status, parseInt(r.count)])
+    )
 
     res.json({
-      students: { total: parseInt(studentsResult.rows[0].count) },
-      employees: { total: parseInt(employeesResult.rows[0].count) },
-      buses: { total: parseInt(busesResult.rows[0].count) },
-      todayAttendance: {
-        students: attS,
-        employees: attE,
-        date: today
+      students:      parseInt(students.rows[0].count),
+      employees:     parseInt(employees.rows[0].count),
+      totalSalary:   parseFloat(employees.rows[0].total_salary),
+      buses:         parseInt(buses.rows[0].count),
+      feesTotal:     parseFloat(fees.rows[0].total),
+      feesCollected: parseFloat(fees.rows[0].collected),
+      attendance: {
+        present: attMap['present'] || 0,
+        absent:  attMap['absent']  || 0,
+        late:    attMap['late']    || 0,
+        excused: attMap['excused'] || 0,
       },
-      messages: { unread: parseInt(messagesResult.rows[0].count) },
-      news: { total: parseInt(newsResult.rows[0].count) },
-      events: { upcoming: parseInt(eventsResult.rows[0].count) },
-      salary: { total: parseFloat(salaryResult.rows[0].total || 0) },
-      weeklyAttendance: weeklyAtt.rows
+      unreadMessages:  parseInt(unreadMsgs.rows[0].count),
+      upcomingEvents:  parseInt(events.rows[0].count),
     })
-  } catch (err: any) {
-    console.error(err)
+  } catch (err) {
+    log.error('GET /stats failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
   }
 })
 
 router.get('/activity', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const schoolId = req.user!.schoolId
+    const { schoolId } = req.user!
     const [news, events, messages] = await Promise.all([
       query(`SELECT 'news' as type, title, created_at FROM news WHERE school_id=$1 ORDER BY created_at DESC LIMIT 5`, [schoolId]),
-      query(`SELECT 'event' as type, title, start_date as created_at FROM events WHERE school_id=$1 ORDER BY created_at DESC LIMIT 5`, [schoolId]),
+      query(`SELECT 'event' as type, title, start_date as created_at FROM events WHERE school_id=$1 ORDER BY start_date DESC LIMIT 5`, [schoolId]),
       query(`SELECT 'message' as type, subject as title, created_at FROM messages WHERE school_id=$1 ORDER BY created_at DESC LIMIT 5`, [schoolId]),
     ])
     const activity = [...news.rows, ...events.rows, ...messages.rows]
-      .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, 10)
     res.json({ activity })
-  } catch {
+  } catch (err) {
+    log.error('GET /activity failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
   }
 })

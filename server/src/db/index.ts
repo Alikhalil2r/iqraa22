@@ -1,6 +1,9 @@
 import { Pool } from 'pg'
 import fs from 'fs'
 import path from 'path'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('DB')
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -10,13 +13,19 @@ export const pool = new Pool({
   connectionTimeoutMillis: 2000,
 })
 
-export async function query(text: string, params?: any[]) {
+pool.on('error', (err) => {
+  log.error('Unexpected pool error', { error: err.message })
+})
+
+export async function query(text: string, params?: unknown[]) {
   const start = Date.now()
   try {
     const res = await pool.query(text, params)
+    const dur = Date.now() - start
+    if (dur > 1000) log.warn('Slow query detected', { dur, sql: text.slice(0, 80) })
     return res
   } catch (err) {
-    console.error('DB Query Error:', err)
+    log.error('DB Query Error', { error: (err as Error).message, sql: text.slice(0, 80) })
     throw err
   }
 }
@@ -26,9 +35,9 @@ export async function initDB() {
     const schemaPath = path.join(__dirname, 'schema.sql')
     const schema = fs.readFileSync(schemaPath, 'utf-8')
     await pool.query(schema)
-    console.log('✅ Database schema initialized')
+    log.info('Database schema initialized')
   } catch (err) {
-    console.error('❌ DB init error:', err)
+    log.error('DB init error', { error: (err as Error).message })
     throw err
   }
 }

@@ -58,7 +58,7 @@ function CalendarGrid({ events, year, month, onEdit, onDelete, onAdd }: any) {
           const isToday = cell.current && cell.day === today.getDate() && year === today.getFullYear() && month === today.getMonth()
           const dayEvs = cell.current ? (eventsByDay[cell.day] || []) : []
           return (
-            <div key={idx} className={`min-h-[90px] p-1.5 relative group transition-colors ${cell.current ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50'} ${isToday ? 'ring-2 ring-inset ring-emerald-400' : ''}`}>
+            <div key={`${year}-${month}-${idx}`} className={`min-h-[90px] p-1.5 relative group transition-colors ${cell.current ? 'bg-white hover:bg-gray-50' : 'bg-gray-50/50'} ${isToday ? 'ring-2 ring-inset ring-emerald-400' : ''}`}>
               <div className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-black mb-1 ${isToday ? 'bg-emerald-600 text-white' : cell.current ? 'text-gray-700' : 'text-gray-300'}`}>
                 {cell.day}
               </div>

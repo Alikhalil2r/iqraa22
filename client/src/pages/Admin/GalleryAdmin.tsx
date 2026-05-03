@@ -121,7 +121,7 @@ export default function GalleryAdmin() {
       {/* Gallery Grid */}
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => <div key={i} className="aspect-square rounded-2xl bg-gray-100 animate-pulse" />)}
+          {[...Array(8)].map((_, i) => <div key={`gal-pulse-${i}`} className="aspect-square rounded-2xl bg-gray-100 animate-pulse" />)}
         </div>
       ) : gallery.length === 0 ? (
         <div className="card text-center py-16 text-gray-400">

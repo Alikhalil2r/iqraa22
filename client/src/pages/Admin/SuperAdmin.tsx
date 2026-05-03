@@ -148,7 +148,7 @@ export default function SuperAdmin() {
         </div>
 
         {isLoading ? (
-          <div className="p-4 space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          <div className="p-4 space-y-3">{[1,2,3].map(i => <div key={`sa-pulse-${i}`} className="h-16 rounded-xl bg-gray-100 animate-pulse" />)}</div>
         ) : schools.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
             <Building2 size={40} className="mx-auto mb-3 opacity-30" />

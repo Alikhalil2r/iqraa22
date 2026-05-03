@@ -33,7 +33,7 @@ function SkeletonRow({ cols }: { cols: number }) {
   return (
     <tr>
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="table-cell">
+        <td key={`skel-td-${i}`} className="table-cell">
           <div className="skeleton h-4 rounded-lg" style={{ width: `${55 + (i * 17) % 40}%` }} />
         </td>
       ))}
@@ -168,7 +168,7 @@ export default function DataTable({
             </thead>
             <tbody>
               {loading ? (
-                Array.from({ length: 7 }).map((_, i) => <SkeletonRow key={i} cols={columns.length} />)
+                Array.from({ length: 7 }).map((_, i) => <SkeletonRow key={`skel-${i}`} cols={columns.length} />)
               ) : paginated.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + 1} className="text-center py-20">

@@ -34,7 +34,7 @@ export function TableRowSkeleton({ cols = 5 }: { cols?: number }) {
   return (
     <tr>
       {Array.from({ length: cols }).map((_, i) => (
-        <td key={i} className="table-cell">
+        <td key={`td-${i}`} className="table-cell">
           <Skeleton className="h-4" style={{ width: `${60 + Math.random() * 40}%` }} />
         </td>
       ))}
@@ -61,7 +61,7 @@ export function TableSkeleton({ rows = 8, cols = 5 }: { rows?: number; cols?: nu
         <thead className="bg-gray-50/80">
           <tr>
             {Array.from({ length: cols }).map((_, i) => (
-              <th key={i} className="table-header">
+              <th key={`th-${i}`} className="table-header">
                 <Skeleton className="h-3 w-16" />
               </th>
             ))}
@@ -70,7 +70,7 @@ export function TableSkeleton({ rows = 8, cols = 5 }: { rows?: number; cols?: nu
         </thead>
         <tbody>
           {Array.from({ length: rows }).map((_, i) => (
-            <TableRowSkeleton key={i} cols={cols} />
+            <TableRowSkeleton key={`tr-${i}`} cols={cols} />
           ))}
         </tbody>
       </table>
@@ -89,11 +89,11 @@ export function DashboardSkeleton() {
         <Skeleton className="h-9 w-40" rounded="rounded-xl" />
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)}
+        {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={`stat-${i}`} />)}
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="card space-y-2">
+          <div key={`card-${i}`} className="card space-y-2">
             <Skeleton className="h-3 w-28" />
             <Skeleton className="h-9 w-16" />
             <div className="flex gap-2">
@@ -122,7 +122,7 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
     <div className="card space-y-3">
       <Skeleton className="h-5 w-40" />
       {Array.from({ length: lines }).map((_, i) => (
-        <Skeleton key={i} className="h-4" style={{ width: `${70 + Math.random() * 30}%` }} />
+        <Skeleton key={`line-${i}`} className="h-4" style={{ width: `${70 + Math.random() * 30}%` }} />
       ))}
     </div>
   )

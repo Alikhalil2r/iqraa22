@@ -1,19 +1,20 @@
 import rateLimit from 'express-rate-limit'
 
-// General API rate limiter
+const isProd = process.env.NODE_ENV === 'production'
+
 export const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 300,                   // Reduced from 500
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 300 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
   message: { error: 'عدد الطلبات تجاوز الحد المسموح. حاول مجدداً بعد قليل.' },
+  skip: (req) => req.path === '/api/health',
 })
 
-// Strict limiter for login endpoints — prevent brute force
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 10,                    // Reduced from 20 — only 10 failed attempts
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 10 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
@@ -21,12 +22,20 @@ export const authLimiter = rateLimit({
   message: { error: 'عدد محاولات تسجيل الدخول تجاوز الحد المسموح. حاول مجدداً بعد 15 دقيقة.' },
 })
 
-// Stricter limiter for sensitive write operations
 export const writeLimiter = rateLimit({
-  windowMs: 60 * 1000,        // 1 minute
-  max: 30,
+  windowMs: 60 * 1000,
+  max: isProd ? 30 : 200,
   standardHeaders: true,
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
   message: { error: 'عدد العمليات تجاوز الحد المسموح. حاول مجدداً بعد دقيقة.' },
+})
+
+export const reportLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: isProd ? 20 : 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
+  message: { error: 'عدد طلبات التقارير تجاوز الحد المسموح.' },
 })

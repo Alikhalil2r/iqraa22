@@ -69,7 +69,7 @@ export default function LearningSupportPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {LS_DATA.services.map((s, i) => (
-                <div key={i} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border-b-4 border-teal-100 group">
+                <div key={s.title} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border-b-4 border-teal-100 group">
                   <div className="text-3xl mb-4 group-hover:scale-110 transition-transform inline-block">{s.icon}</div>
                   <h3 className="font-black text-gray-800 mb-2">{s.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>

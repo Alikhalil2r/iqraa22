@@ -5,6 +5,9 @@ import { query } from '../db'
 import { generateToken, authenticateToken, AuthRequest } from '../middleware/auth'
 import { validate, validatePasswordStrength } from '../middleware/validate'
 import { authLimiter } from '../middleware/rateLimiter'
+import { createLogger } from '../utils/logger'
+
+const log = createLogger('AUTH')
 
 const router = Router()
 
@@ -68,7 +71,7 @@ router.post('/login',
         },
       })
     } catch (err) {
-      console.error('[AUTH] Login error:', (err as Error).message)
+      log.error('Login failed', { error: (err as Error).message })
       res.status(500).json({ error: 'Server error' })
     }
   }
@@ -86,7 +89,8 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
     res.json({ user: result.rows[0] })
-  } catch {
+  } catch (err) {
+    log.error('GET /me failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
   }
 })

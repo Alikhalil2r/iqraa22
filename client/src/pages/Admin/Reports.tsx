@@ -190,7 +190,7 @@ export default function Reports() {
                   <PieChart>
                     <Pie data={hrQuery.data?.byDepartment||[]} dataKey="count" nameKey="department" cx="50%" cy="50%" outerRadius={75} innerRadius={35} paddingAngle={3}
                       label={(p:any) => `${p.department}: ${p.count}`}>
-                      {(hrQuery.data?.byDepartment||[]).map((_:any,i:number)=><Cell key={i} fill={DEPT_COLORS[i%DEPT_COLORS.length]}/>)}
+                      {(hrQuery.data?.byDepartment||[]).map((d:any,i:number)=><Cell key={d.department??i} fill={DEPT_COLORS[i%DEPT_COLORS.length]}/>)}
                     </Pie>
                     <Tooltip contentStyle={TOOLTIP_STYLE}/>
                   </PieChart>
@@ -292,7 +292,7 @@ export default function Reports() {
                   ) : attReport.map((r:any,i:number) => {
                     const rate = parseFloat(r.attendance_rate||0)
                     return (
-                      <tr key={i} className="table-row">
+                      <tr key={r.person_id ?? r.name} className="table-row">
                         <td className="table-cell font-bold text-gray-800">{r.name}</td>
                         <td className="table-cell text-gray-500 text-xs">{r.group_name||'—'}</td>
                         <td className="table-cell"><span className="badge-success">{r.present_days}</span></td>
@@ -377,7 +377,7 @@ export default function Reports() {
                       const grade = avg>=90?'ممتاز':avg>=80?'جيد جداً':avg>=70?'جيد':avg>=60?'مقبول':avg>=50?'ضعيف':'راسب'
                       const color = avg>=75?'text-green-600':avg>=60?'text-amber-600':'text-red-500'
                       return (
-                        <tr key={i} className="table-row">
+                        <tr key={r.student_id ?? r.student_name} className="table-row">
                           <td className="table-cell text-gray-400 text-xs w-8">{i+1}</td>
                           <td className="table-cell font-bold text-gray-800">{r.student_name}</td>
                           <td className="table-cell text-gray-500 text-xs">{r.class_name}</td>
@@ -433,7 +433,7 @@ export default function Reports() {
                       <Pie data={hrQuery.data?.byDepartment||[]} dataKey="count" nameKey="department" cx="50%" cy="50%"
                         outerRadius={85} innerRadius={40} paddingAngle={3}
                         label={(p:any)=>`${p.department}: ${p.count}`}>
-                        {(hrQuery.data?.byDepartment||[]).map((_:any,i:number)=><Cell key={i} fill={DEPT_COLORS[i%DEPT_COLORS.length]}/>)}
+                        {(hrQuery.data?.byDepartment||[]).map((d:any,i:number)=><Cell key={d.department??i} fill={DEPT_COLORS[i%DEPT_COLORS.length]}/>)}
                       </Pie>
                       <Tooltip contentStyle={TOOLTIP_STYLE}/>
                     </PieChart>
@@ -460,7 +460,7 @@ export default function Reports() {
                       const label = r.status==='active'?'نشط':r.status==='on-leave'?'إجازة':'غير نشط'
                       const badge = r.status==='active'?'badge-success':r.status==='on-leave'?'badge-warning':'badge-gray'
                       return (
-                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <div key={r.status} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                           <span className={badge}>{label}</span>
                           <div className="flex items-center gap-3">
                             <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -480,7 +480,7 @@ export default function Reports() {
                     {(hrQuery.data?.byType||[]).map((r:any,i:number)=>{
                       const label = r.employee_type==='full-time'?'دوام كامل':r.employee_type==='part-time'?'دوام جزئي':'عقد'
                       return (
-                        <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                        <div key={r.employee_type} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                           <span className="font-bold text-gray-700">{label}</span>
                           <div className="flex items-center gap-3">
                             <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">

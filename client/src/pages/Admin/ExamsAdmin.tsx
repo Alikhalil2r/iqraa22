@@ -162,7 +162,7 @@ export default function ExamsAdmin() {
 
       {/* Exam Schedule by Date */}
       {isLoading ? (
-        <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="card h-32 animate-pulse bg-gray-100" />)}</div>
+        <div className="space-y-4">{[1, 2, 3].map(i => <div key={`pulse-${i}`} className="card h-32 animate-pulse bg-gray-100" />)}</div>
       ) : exams.length === 0 ? (
         <div className="card text-center py-16 text-gray-400">
           <Calendar size={48} className="mx-auto mb-3 opacity-30" />

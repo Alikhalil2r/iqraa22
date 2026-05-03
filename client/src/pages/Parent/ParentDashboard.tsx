@@ -218,7 +218,7 @@ export default function ParentDashboard() {
             </div>
             <div className="space-y-3">
               {stats.recentGrades.slice(0, 5).map((g: any, i: number) => (
-                <GradeBar key={i} subject={g.subject_name || g.subject} grade={Math.round(parseFloat(g.score || g.grade) || 0)} max={parseFloat(g.max_score) || 100} />
+                <GradeBar key={g.id ?? g.subject_name ?? i} subject={g.subject_name || g.subject} grade={Math.round(parseFloat(g.score || g.grade) || 0)} max={parseFloat(g.max_score) || 100} />
               ))}
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function ParentDashboard() {
                 { label: 'حضور الشهر', value: `${attRate}%`, color: attRate >= 90 ? '#10b981' : attRate >= 70 ? '#f59e0b' : '#ef4444', icon: <CalendarCheck size={14} /> },
                 { label: 'عدد المواد', value: `${stats.gradeCount || 0} مادة`, color: '#6366f1', icon: <Star size={14} /> },
               ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
+                <div key={item.label} className="flex items-center gap-3 p-3 bg-gray-50 rounded-2xl">
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: item.color + '15', color: item.color }}>
                     {item.icon}
                   </div>

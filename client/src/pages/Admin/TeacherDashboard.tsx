@@ -145,7 +145,7 @@ export default function TeacherDashboard() {
       <div className="relative rounded-2xl overflow-hidden p-6 text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%)' }}>
         <div className="absolute inset-0 opacity-10">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="absolute rounded-full bg-white"
+            <div key={`bubble-${i}`} className="absolute rounded-full bg-white"
               style={{ width: 60 + i * 20, height: 60 + i * 20, right: -20 + i * 40, top: -20 + i * 15, opacity: 0.3 }} />
           ))}
         </div>
@@ -206,7 +206,7 @@ export default function TeacherDashboard() {
                 <Tooltip contentStyle={{ fontFamily: 'Cairo', fontSize: 12, borderRadius: 10, border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }} />
                 <Bar dataKey="count" name="عدد الطلاب" radius={[8, 8, 0, 0]}>
                   {gradeStats.dist.map((entry, i) => (
-                    <rect key={i} fill={GRADE_COLORS[entry.name] || '#6366f1'} />
+                    <rect key={entry.name} fill={GRADE_COLORS[entry.name] || '#6366f1'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -269,7 +269,7 @@ export default function TeacherDashboard() {
           {todaySchedule.length > 0 ? (
             <div className="space-y-2">
               {todaySchedule.map((item: any, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                <div key={item.id ?? `sched-${i}`} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
                   <div className="w-2 h-12 rounded-full flex-shrink-0" style={{ background: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'][i % 5] }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-gray-800 truncate">{item.subject_name || item.subject}</p>
@@ -307,7 +307,7 @@ export default function TeacherDashboard() {
           {topStudents.length > 0 ? (
             <div className="space-y-2.5">
               {topStudents.map((s, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={s.name} className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black flex-shrink-0"
                     style={{ background: i === 0 ? '#fef3c7' : i === 1 ? '#f1f5f9' : i === 2 ? '#fef3c7' : '#f9fafb',
                              color: i === 0 ? '#d97706' : i === 1 ? '#64748b' : i === 2 ? '#92400e' : '#6b7280' }}>
