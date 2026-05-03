@@ -123,6 +123,10 @@ export default function HomePage() {
               <button key={id} onClick={() => scrollTo(id)} className="hover:text-purple-600 transition-colors">{lbl}</button>
             ))}
             <a href="/blog" className="hover:text-purple-600 transition-colors">المدونة</a>
+            <a href="/track" className="hover:text-purple-600 transition-colors flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"/>
+              تتبع طلبك
+            </a>
           </div>
           <div className="hidden md:flex items-center gap-3">
             <a href="/login" className="text-sm font-bold text-gray-500 hover:text-purple-600 transition-colors">دخول الإدارة</a>
@@ -538,7 +542,7 @@ export default function HomePage() {
             <div>
               <h4 className="text-white font-black text-sm mb-4">روابط سريعة</h4>
               <ul className="space-y-2 text-xs">
-                {[['#portfolio','أعمالنا'],['#pricing','الأسعار'],['#faq','الأسئلة الشائعة'],['#contact','تواصل معنا'],['/blog','المدونة التقنية'],['/request','ابدأ مشروعك'],['/login','دخول الإدارة']].map(([to,lbl]) => (
+                {[['#portfolio','أعمالنا'],['#pricing','الأسعار'],['#faq','الأسئلة الشائعة'],['#contact','تواصل معنا'],['/blog','المدونة التقنية'],['/track','تتبع طلبك'],['/request','ابدأ مشروعك'],['/login','دخول الإدارة']].map(([to,lbl]) => (
                   <li key={lbl}><Link to={to} className="hover:text-white transition-colors">{lbl}</Link></li>
                 ))}
               </ul>

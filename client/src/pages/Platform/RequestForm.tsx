@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   CheckCircle, ArrowRight, Globe, Smartphone, Palette,
   TrendingUp, Brain, Cloud, Upload, Calendar, DollarSign,
-  FileText, User, Phone, Mail, Building2, Rocket, Code2
+  FileText, User, Phone, Mail, Building2, Rocket, Code2, Search
 } from 'lucide-react'
 
 const API = (p: string) => fetch(`/api${p}`).then(r => r.json())
@@ -99,23 +99,40 @@ export default function RequestForm() {
   const companyName = cfg.company_name_ar || 'اكسبو التقنية'
 
   if (result) {
+    const trackUrl = `/track/${result.ticket}?email=${encodeURIComponent(form.client_email)}`
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background:'linear-gradient(135deg,#0f0c29,#302b63)' }} dir="rtl">
-        <div className="bg-white rounded-3xl p-10 max-w-md w-full text-center shadow-2xl">
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={40} className="text-green-500"/>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)' }} dir="rtl">
+        <div className="bg-white rounded-3xl p-10 max-w-lg w-full text-center shadow-2xl">
+          {/* Animated checkmark */}
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-400/30 animate-pulse">
+            <CheckCircle size={46} className="text-white"/>
           </div>
-          <h2 className="text-2xl font-black text-gray-900 mb-3">تم إرسال طلبك!</h2>
+          <h2 className="text-2xl font-black text-gray-900 mb-2">تم إرسال طلبك بنجاح!</h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-6">
-            سيتواصل معك فريقنا خلال ساعات العمل. رقم التذكرة الخاص بك:
+            استلمنا طلبك وسيتواصل معك فريقنا خلال 24 ساعة عمل.<br/>رقم تذكرتك هو:
           </p>
-          <div className="px-6 py-4 bg-purple-50 rounded-2xl border border-purple-200 mb-6">
-            <p className="font-black text-purple-700 text-xl">{result.ticket}</p>
+
+          {/* Ticket number */}
+          <div className="px-6 py-5 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 mb-3">
+            <p className="text-xs text-violet-400 font-bold mb-1">رقم التذكرة</p>
+            <p className="font-black text-violet-700 text-2xl tracking-widest font-mono">{result.ticket}</p>
           </div>
-          <p className="text-gray-400 text-xs mb-8">احتفظ برقم التذكرة لمتابعة طلبك</p>
-          <Link to="/" className="block w-full py-3 rounded-2xl font-black text-white text-center transition-all hover:opacity-90" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
-            العودة للرئيسية
-          </Link>
+          <p className="text-gray-400 text-xs mb-7">
+            🔒 احتفظ بهذا الرقم لمتابعة حالة طلبك وإجراء محادثات مع الفريق
+          </p>
+
+          {/* CTA buttons */}
+          <div className="space-y-3">
+            <Link to={trackUrl}
+              className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-black text-white text-base transition-all hover:opacity-90 hover:shadow-xl hover:shadow-violet-600/30 hover:-translate-y-0.5"
+              style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+              <Search size={18}/> تتبع طلبي الآن
+            </Link>
+            <Link to="/"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all text-sm">
+              العودة للرئيسية
+            </Link>
+          </div>
         </div>
       </div>
     )

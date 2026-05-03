@@ -76,6 +76,7 @@ const PlatformContent     = lazy(() => import('./pages/Admin/PlatformContent'))
 const BlogAdmin           = lazy(() => import('./pages/Admin/BlogAdmin'))
 const BlogPage            = lazy(() => import('./pages/Public/BlogPage'))
 const BlogPostPage        = lazy(() => import('./pages/Public/BlogPostPage'))
+const TicketTrackPage     = lazy(() => import('./pages/Public/TicketTrackPage'))
 
 // ─── Role-aware admin guard ───────────────────────────────────────────────────
 // (admin roles include: super_admin, admin, teacher, accountant, librarian, hr_manager, guard)
@@ -150,6 +151,8 @@ function RedirectCheck() {
         <Route path="/request" element={<RequestForm />} />
         <Route path="/blog" element={<BlogPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/track" element={<TicketTrackPage />} />
+        <Route path="/track/:ticket" element={<TicketTrackPage />} />
 
         {/* ── School public site (legacy) ── */}
         <Route path="/school" element={<PublicLayout />}>

@@ -91,6 +91,78 @@ router.get('/settings', async (_req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
+// GET /api/platform/track/:ticket — public ticket lookup (by ticket_number + email)
+router.get('/track/:ticket', async (req, res) => {
+  try {
+    const { email } = req.query
+    const row = await query(
+      `SELECT r.id, r.ticket_number, r.client_name, r.client_email, r.client_phone,
+              r.service_type, r.title, r.description, r.status, r.priority,
+              r.budget_min, r.budget_max, r.expected_date, r.created_at, r.updated_at,
+              r.client_rating, r.client_feedback, r.resolved_at
+       FROM service_requests r
+       WHERE r.ticket_number=$1`, [req.params.ticket])
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
+    const ticket = row.rows[0]
+    // validate email if provided
+    if (email && ticket.client_email?.toLowerCase() !== (email as string).toLowerCase()) {
+      return res.status(403).json({ error: 'البريد الإلكتروني غير صحيح' })
+    }
+    // Get messages (non-internal only for public)
+    const msgs = await query(
+      `SELECT id, sender_type, sender_name, content, created_at FROM ticket_messages
+       WHERE request_id=$1 AND is_internal=false ORDER BY created_at ASC`, [ticket.id])
+    // Get history
+    const hist = await query(
+      `SELECT field, old_value, new_value, note, created_at FROM ticket_history
+       WHERE request_id=$1 ORDER BY created_at ASC`, [ticket.id])
+    res.json({ ...ticket, messages: msgs.rows, history: hist.rows })
+  } catch (err) {
+    log.error('Track ticket', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// POST /api/platform/track/:ticket/message — client adds a message
+router.post('/track/:ticket/message', async (req, res) => {
+  try {
+    const { email, name, content } = req.body
+    if (!content?.trim()) return res.status(400).json({ error: 'المحتوى مطلوب' })
+    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
+    const ticket = row.rows[0]
+    if (email && ticket.client_email?.toLowerCase() !== email.toLowerCase()) {
+      return res.status(403).json({ error: 'البريد غير صحيح' })
+    }
+    const msg = await query(
+      `INSERT INTO ticket_messages (request_id, sender_type, sender_name, sender_email, content)
+       VALUES ($1,'client',$2,$3,$4) RETURNING *`,
+      [ticket.id, name || 'العميل', email || ticket.client_email, content]
+    )
+    // Update ticket updated_at
+    await query(`UPDATE service_requests SET updated_at=NOW() WHERE id=$1`, [ticket.id])
+    res.json(msg.rows[0])
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+// POST /api/platform/track/:ticket/rate — client rates the service
+router.post('/track/:ticket/rate', async (req, res) => {
+  try {
+    const { email, rating, feedback } = req.body
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'التقييم بين 1 و 5' })
+    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
+    if (email && row.rows[0].client_email?.toLowerCase() !== email.toLowerCase()) {
+      return res.status(403).json({ error: 'البريد غير صحيح' })
+    }
+    await query(`UPDATE service_requests SET client_rating=$1, client_feedback=$2 WHERE id=$3`,
+      [rating, feedback || null, row.rows[0].id])
+    res.json({ ok: true })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
 // POST /api/platform/request — submit service request (PUBLIC, no auth)
 router.post('/request', async (req, res) => {
   try {
@@ -178,7 +250,11 @@ router.get('/admin/requests', async (req, res) => {
 // PATCH /api/platform/admin/requests/:id
 router.patch('/admin/requests/:id', async (req, res) => {
   try {
+    const authReq = req as AuthRequest
     const { status, priority, admin_notes, assigned_to } = req.body
+    // Get current status for history
+    const current = await query(`SELECT status, priority FROM service_requests WHERE id=$1`, [req.params.id])
+    const old = current.rows[0]
     const updates: string[] = ['updated_at=NOW()']
     const params: unknown[] = []
     if (status)      { params.push(status);      updates.push(`status=$${params.length}`) }
@@ -187,7 +263,58 @@ router.patch('/admin/requests/:id', async (req, res) => {
     if (assigned_to) { params.push(assigned_to); updates.push(`assigned_to=$${params.length}`) }
     params.push(req.params.id)
     const row = await query(`UPDATE service_requests SET ${updates.join(',')} WHERE id=$${params.length} RETURNING *`, params)
+    // Log history
+    if (old && status && old.status !== status) {
+      await query(
+        `INSERT INTO ticket_history (request_id, changed_by, field, old_value, new_value, note) VALUES ($1,$2,'status',$3,$4,$5)`,
+        [req.params.id, authReq.user?.name || 'الإدارة', old.status, status,
+         `تم تغيير الحالة إلى "${status === 'in_progress' ? 'قيد التنفيذ' : status === 'completed' ? 'مكتمل' : status === 'approved' ? 'موافق عليه' : status === 'rejected' ? 'مرفوض' : status === 'on_hold' ? 'معلّق' : status}"` ]
+      )
+    }
+    if (old && priority && old.priority !== priority) {
+      await query(
+        `INSERT INTO ticket_history (request_id, changed_by, field, old_value, new_value, note) VALUES ($1,$2,'priority',$3,$4,$5)`,
+        [req.params.id, authReq.user?.name || 'الإدارة', old.priority, priority,
+         `تم تغيير الأولوية إلى "${priority === 'high' ? 'عالية' : priority === 'urgent' ? 'عاجل' : priority === 'low' ? 'منخفضة' : 'متوسطة'}"`]
+      )
+    }
     res.json(row.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/tickets/:id/messages
+router.get('/admin/tickets/:id/messages', authenticateToken, async (req, res) => {
+  try {
+    const msgs = await query(
+      `SELECT * FROM ticket_messages WHERE request_id=$1 ORDER BY created_at ASC`,
+      [req.params.id])
+    res.json(msgs.rows)
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// POST /api/platform/admin/tickets/:id/messages
+router.post('/admin/tickets/:id/messages', authenticateToken, async (req, res) => {
+  try {
+    const authReq = req as AuthRequest
+    const { content, sender_type = 'admin', sender_name, is_internal = false } = req.body
+    if (!content?.trim()) return res.status(400).json({ error: 'المحتوى مطلوب' })
+    const msg = await query(
+      `INSERT INTO ticket_messages (request_id, sender_type, sender_name, content, is_internal)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [req.params.id, sender_type, sender_name || authReq.user?.name || 'الإدارة', content, is_internal]
+    )
+    await query(`UPDATE service_requests SET updated_at=NOW() WHERE id=$1`, [req.params.id])
+    res.json(msg.rows[0])
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
+// GET /api/platform/admin/tickets/:id/history
+router.get('/admin/tickets/:id/history', authenticateToken, async (req, res) => {
+  try {
+    const hist = await query(
+      `SELECT * FROM ticket_history WHERE request_id=$1 ORDER BY created_at ASC`,
+      [req.params.id])
+    res.json(hist.rows)
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
