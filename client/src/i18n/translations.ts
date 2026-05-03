@@ -216,6 +216,13 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.group.school':        'School Management',
     'nav.group.communication': 'Communication & Content',
     'nav.group.settings':      'Settings',
+    'nav.group.platform':      'Business Platform',
+    'nav.requests':            'Service Requests',
+    'nav.clients':             'Clients (CRM)',
+    'nav.projects':            'Project Management',
+    'nav.platformAnalytics':   'Platform Analytics',
+    'nav.platformContent':     'Content Management',
+    'nav.blogAdmin':           'Blog',
 
     /* ─── Admin Nav Items ─── */
     'nav.dashboard':       'Dashboard',

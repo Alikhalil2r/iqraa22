@@ -1,6 +1,21 @@
 import { Request, Response, NextFunction } from 'express'
 import { validationResult, ValidationChain } from 'express-validator'
 
+// ── UUID v4 validation ────────────────────────────────────────────────────────
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+export function isValidUUID(v: unknown): v is string {
+  return typeof v === 'string' && UUID_RE.test(v)
+}
+
+/** Express middleware: validates req.params.id is a UUID */
+export function validateUUIDParam(paramName = 'id') {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const val = req.params[paramName]
+    if (!isValidUUID(val)) return res.status(400).json({ error: `معرف ${paramName} غير صالح` })
+    next()
+  }
+}
+
 export function validate(chains: ValidationChain[]) {
   return async (req: Request, res: Response, next: NextFunction) => {
     await Promise.all(chains.map(c => c.run(req)))

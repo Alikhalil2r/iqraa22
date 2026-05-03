@@ -3,7 +3,7 @@ import { query } from '../db'
 import { withTransaction } from '../db/transaction'
 import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth'
 import { createLogger } from '../utils/logger'
-import { platformPublicLimiter, ticketMsgLimiter } from '../middleware/rateLimiter'
+import { platformPublicLimiter, ticketMsgLimiter, ticketLookupLimiter, ticketRateLimiter } from '../middleware/rateLimiter'
 
 // ── Input sanitizer (strip HTML tags, trim, limit length) ─────────────────
 const sanitize = (v: unknown, maxLen = 2000): string =>
@@ -98,10 +98,16 @@ router.get('/settings', async (_req, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
-// GET /api/platform/track/:ticket — public ticket lookup (by ticket_number + email)
-router.get('/track/:ticket', async (req, res) => {
+// GET /api/platform/track/:ticket — public ticket lookup (requires email for verification)
+router.get('/track/:ticket', ticketLookupLimiter, async (req, res) => {
   try {
-    const { email } = req.query
+    const email = sanitizeEmail(req.query.email)
+
+    // Validate ticket number format (TKT-YYYY-NNNNN) to prevent injection/enumeration
+    if (!/^TKT-\d{4}-\d{5}$/.test(req.params.ticket)) {
+      return res.status(400).json({ error: 'رقم التذكرة غير صالح' })
+    }
+
     const row = await query(
       `SELECT r.id, r.ticket_number, r.client_name, r.client_email, r.client_phone,
               r.service_type, r.title, r.description, r.status, r.priority,
@@ -109,21 +115,30 @@ router.get('/track/:ticket', async (req, res) => {
               r.client_rating, r.client_feedback, r.resolved_at
        FROM service_requests r
        WHERE r.ticket_number=$1`, [req.params.ticket])
-    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
+
+    // Always return 404 even if email is wrong (prevent ticket existence enumeration)
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
     const ticket = row.rows[0]
-    // validate email if provided
-    if (email && ticket.client_email?.toLowerCase() !== (email as string).toLowerCase()) {
-      return res.status(403).json({ error: 'البريد الإلكتروني غير صحيح' })
+
+    // Email is REQUIRED for security — must match exactly
+    if (!email) return res.status(400).json({ error: 'البريد الإلكتروني مطلوب للتحقق من هويتك' })
+    if (ticket.client_email?.toLowerCase() !== email.toLowerCase()) {
+      return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
     }
+
     // Get messages (non-internal only for public)
-    const msgs = await query(
-      `SELECT id, sender_type, sender_name, content, created_at FROM ticket_messages
-       WHERE request_id=$1 AND is_internal=false ORDER BY created_at ASC`, [ticket.id])
-    // Get history
-    const hist = await query(
-      `SELECT field, old_value, new_value, note, created_at FROM ticket_history
-       WHERE request_id=$1 ORDER BY created_at ASC`, [ticket.id])
-    res.json({ ...ticket, messages: msgs.rows, history: hist.rows })
+    const [msgs, hist] = await Promise.all([
+      query(
+        `SELECT id, sender_type, sender_name, content, created_at FROM ticket_messages
+         WHERE request_id=$1 AND is_internal=false ORDER BY created_at ASC`, [ticket.id]),
+      query(
+        `SELECT field, old_value, new_value, note, created_at FROM ticket_history
+         WHERE request_id=$1 ORDER BY created_at ASC`, [ticket.id])
+    ])
+
+    // Strip internal email from response (client already authenticated via it)
+    const { client_email: _hidden, ...safeTicket } = ticket
+    res.json({ ...safeTicket, messages: msgs.rows, history: hist.rows })
   } catch (err) {
     log.error('Track ticket', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
@@ -136,42 +151,64 @@ router.post('/track/:ticket/message', ticketMsgLimiter, async (req, res) => {
     const email   = sanitizeEmail(req.body.email)
     const name    = sanitize(req.body.name, 200)
     const content = sanitize(req.body.content, 3000)
-    // re-assign for downstream use
-    req.body = { email, name, content }
+
     if (!content?.trim()) return res.status(400).json({ error: 'المحتوى مطلوب' })
-    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
-    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
-    const ticket = row.rows[0]
-    if (email && ticket.client_email?.toLowerCase() !== email.toLowerCase()) {
-      return res.status(403).json({ error: 'البريد غير صحيح' })
+    if (!email) return res.status(400).json({ error: 'البريد الإلكتروني مطلوب' })
+
+    if (!/^TKT-\d{4}-\d{5}$/.test(req.params.ticket)) {
+      return res.status(400).json({ error: 'رقم التذكرة غير صالح' })
     }
+
+    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
+    const ticket = row.rows[0]
+    if (ticket.client_email?.toLowerCase() !== email.toLowerCase()) {
+      return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
+    }
+
     const msg = await query(
       `INSERT INTO ticket_messages (request_id, sender_type, sender_name, sender_email, content)
-       VALUES ($1,'client',$2,$3,$4) RETURNING *`,
-      [ticket.id, name || 'العميل', email || ticket.client_email, content]
+       VALUES ($1,'client',$2,$3,$4)
+       RETURNING id, sender_type, sender_name, content, created_at`,
+      [ticket.id, name || 'العميل', email, content]
     )
-    // Update ticket updated_at
     await query(`UPDATE service_requests SET updated_at=NOW() WHERE id=$1`, [ticket.id])
     res.json(msg.rows[0])
   } catch (err) {
+    log.error('Ticket message failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
   }
 })
 
-// POST /api/platform/track/:ticket/rate — client rates the service
-router.post('/track/:ticket/rate', async (req, res) => {
+// POST /api/platform/track/:ticket/rate — client rates the service (with limiter)
+router.post('/track/:ticket/rate', ticketRateLimiter, async (req, res) => {
   try {
-    const { email, rating, feedback } = req.body
-    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'التقييم بين 1 و 5' })
-    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
-    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة' })
-    if (email && row.rows[0].client_email?.toLowerCase() !== email.toLowerCase()) {
-      return res.status(403).json({ error: 'البريد غير صحيح' })
+    const email    = sanitizeEmail(req.body.email)
+    const rating   = parseInt(String(req.body.rating))
+    const feedback = sanitize(req.body.feedback, 1000)
+
+    if (!email) return res.status(400).json({ error: 'البريد الإلكتروني مطلوب' })
+    if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'التقييم يجب أن يكون بين 1 و 5' })
+
+    if (!/^TKT-\d{4}-\d{5}$/.test(req.params.ticket)) {
+      return res.status(400).json({ error: 'رقم التذكرة غير صالح' })
     }
-    await query(`UPDATE service_requests SET client_rating=$1, client_feedback=$2 WHERE id=$3`,
-      [rating, feedback || null, row.rows[0].id])
+
+    const row = await query(`SELECT id, client_email FROM service_requests WHERE ticket_number=$1`, [req.params.ticket])
+    if (!row.rows[0]) return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
+    if (row.rows[0].client_email?.toLowerCase() !== email.toLowerCase()) {
+      return res.status(404).json({ error: 'التذكرة غير موجودة أو البريد غير صحيح' })
+    }
+
+    await query(
+      `UPDATE service_requests SET client_rating=$1, client_feedback=$2 WHERE id=$3`,
+      [rating, feedback || null, row.rows[0].id]
+    )
     res.json({ ok: true })
-  } catch { res.status(500).json({ error: 'Server error' }) }
+  } catch (err) {
+    log.error('Ticket rating failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 // POST /api/platform/request — submit service request (PUBLIC, no auth)
@@ -395,15 +432,21 @@ router.post('/admin/projects', async (req, res) => {
 // PATCH /api/platform/admin/projects/:id
 router.patch('/admin/projects/:id', async (req, res) => {
   try {
-    const { status, progress, admin_notes, budget, paid } = req.body
+    const { status, progress, admin_notes, budget, paid, phase, end_date, description, technologies } = req.body
     const updates: string[] = ['updated_at=NOW()']
     const params: unknown[] = []
-    if (status !== undefined)   { params.push(status);   updates.push(`status=$${params.length}`) }
-    if (progress !== undefined) { params.push(progress); updates.push(`progress=$${params.length}`) }
-    if (budget !== undefined)   { params.push(budget);   updates.push(`budget=$${params.length}`) }
-    if (paid !== undefined)     { params.push(paid);     updates.push(`paid=$${params.length}`) }
+    if (status !== undefined)       { params.push(status);        updates.push(`status=$${params.length}`) }
+    if (progress !== undefined)     { params.push(Math.max(0, Math.min(100, parseInt(progress)))); updates.push(`progress=$${params.length}`) }
+    if (budget !== undefined)       { params.push(budget);        updates.push(`budget=$${params.length}`) }
+    if (paid !== undefined)         { params.push(paid);          updates.push(`paid=$${params.length}`) }
+    if (phase !== undefined)        { params.push(phase);         updates.push(`phase=$${params.length}`) }
+    if (end_date !== undefined)     { params.push(end_date);      updates.push(`end_date=$${params.length}`) }
+    if (admin_notes !== undefined)  { params.push(admin_notes);   updates.push(`admin_notes=$${params.length}`) }
+    if (description !== undefined)  { params.push(description);   updates.push(`description=$${params.length}`) }
+    if (technologies !== undefined) { params.push(technologies);  updates.push(`technologies=$${params.length}`) }
     params.push(req.params.id)
     const row = await query(`UPDATE projects SET ${updates.join(',')} WHERE id=$${params.length} RETURNING *`, params)
+    if (!row.rows[0]) return res.status(404).json({ error: 'Project not found' })
     res.json(row.rows[0])
   } catch { res.status(500).json({ error: 'Server error' }) }
 })

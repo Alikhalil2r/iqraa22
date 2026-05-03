@@ -110,6 +110,25 @@ app.use('/api/', globalLimiter)
 app.use(express.json({ limit: '500kb' }))
 app.use(express.urlencoded({ extended: true, limit: '500kb' }))
 
+// ─── API No-Cache Headers (prevent stale auth/sensitive data caching) ─────────
+app.use('/api/', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  res.setHeader('Pragma', 'no-cache')
+  res.setHeader('Expires', '0')
+  next()
+})
+
+// ─── Enforce JSON Content-Type on POST/PUT/PATCH bodies ───────────────────────
+app.use('/api/', (req, res, next) => {
+  if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+    const ct = req.headers['content-type'] || ''
+    if (req.headers['content-length'] !== '0' && !ct.includes('application/json') && !ct.includes('multipart') && !ct.includes('urlencoded')) {
+      return res.status(415).json({ error: 'Content-Type يجب أن يكون application/json' })
+    }
+  }
+  next()
+})
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter)
 app.use('/api/dashboard', dashboardRouter)
@@ -142,7 +161,7 @@ app.use('/api/ai-insights',  aiInsightsRouter)
 app.use('/api/billing',      billingRouter)
 app.use('/api/platform',    platformRouter)
 
-app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
+app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
 // ─── API 404 ──────────────────────────────────────────────────────────────────
 app.use('/api/*path', (_req, res) => res.status(404).json({ error: 'Not found' }))

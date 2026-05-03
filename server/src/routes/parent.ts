@@ -6,7 +6,9 @@ const router = Router()
 
 async function getChild(parentId: string, schoolId: string) {
   const result = await query(
-    'SELECT * FROM students WHERE parent_id=$1 AND school_id=$2 LIMIT 1',
+    `SELECT id, name, name_en, student_id, class_id, grade_level, section,
+            gender, date_of_birth, photo, bus_id, nationality
+     FROM students WHERE parent_id=$1 AND school_id=$2 LIMIT 1`,
     [parentId, schoolId]
   )
   return result.rows[0]
@@ -52,7 +54,7 @@ router.get('/child', authenticateToken, requireRole('parent'), async (req: AuthR
   try {
     const child = await getChild(req.user!.id, req.user!.schoolId)
     if (!child) return res.json({ child: null })
-    const bus = child.bus_id ? (await query('SELECT * FROM buses WHERE id=$1', [child.bus_id])).rows[0] : null
+    const bus = child.bus_id ? (await query('SELECT id, bus_number, plate_number, driver_name, driver_phone, route_name, morning_time, afternoon_time FROM buses WHERE id=$1', [child.bus_id])).rows[0] : null
     res.json({ child, bus })
   } catch { res.status(500).json({ error: 'Server error' }) }
 })

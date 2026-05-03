@@ -313,5 +313,43 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - CSS Dark Mode يعمل عبر `[data-theme="dark"]` على `document.documentElement`
 - Server compression يعمل بعد `helmet` مباشرة في server/src/index.ts
 - `adminApi` في client.ts يُعيد `r.data` مباشرة (axios unwrapped) — لا تُضيف `.data` مرة ثانية
-- Rate limiters: globalLimiter (300/15min) + authLimiter (10/15min) + writeLimiter (30/min) + platformPublicLimiter (30/15min) + ticketMsgLimiter (10/5min)
-- Input sanitization functions في platform.ts: `sanitize(v, maxLen)` + `sanitizeEmail(v)` — يجب استخدامهما في جميع public endpoints
+- Rate limiters: globalLimiter + authLimiter + writeLimiter + reportLimiter + platformPublicLimiter + ticketMsgLimiter + ticketLookupLimiter + ticketRateLimiter
+- Input sanitization: `sanitize(v, maxLen)` + `sanitizeEmail(v)` في platform.ts — يجب استخدامهما في جميع public endpoints
+- UUID validation: `isValidUUID()` + `validateUUIDParam()` في middleware/validate.ts
+- `smtp_pass` مستبعدة تماماً من GET /api/settings — يُعاد `smtp_pass_set: boolean` بدلاً منها
+
+## الأمان — Audit شامل (اكتُشف وأُصلح كل شيء)
+
+### 🔴 CRITICAL — تم الإصلاح
+| # | الثغرة | الإصلاح |
+|---|--------|---------|
+| 1 | `/api/users` بدون `requireRole` — أي مستخدم (معلم/حارس) يُنشئ super_admin | أُضيف `requireRole('admin','super_admin')` على POST/PUT/DELETE |
+| 2 | حقل `role` يقبل أي قيمة — تصعيد الصلاحيات | Allowlist صارمة: فقط الأدوار المعرّفة مسبقاً |
+| 3 | `/track/:ticket` يُعيد بيانات العميل لمن يعرف رقم التذكرة | البريد الإلكتروني مطلوب الآن + unified 404 (لا يكشف وجود التذكرة) |
+
+### 🟠 HIGH — تم الإصلاح
+| # | الثغرة | الإصلاح |
+|---|--------|---------|
+| 4 | `/track/:ticket` بدون rate limiting — brute-force | أُضيف `ticketLookupLimiter` (60 req/10min) |
+| 5 | `/track/:ticket/rate` بدون rate limiting | أُضيف `ticketRateLimiter` (20/hr) |
+| 6 | Ticket number format لا يُتحقق — injection | Regex validation `^TKT-\d{4}-\d{5}$` |
+| 7 | bcrypt rounds=10 في users.ts | رُفع إلى 12 (OWASP recommendation) |
+| 8 | Ticket message يعيد `RETURNING *` — بيانات داخلية | Explicit columns فقط في RETURNING |
+
+### 🟡 MEDIUM — تم الإصلاح
+| # | الثغرة | الإصلاح |
+|---|--------|---------|
+| 9 | `SELECT *` على جداول حساسة (schools/students/buses) | Explicit columns في public.ts، parent.ts، settings.ts |
+| 10 | لا Content-Type validation — تقبل أي body | Middleware 415 يرفض non-JSON على POST/PUT/PATCH |
+| 11 | API responses قابلة للـ cache — بيانات قديمة | `Cache-Control: no-store` على جميع `/api/*` |
+| 12 | `/api/health` يكشف timestamp الخادم | أُزيل `time: new Date()` |
+| 13 | `SELECT *` على school_settings يشمل smtp_pass | smtp_pass مستبعدة + `smtp_pass_set: boolean` |
+| 14 | لا `.gitignore` في الـ root | أُنشئ `.gitignore` يحمي `.env` وجميع الأسرار |
+| 15 | SSL `rejectUnauthorized: false` في production | `rejectUnauthorized: true` في production |
+| 16 | UUID params بدون validation — DB errors مكشوفة | `validateUUIDParam()` middleware + inline checks |
+
+### 🟢 LOW — تم الإصلاح
+| # | الثغرة | الإصلاح |
+|---|--------|---------|
+| 17 | Teacher/librarian يمكنهم حذف super_admin | حماية إضافية — super_admin لا يُحذف إلا بـ super_admin |
+| 18 | `ticketRateLimiter` + `ticketLookupLimiter` مفقودان | أُضيفا للـ rateLimiter.ts |

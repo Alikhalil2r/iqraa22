@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { dashboardApi, feesApi as feesApiClient, eventsApi } from '../../api/client'
 import PerformanceWidget from './PerformanceWidget'
 import PlatformWidget from '../../components/PlatformWidget'
+import BlogWidget from '../../components/BlogWidget'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Link } from 'react-router-dom'
@@ -438,8 +439,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Platform Business Widget */}
-      <PlatformWidget />
+      {/* Platform Business + Blog Widgets */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <PlatformWidget />
+        <BlogWidget />
+      </div>
 
       {/* Performance Widget */}
       <PerformanceWidget />

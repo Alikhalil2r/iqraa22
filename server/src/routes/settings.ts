@@ -10,9 +10,29 @@ const router = Router()
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
-    const school = await query('SELECT * FROM schools WHERE id=$1', [schoolId])
-    const settings = await query('SELECT * FROM school_settings WHERE school_id=$1', [schoolId])
-    res.json({ school: school.rows[0], settings: settings.rows[0] || {} })
+    const school = await query(
+      `SELECT id, name, name_en, tagline, address, phone, email, website, logo_url, status, plan
+       FROM schools WHERE id=$1`,
+      [schoolId]
+    )
+    const settings = await query(
+      `SELECT id, school_id, about_text, vision, mission, principal_name, principal_message,
+              principal_image, hero_image, primary_color, primary_dark, primary_light,
+              accent_color, accent_dark, logo_url, show_parent_portal, show_jobs,
+              smtp_host, smtp_port, smtp_user, smtp_from, email_absence_alert,
+              email_grade_notification, email_fee_reminder, notify_parent_absence,
+              notify_parent_grades, custom_css, updated_at
+              -- NOTE: smtp_pass intentionally excluded to prevent credential leakage
+       FROM school_settings WHERE school_id=$1`,
+      [schoolId]
+    )
+    // Mask SMTP presence without revealing the actual password
+    const settingsRow = settings.rows[0] || {}
+    if (settingsRow) {
+      const hasSmtpPass = !!(await query('SELECT 1 FROM school_settings WHERE school_id=$1 AND smtp_pass IS NOT NULL', [schoolId])).rows[0]
+      settingsRow.smtp_pass_set = hasSmtpPass
+    }
+    res.json({ school: school.rows[0], settings: settingsRow })
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
@@ -144,7 +164,8 @@ router.put('/users/:id',
         return res.status(400).json({ error: 'لا يمكنك تعطيل حسابك الخاص' })
       }
 
-      if (!['admin', 'teacher', 'parent'].includes(role)) {
+      const VALID_ROLES = ['admin', 'teacher', 'parent', 'accountant', 'librarian', 'hr_manager', 'guard']
+      if (!VALID_ROLES.includes(role)) {
         return res.status(400).json({ error: 'نوع المستخدم غير صالح' })
       }
 
