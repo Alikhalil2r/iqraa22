@@ -40,6 +40,25 @@ router.get('/', async (req: AuthRequest, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
+router.get('/stats', async (req: AuthRequest, res) => {
+  try {
+    const { schoolId } = req.user!
+    const stats = await query(`
+      SELECT
+        COUNT(*) as total,
+        COALESCE(SUM(amount), 0) as total_amount,
+        COALESCE(SUM(paid_amount), 0) as collected,
+        COALESCE(SUM(amount - paid_amount), 0) as pending,
+        SUM(CASE WHEN status='paid' THEN 1 ELSE 0 END) as paid_count,
+        SUM(CASE WHEN status='unpaid' THEN 1 ELSE 0 END) as unpaid_count,
+        SUM(CASE WHEN status='partial' THEN 1 ELSE 0 END) as partial_count,
+        SUM(CASE WHEN due_date < CURRENT_DATE AND status != 'paid' THEN 1 ELSE 0 END) as overdue_count
+      FROM fees WHERE school_id = $1
+    `, [schoolId])
+    res.json({ stats: stats.rows[0] })
+  } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
+})
+
 router.post('/', async (req: AuthRequest, res) => {
   try {
     const { schoolId, userId } = req.user!

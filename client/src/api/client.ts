@@ -186,3 +186,26 @@ export const usersAdminApi = {
   delete: (id: string) => api.delete(`/users/${id}`),
   resetPassword: (id: string, data: any) => api.put(`/users/${id}/password`, data),
 }
+
+// Teacher
+export const teacherApi = {
+  dashboard: () => api.get('/teacher/dashboard'),
+  myClasses: () => api.get('/teacher/my-classes'),
+  subjectPerformance: () => api.get('/teacher/subject-performance'),
+}
+
+// Gallery admin
+export const galleryApi = {
+  list: (params?: any) => api.get('/gallery', { params }),
+  create: (data: any) => api.post('/gallery', data),
+  update: (id: string, data: any) => api.put(`/gallery/${id}`, data),
+  delete: (id: string) => api.delete(`/gallery/${id}`),
+}
+
+// Exams admin
+export const examsApi = {
+  list: (params?: any) => api.get('/exams', { params }),
+  create: (data: any) => api.post('/exams', data),
+  update: (id: string, data: any) => api.put(`/exams/${id}`, data),
+  delete: (id: string) => api.delete(`/exams/${id}`),
+}

@@ -46,6 +46,8 @@ const GalleryAdmin     = lazy(() => import('./pages/Admin/GalleryAdmin'))
 const ExamsAdmin       = lazy(() => import('./pages/Admin/ExamsAdmin'))
 const SuperAdmin       = lazy(() => import('./pages/Admin/SuperAdmin'))
 const BillingAdmin     = lazy(() => import('./pages/Admin/BillingAdmin'))
+const TeacherDashboard = lazy(() => import('./pages/Admin/TeacherDashboard'))
+const StudentIdCards   = lazy(() => import('./pages/Admin/StudentIdCards'))
 
 const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -86,8 +88,7 @@ function RequireAuth({ children, role }: { children: React.ReactNode; role?: str
     const loginPath = role === 'parent' ? '/parent-login' : '/login'
     return <Navigate to={loginPath} replace />
   }
-  if (role && user.role !== role && !(role === 'admin' && user.role === 'teacher')) {
-    // Logged-in user doesn't have the right role — send them to their home
+  if (role && user.role !== role && !(role === 'admin' && (user.role === 'teacher' || user.role === 'admin'))) {
     const homePath = user.role === 'parent' ? '/parent' : '/admin'
     return <Navigate to={homePath} replace />
   }
@@ -162,10 +163,12 @@ function RedirectCheck() {
           <Route path="fees"          element={<FeesAdmin />} />
           <Route path="schedule"      element={<ScheduleAdmin />} />
           <Route path="announcements" element={<Announcements />} />
-          <Route path="gallery"       element={<GalleryAdmin />} />
-          <Route path="exams"         element={<ExamsAdmin />} />
-          <Route path="super"         element={<SuperAdmin />} />
-          <Route path="billing"       element={<BillingAdmin />} />
+          <Route path="gallery"         element={<GalleryAdmin />} />
+          <Route path="exams"          element={<ExamsAdmin />} />
+          <Route path="super"          element={<SuperAdmin />} />
+          <Route path="billing"        element={<BillingAdmin />} />
+          <Route path="teacher"        element={<TeacherDashboard />} />
+          <Route path="id-cards"       element={<StudentIdCards />} />
         </Route>
 
         {/* Parent Portal */}

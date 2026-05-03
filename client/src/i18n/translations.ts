@@ -30,6 +30,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.billing':         'الاشتراك والفواتير',
     'nav.superAdmin':      'الإدارة العليا',
     'nav.group.content':   'المحتوى والإدارة',
+    'nav.teacher':         'لوحة المعلم',
+    'nav.idCards':         'بطاقات الطلاب',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'الرئيسية',
@@ -60,6 +62,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.exams':         'جدول الامتحانات',
     'breadcrumb.billing':       'الاشتراك والفواتير',
     'breadcrumb.superAdmin':    'الإدارة العليا',
+    'breadcrumb.teacher':       'لوحة المعلم',
+    'breadcrumb.idCards':       'بطاقات الطلاب',
 
     /* ─── Common Actions ─── */
     'common.save':      'حفظ',
@@ -213,6 +217,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.billing':         'Billing & Plans',
     'nav.superAdmin':      'Super Admin',
     'nav.group.content':   'Content & Admin',
+    'nav.teacher':         'Teacher Dashboard',
+    'nav.idCards':         'Student ID Cards',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'Home',
@@ -243,6 +249,8 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.exams':         'Exam Schedule',
     'breadcrumb.billing':       'Billing & Plans',
     'breadcrumb.superAdmin':    'Super Admin',
+    'breadcrumb.teacher':       'Teacher Dashboard',
+    'breadcrumb.idCards':       'Student ID Cards',
 
     /* ─── Common Actions ─── */
     'common.save':      'Save',

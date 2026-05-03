@@ -43,23 +43,39 @@ node_modules/   — Shared packages
 | `/jobs` | التوظيف (وظائف شاغرة + نموذج تقديم كامل + CAPTCHA رياضي) |
 | `/login` | دخول المشرفين والمعلمين |
 | `/parent-login` | دخول أولياء الأمور |
-| `/admin` | لوحة التحكم (محمية) |
+| `/admin` | لوحة التحكم الرئيسية (محمية — admin + teacher) |
+| `/admin/teacher` | لوحة المعلم — RingGauge + أداء المواد + جدول اليوم |
+| `/admin/id-cards` | بطاقات هوية الطلاب — طباعة فردية وجماعية مع QR |
 | `/parent` | بوابة أولياء الأمور (محمية) |
 
 ## API Endpoints
 ```
-POST /api/auth/login        — تسجيل الدخول
-GET  /api/students          — قائمة الطلاب
-GET  /api/employees         — قائمة الموظفين
-GET  /api/attendance        — سجل الحضور
-GET  /api/grades            — النتائج
-GET  /api/buses             — الحافلات
-GET  /api/messages          — الرسائل
-GET  /api/news              — الأخبار
-GET  /api/events            — الفعاليات
-GET  /api/school/settings   — إعدادات المدرسة
-GET  /api/school/theme      — ثيم المدرسة
-GET  /api/reports/*         — التقارير
+POST /api/auth/login              — تسجيل الدخول
+GET  /api/dashboard/stats         — إحصائيات الداشبورد
+GET  /api/dashboard/activity      — آخر الأنشطة
+GET  /api/students                — قائمة الطلاب
+GET  /api/employees               — قائمة الموظفين
+GET  /api/attendance              — سجل الحضور
+GET  /api/attendance/stats        — إحصائيات الحضور
+GET  /api/grades                  — النتائج
+GET  /api/grades/subjects         — قائمة المواد
+GET  /api/grades/report/:id       — تقرير طالب
+GET  /api/buses                   — الحافلات
+GET  /api/messages                — الرسائل
+GET  /api/messages/unread-count   — عدد الرسائل غير المقروءة
+GET  /api/news                    — الأخبار
+GET  /api/events                  — الفعاليات
+GET  /api/fees                    — الرسوم المالية
+GET  /api/fees/stats              — إحصائيات الرسوم (مستقل)
+GET  /api/schedule                — الجداول الدراسية
+GET  /api/settings                — إعدادات المدرسة
+GET  /api/settings/theme          — ثيم المدرسة
+GET  /api/reports/*               — التقارير
+GET  /api/teacher/dashboard       — داشبورد المعلم
+GET  /api/teacher/my-classes      — فصولي (جدول)
+GET  /api/teacher/subject-performance — أداء المواد
+GET  /api/parent/*                — بوابة أولياء الأمور
+GET  /api/public/*                — endpoints عامة (بدون auth)
 ```
 
 ## دعم ثنائي اللغة (عربي / إنجليزي) — الجلسة الحالية
@@ -73,14 +89,21 @@ GET  /api/reports/*         — التقارير
 - ✅ ParentLoginPage — نموذج الدخول + بطاقات الميزات + زر ع|EN في الـ card
 - **التبديل:** `document.dir = 'ltr'/'rtl'` تلقائياً عند التغيير — محفوظ في localStorage
 
-## الميزات المكتملة — الجلسة الحالية (أفضل 7 إضافات)
-- ✅ **Mobile Bottom Navigation** في بوابة أولياء الأمور — شريط تنقل ثابت أسفل الشاشة على الجوال بأيقونات وتسميات وبادجات للإشعارات
-- ✅ **Session Expiry Warning** — بانر تحذيري عند اقتراب انتهاء JWT (10 دقائق تحذير، 3 دقائق تنبيه طارئ) مع زر تسجيل خروج
-- ✅ **Notification Bell Dropdown** — جرس الإشعارات في AdminLayout يفتح لوحة منسدلة مع رسائل غير مقروءة وتنبيهات الغياب، وربط بنافذة الاختصارات
-- ✅ **Keyboard Shortcuts Help Modal** — الضغط على '?' يعرض نافذة جميلة لكل الاختصارات المتاحة (Alt+1-7، Ctrl+K، Esc)
-- ✅ **Grade Radar Chart** — في بروفايل الطالب > تبويب الدرجات: مخطط رادار تفاعلي يُظهر أداء المواد مقارنةً بعضها (recharts RadarChart)
-- ✅ **Attendance Heatmap** — في بروفايل الطالب > تبويب الحضور: تقويم ملوّن بـ 10 أسابيع يُظهر الحضور والغياب والتأخر بالألوان
-- ✅ **Smart Insights Widget** — في Dashboard: قسم "تحليل ذكي" يُنتج رسائل ذكية بناءً على البيانات (حضور ممتاز ✅ / رسوم منخفضة ⚠️ / إجمالي المسجلين)
+## الميزات المكتملة — الجلسة الحالية (أحدث الإضافات)
+- ✅ **Teacher Dashboard** (`/admin/teacher`) — لوحة معلم متكاملة: RingGauge charts، أداء الفصول، بارشارت المواد، جدول اليوم، Top Students
+- ✅ **Student ID Cards** (`/admin/id-cards`) — بطاقات هوية قابلة للطباعة (فردية وجماعية) مع QR code simulation، فلترة بالفصل، print CSS
+- ✅ **Performance Widget** — ودجت أداء المؤسسة في الداشبورد: متوسط الدرجات، معدل النجاح، تحصيل الرسوم، شريط مواد المقارنة
+- ✅ **Enhanced Notification Panel** — لوحة إشعارات محسّنة: شريط حضور اليوم، تذكيرات رسوم متأخرة، فعاليات قادمة، رسائل + غياب
+- ✅ **`/api/fees/stats`** — endpoint مستقل لإحصائيات الرسوم (total، collected، pending، overdue)
+- ✅ **`/api/teacher/*`** — routes جديدة: dashboard، my-classes، subject-performance
+- ✅ **Quick Actions 8-grid** — أيقونات الوصول السريع في الداشبورد توسّعت لـ 8 إجراءات شاملة Teacher Dashboard و ID Cards
+- ✅ **Mobile Bottom Navigation** في بوابة أولياء الأمور — شريط تنقل ثابت أسفل الشاشة على الجوال
+- ✅ **Session Expiry Warning** — بانر تحذيري عند اقتراب انتهاء JWT مع زر تسجيل خروج
+- ✅ **Notification Bell Dropdown** — جرس الإشعارات في AdminLayout مع لوحة منسدلة احترافية
+- ✅ **Keyboard Shortcuts Help Modal** — الضغط على '?' يعرض نافذة الاختصارات
+- ✅ **Grade Radar Chart** — في بروفايل الطالب: مخطط رادار للمواد
+- ✅ **Attendance Heatmap** — تقويم ملوّن بـ 10 أسابيع
+- ✅ **Smart Insights Widget** — تحليل ذكي في Dashboard
 
 ## الميزات المكتملة
 - ✅ Multi-tenant (كل مدرسة لها بياناتها المعزولة)

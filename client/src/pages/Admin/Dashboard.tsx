@@ -1,17 +1,17 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { dashboardApi } from '../../api/client'
-import { feesApi as feesApiClient } from '../../api/client'
+import { dashboardApi, feesApi as feesApiClient, eventsApi } from '../../api/client'
+import PerformanceWidget from './PerformanceWidget'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Link } from 'react-router-dom'
 import {
   Users, GraduationCap, Bus, MessageSquare, UserCheck, TrendingUp,
   AlertCircle, Calendar, BarChart3, DollarSign, ArrowLeft, Clock,
-  Newspaper, BookOpen, Star, RefreshCw, CheckCircle, XCircle, Zap,
-  CalendarDays, AlertTriangle
+  Newspaper, BookOpen, Star, RefreshCw, CheckCircle, Zap,
+  CalendarDays, AlertTriangle, CreditCard, School, FileText, Target
 } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
 import { DashboardSkeleton } from '../../components/Skeleton'
 
 
@@ -196,6 +196,8 @@ export default function Dashboard() {
     { to: '/admin/fees',       icon: DollarSign,    labelKey: 'nav.fees',       color: '#f59e0b' },
     { to: '/admin/messages',   icon: MessageSquare, labelKey: 'nav.messages',   color: '#ef4444' },
     { to: '/admin/reports',    icon: BarChart3,     labelKey: 'nav.reports',    color: '#8b5cf6' },
+    { to: '/admin/teacher',    icon: School,        labelKey: 'nav.teacher',    color: '#0891b2' },
+    { to: '/admin/id-cards',   icon: CreditCard,    labelKey: 'nav.idCards',    color: '#7c3aed' },
   ]
 
   const activityTypeLabel = (type: string) => {
@@ -422,7 +424,7 @@ export default function Dashboard() {
           <Zap size={14} className="text-yellow-500"/>
           {t('dash.quickAccess')}
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
           {quickActions.map(q => (
             <Link key={q.to} to={q.to}
               className="card flex flex-col items-center gap-2 hover:shadow-md transition-all group !py-4 text-center">
@@ -434,6 +436,9 @@ export default function Dashboard() {
           ))}
         </div>
       </div>
+
+      {/* Performance Widget */}
+      <PerformanceWidget />
 
       {/* Smart Insights */}
       {insights.length > 0 && (
