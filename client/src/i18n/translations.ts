@@ -38,6 +38,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.leaves':          'إجازات الموظفين',
     'nav.group.academic':  'الأكاديمي والسلوكي',
     'nav.pdfReports':      'تقارير الطباعة',
+    'nav.aiInsights':      'التحليل الذكي',
+    'nav.auditLog':        'سجل النشاط',
+    'nav.twoFactor':       'المصادقة الثنائية',
+    'nav.group.analytics': 'الذكاء الاصطناعي',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'الرئيسية',
@@ -236,6 +240,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.leaves':          'Staff Leaves',
     'nav.group.academic':  'Academic & Behavior',
     'nav.pdfReports':      'Print Reports',
+    'nav.aiInsights':      'AI Analytics',
+    'nav.auditLog':        'Audit Log',
+    'nav.twoFactor':       'Two-Factor Auth',
+    'nav.group.analytics': 'AI & Analytics',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'Home',

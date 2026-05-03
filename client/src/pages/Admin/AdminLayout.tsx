@@ -8,7 +8,7 @@ import {
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
   DollarSign, CalendarDays, Home, Globe, Moon, Sun, Image, FileText, CreditCard,
-  School, BookMarked, ClipboardList, Printer
+  School, BookMarked, ClipboardList, Printer, Brain, ShieldCheck, Lock
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
@@ -85,13 +85,22 @@ const menuGroups: MenuGroup[] = [
     ]
   },
   {
+    labelKey: 'nav.group.analytics',
+    roles: ['super_admin','admin','teacher','accountant','hr_manager'],
+    items: [
+      { to: '/admin/ai-insights', icon: Brain,       labelKey: 'nav.aiInsights', roles: ['super_admin','admin','teacher','accountant','hr_manager'] },
+    ]
+  },
+  {
     labelKey: 'nav.group.settings',
     items: [
-      { to: '/admin/theme',    icon: Palette,   labelKey: 'nav.theme',      roles: ADMIN_ONLY },
-      { to: '/admin/settings', icon: Settings,  labelKey: 'nav.settings',   roles: ADMIN_ONLY },
-      { to: '/admin/users',    icon: Shield,    labelKey: 'nav.users',       roles: ADMIN_ONLY },
-      { to: '/admin/billing',  icon: CreditCard,labelKey: 'nav.billing',     roles: ADMIN_ONLY },
-      { to: '/admin/super',    icon: Globe,     labelKey: 'nav.superAdmin',  roles: SUPER_ONLY },
+      { to: '/admin/theme',      icon: Palette,     labelKey: 'nav.theme',      roles: ADMIN_ONLY },
+      { to: '/admin/settings',   icon: Settings,    labelKey: 'nav.settings',   roles: ADMIN_ONLY },
+      { to: '/admin/users',      icon: Shield,      labelKey: 'nav.users',       roles: ADMIN_ONLY },
+      { to: '/admin/billing',    icon: CreditCard,  labelKey: 'nav.billing',     roles: ADMIN_ONLY },
+      { to: '/admin/audit-log',  icon: ShieldCheck, labelKey: 'nav.auditLog',    roles: ADMIN_ONLY },
+      { to: '/admin/2fa',        icon: Lock,        labelKey: 'nav.twoFactor',   roles: ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard'] },
+      { to: '/admin/super',      icon: Globe,       labelKey: 'nav.superAdmin',  roles: SUPER_ONLY },
     ]
   },
 ]
@@ -124,6 +133,9 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/homework':       'breadcrumb.homework',
   '/admin/conduct':        'breadcrumb.conduct',
   '/admin/leaves':         'breadcrumb.leaves',
+  '/admin/ai-insights':   'التحليل الذكي',
+  '/admin/audit-log':     'سجل النشاط',
+  '/admin/2fa':           'المصادقة الثنائية',
 }
 
 export default function AdminLayout() {

@@ -31,6 +31,10 @@ import libraryRouter from './routes/library'
 import leavesRouter  from './routes/leaves'
 import homeworkRouter from './routes/homework'
 import conductRouter  from './routes/conduct'
+import auditRouter    from './routes/audit'
+import twofaRouter    from './routes/twofa'
+import aiInsightsRouter from './routes/ai-insights'
+import billingRouter  from './routes/billing'
 
 dotenv.config()
 
@@ -131,6 +135,10 @@ app.use('/api/library',  libraryRouter)
 app.use('/api/leaves',   leavesRouter)
 app.use('/api/homework', homeworkRouter)
 app.use('/api/conduct',  conductRouter)
+app.use('/api/audit',        auditRouter)
+app.use('/api/2fa',          twofaRouter)
+app.use('/api/ai-insights',  aiInsightsRouter)
+app.use('/api/billing',      billingRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 

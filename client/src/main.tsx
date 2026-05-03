@@ -8,6 +8,13 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { LanguageProvider } from './context/LanguageContext'
 import './index.css'
 
+// ─── PWA Service Worker registration ──────────────────────────────────────────
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {/* non-critical */})
+  })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,7 +33,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <LanguageProvider>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <App />
             <Toaster
               position="top-center"

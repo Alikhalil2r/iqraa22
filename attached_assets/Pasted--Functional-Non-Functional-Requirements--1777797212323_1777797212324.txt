@@ -1,0 +1,483 @@
+المرحلة الثانية: كتابة المتطلبات الاحترافية الكاملة
+Functional + Non-Functional Requirements
+قبل كتابة المتطلبات الدقيقة جدًا، سأبنيها على أساس أنك تريد منصة احترافية لشركة إنشاء تطبيقات ومواقع وخدمات رقمية (مثل شركة Expo / اكسبو التقنية).
+إذا كان نوع المشروع مختلفًا لاحقًا يمكننا تخصيصه بالكامل.
+
+أولًا: Functional Requirements
+(المتطلبات الوظيفية)
+هذه هي الأشياء التي يجب أن “يفعلها” النظام.
+
+1. الصفحة الرئيسية (Home)
+يجب أن تحتوي على:
+
+
+Hero Section احترافي جدًا
+
+
+عرض الخدمات الرئيسية
+
+
+لماذا نحن؟
+
+
+Portfolio / أعمالنا السابقة
+
+
+آراء العملاء
+
+
+خطوات العمل
+
+
+الأسعار أو طلب عرض سعر
+
+
+FAQ
+
+
+CTA قوية للتحويل
+
+
+Footer احترافي
+
+
+الهدف:
+رفع معدل التحويل Conversion Rate
+
+2. نظام طلب الخدمة (Service Request System)
+العميل يستطيع:
+
+
+اختيار نوع الخدمة
+
+
+تحديد تفاصيل المشروع
+
+
+رفع ملفات
+
+
+تحديد الميزانية
+
+
+تحديد الموعد المتوقع
+
+
+إرسال الطلب مباشرة
+
+
+النظام يقوم بـ:
+
+
+إنشاء Ticket تلقائي
+
+
+إشعار الإدارة
+
+
+إشعار العميل
+
+
+حفظ الطلب في CRM
+
+
+
+3. Client Portal (بوابة العميل)
+العميل يمكنه:
+
+
+تسجيل الدخول
+
+
+متابعة المشروع
+
+
+مشاهدة حالة التنفيذ
+
+
+تحميل الملفات
+
+
+الفواتير
+
+
+المحادثة مع الفريق
+
+
+الدعم الفني
+
+
+طلب تعديلات
+
+
+
+4. Admin Dashboard
+الإدارة يمكنها:
+
+
+إدارة العملاء
+
+
+إدارة الطلبات
+
+
+إدارة المشاريع
+
+
+إدارة الموظفين
+
+
+إدارة الفواتير
+
+
+إدارة الصلاحيات
+
+
+إدارة المحتوى
+
+
+إدارة الإشعارات
+
+
+مشاهدة Analytics
+
+
+إدارة AI Assistant
+
+
+
+5. Smart AI Assistant
+الذكاء الاصطناعي يقوم بـ:
+
+
+الرد على العملاء
+
+
+اقتراح الخدمات المناسبة
+
+
+تصنيف العملاء المحتملين
+
+
+تحليل الطلبات
+
+
+اقتراح التسعير
+
+
+دعم خدمة العملاء
+
+
+
+6. نظام الدفع (Payment System)
+يجب دعم:
+
+
+الدفع الإلكتروني
+
+
+الفواتير
+
+
+الاشتراكات
+
+
+الأقساط (اختياري)
+
+
+عروض الأسعار
+
+
+
+7. نظام الإشعارات
+عبر:
+
+
+Email
+
+
+WhatsApp
+
+
+SMS
+
+
+Push Notifications
+
+
+حسب الحدث
+
+8. Blog + SEO System
+يجب دعم:
+
+
+مقالات
+
+
+صفحات SEO
+
+
+Landing Pages
+
+
+تحسين محركات البحث
+
+
+
+9. نظام الصلاحيات
+مستويات مثل:
+
+
+Super Admin
+
+
+Admin
+
+
+Sales
+
+
+Project Manager
+
+
+Support
+
+
+Developer
+
+
+Client
+
+
+
+10. Security Monitoring
+النظام يجب أن يراقب:
+
+
+محاولات الاختراق
+
+
+تسجيل الدخول المشبوه
+
+
+Spam
+
+
+Abuse
+
+
+API Abuse
+
+
+
+ثانيًا: Non-Functional Requirements
+(المتطلبات غير الوظيفية)
+هذه أخطر من الوظيفية غالبًا.
+
+1. الأداء (Performance)
+يجب أن يكون:
+
+
+تحميل أقل من 2 ثانية
+
+
+API Response سريع جدًا
+
+
+Core Web Vitals ممتازة
+
+
+ضغط الصور
+
+
+Lazy Loading
+
+
+CDN
+
+
+Caching
+
+
+
+2. الأمان (Security)
+يجب تطبيق:
+
+
+JWT Secure Auth
+
+
+2FA
+
+
+Rate Limiting
+
+
+CSRF Protection
+
+
+XSS Protection
+
+
+SQL Injection Prevention
+
+
+WAF Ready
+
+
+Audit Logs
+
+
+Backup Strategy
+
+
+
+3. القابلية للتوسع (Scalability)
+يجب أن يدعم:
+
+
+آلاف المستخدمين
+
+
+Microservices Ready
+
+
+Queue System
+
+
+Background Jobs
+
+
+Horizontal Scaling
+
+
+
+4. الاعتمادية (Reliability)
+يجب أن يحتوي:
+
+
+Auto Backup
+
+
+Disaster Recovery
+
+
+Fail-safe System
+
+
+Monitoring
+
+
+Alerting
+
+
+
+5. تجربة المستخدم (UX)
+يجب أن تكون:
+
+
+سهلة جدًا
+
+
+احترافية جدًا
+
+
+Premium Feel
+
+
+Mobile First
+
+
+Responsive بالكامل
+
+
+
+6. الصيانة (Maintainability)
+يجب أن يكون:
+
+
+Clean Code
+
+
+Modular Architecture
+
+
+Documentation
+
+
+CI/CD Ready
+
+
+Testing Ready
+
+
+
+7. قابلية التطوير (Extensibility)
+بحيث لاحقًا يمكن إضافة:
+
+
+تطبيق جوال
+
+
+نظام اشتراكات
+
+
+Marketplace
+
+
+Multi-language
+
+
+Multi-country
+
+
+Franchise System
+
+
+
+أخطر قرار CTO هنا
+لا نبني “صفحات”
+نحن نبني:
+Business Engine
+وليس مجرد Website
+وهذا فرق ضخم جدًا.
+
+ملاحظتي كـ CTO
+أكبر خطأ يقع فيه المطورون:
+
+بناء واجهات فقط بدون بناء نظام أعمال حقيقي
+
+وهذا يؤدي لفشل المشروع لاحقًا.
+نحن نتجنب هذا من البداية.
+
+المرحلة القادمة
+المرحلة الثالثة:
+System Design + Architecture
+وهنا سنحدد:
+
+
+الهيكل الحقيقي للنظام
+
+
+قاعدة البيانات
+
+
+Backend Architecture
+
+
+Frontend Architecture
+
+
+Security Layers
+
+
+AI Integration
+
+
+Scalability Plan
+
+
+Deployment Strategy
+
+
+وهذه مرحلة احتراف الشركات الكبرى.

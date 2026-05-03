@@ -193,6 +193,21 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `@import "tailwindcss"` في index.css (v3 approach)
 - لا حاجة لـ postcss tailwind plugin
 
+## الميزات المكتملة — أحدث جلسة (6 محاور Enterprise)
+- ✅ **إصلاح React Router** — `future={{ v7_startTransition, v7_relativeSplatPath }}` في BrowserRouter
+- ✅ **PWA + Push Notifications** — `client/public/manifest.webmanifest` + `client/public/sw.js` (SW registration في main.tsx)، push handler، `<link rel="manifest">` في index.html
+- ✅ **Excel Export** — `exportToExcel()` مع `xlsx` (dynamic import) في ExportButton.tsx — تصدير CSV / Excel / JSON
+- ✅ **AI Smart Analytics** (`/admin/ai-insights`) — 8 SQL queries parallel: توزيع الدرجات، طلاب في خطر، اتجاه الحضور، تحصيل الرسوم، أداء المواد، نمط الغياب، أداء الفصول، السلوك — توصيات ذكية تلقائية (critical/warning/positive/info)
+- ✅ **Enterprise Security — Audit Log** (`/admin/audit-log`) — جدول `audit_logs` + route `/api/audit/*` + صفحة عرض مع فلاتر وpagination + تصدير CSV + إحصائيات
+- ✅ **Enterprise Security — 2FA** (`/admin/2fa`) — TOTP مع speakeasy + QR code مع qrcode — setup/verify/disable — جدول `user_sessions` + حقول `totp_secret/totp_enabled` في users
+- ✅ **Billing Enhancement** — route `/api/billing/*` — invoices CRUD + usage stats + auto-invoice-number — جدول `invoices`
+- ✅ **5 routes جديدة في server** — `/api/audit`, `/api/2fa`, `/api/ai-insights`, `/api/billing` مُسجَّلة في index.ts
+- ✅ **3 صفحات frontend جديدة** — AIInsights.tsx, AuditLog.tsx, TwoFactorSetup.tsx
+- ✅ **AdminLayout sidebar** — مجموعة "الذكاء الاصطناعي" + روابط AI Insights / Audit Log / 2FA
+- ✅ **ترجمات جديدة** — nav.aiInsights, nav.auditLog, nav.twoFactor, nav.group.analytics (عربي + إنجليزي)
+- ✅ **Schema migrations** — audit_logs, user_sessions, invoices + ALTER users (totp_secret, totp_enabled, last_login_at, last_login_ip, login_count)
+- ✅ **logAudit() helper** — exported من audit.ts لاستخدامه في أي route (2fa + billing يستخدمانه)
+
 ## قاعدة البيانات — الجداول
 - schools, users, students, employees
 - classes, subjects, attendance, grades
@@ -203,6 +218,9 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - **leave_types, employee_leaves** — إجازات الموظفين
 - **homework, homework_submissions** — الواجبات المنزلية
 - **conduct_records** — سجل السلوك
+- **audit_logs** — سجل النشاط الكامل (Enterprise Audit)
+- **user_sessions** — جلسات المستخدمين
+- **invoices** — فواتير الاشتراك
 
 ## Workflows
 - `Backend Server`: `cd server && npm start` (port 3001)
@@ -220,7 +238,7 @@ GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 - `Skeleton` — مكونات skeleton loaders (StatCard, Table, Dashboard, Card)
 - `ConfirmDialog` — نافذة تأكيد احترافية للحذف
 - `ErrorBoundary` — class component للتعامل مع أخطاء React (يلتف حول كامل App)
-- `ExportButton` — تصدير CSV/JSON مع dropdown
+- `ExportButton` — تصدير CSV / Excel (xlsx) / JSON مع dropdown
 - `GlobalSearch` — Command palette (Ctrl+K)
 - `FormField`, `Input`, `Select`, `Textarea` — مكونات نماذج موحّدة
 

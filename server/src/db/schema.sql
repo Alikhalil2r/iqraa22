@@ -565,3 +565,70 @@ ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
 ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN (
   'super_admin','admin','teacher','parent','accountant','librarian','hr_manager','guard'
 ));
+
+-- ═══════════════════════════════════════════
+-- MIGRATIONS: Enterprise Security (Audit Log + 2FA) + Billing
+-- ═══════════════════════════════════════════
+
+-- Audit log for all admin actions
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  user_id UUID,
+  user_name VARCHAR(200),
+  user_role VARCHAR(50),
+  action VARCHAR(100) NOT NULL,
+  entity_type VARCHAR(100),
+  entity_id VARCHAR(200),
+  description TEXT,
+  ip_address VARCHAR(100),
+  user_agent TEXT,
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_school ON audit_logs(school_id);
+CREATE INDEX IF NOT EXISTS idx_audit_user ON audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_created ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_logs(action);
+
+-- 2FA secrets per user
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(100);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS login_count INTEGER DEFAULT 0;
+
+-- Sessions tracking
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  session_token TEXT UNIQUE NOT NULL,
+  ip_address VARCHAR(100),
+  user_agent TEXT,
+  is_active BOOLEAN DEFAULT true,
+  last_activity TIMESTAMPTZ DEFAULT NOW(),
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(session_token);
+
+-- Subscription / billing invoices
+CREATE TABLE IF NOT EXISTS invoices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  invoice_number VARCHAR(50) UNIQUE,
+  plan VARCHAR(30) NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
+  currency VARCHAR(10) DEFAULT 'OMR',
+  status VARCHAR(20) DEFAULT 'pending',
+  due_date DATE,
+  paid_at TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_invoices_school ON invoices(school_id);

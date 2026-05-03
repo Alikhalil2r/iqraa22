@@ -53,6 +53,9 @@ const LeavesAdmin      = lazy(() => import('./pages/Admin/LeavesAdmin'))
 const HomeworkAdmin    = lazy(() => import('./pages/Admin/HomeworkAdmin'))
 const ConductAdmin     = lazy(() => import('./pages/Admin/ConductAdmin'))
 const PDFReports       = lazy(() => import('./pages/Admin/PDFReports'))
+const AIInsights       = lazy(() => import('./pages/Admin/AIInsights'))
+const AuditLog         = lazy(() => import('./pages/Admin/AuditLog'))
+const TwoFactorSetup   = lazy(() => import('./pages/Admin/TwoFactorSetup'))
 
 const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -186,6 +189,9 @@ function RedirectCheck() {
           <Route path="homework"       element={<HomeworkAdmin />} />
           <Route path="conduct"        element={<ConductAdmin />} />
           <Route path="pdf-reports"    element={<PDFReports />} />
+          <Route path="ai-insights"    element={<AIInsights />} />
+          <Route path="audit-log"      element={<AuditLog />} />
+          <Route path="2fa"            element={<TwoFactorSetup />} />
         </Route>
 
         {/* Parent Portal */}
