@@ -76,6 +76,26 @@ GET  /api/teacher/my-classes      — فصولي (جدول)
 GET  /api/teacher/subject-performance — أداء المواد
 GET  /api/parent/*                — بوابة أولياء الأمور
 GET  /api/public/*                — endpoints عامة (بدون auth)
+GET  /api/library/books           — كتالوج المكتبة (بحث + فلترة)
+POST /api/library/books           — إضافة كتاب
+PUT  /api/library/books/:id       — تعديل كتاب
+DELETE /api/library/books/:id     — حذف كتاب
+GET  /api/library/borrows         — قائمة الإعارات
+POST /api/library/borrows         — إعارة كتاب (يُنقص copies_available)
+PUT  /api/library/borrows/:id/return — إرجاع كتاب (يزيد copies_available + غرامة)
+GET  /api/leaves/types            — أنواع الإجازات (6 مضمّنة افتراضياً)
+GET  /api/leaves                  — طلبات الإجازات
+POST /api/leaves                  — طلب إجازة جديدة
+PUT  /api/leaves/:id/approve      — الموافقة على إجازة
+PUT  /api/leaves/:id/reject       — رفض إجازة + سبب
+GET  /api/leaves/balance/:empId   — رصيد الإجازات لموظف
+GET  /api/homework                — قائمة الواجبات (مع إحصائيات التسليم)
+POST /api/homework                — تعيين واجب (يُنشئ تسليمات pending تلقائياً لطلاب الفصل)
+GET  /api/homework/:id/submissions — تسليمات واجب محدد
+PUT  /api/homework/submissions/:id/grade — تقييم تسليم
+GET  /api/conduct                 — سجلات السلوك (حوادث + مكافآت + top students)
+POST /api/conduct                 — تسجيل سلوك جديد
+GET  /api/conduct/student/:id     — ملخص سلوك طالب محدد
 ```
 
 ## دعم ثنائي اللغة (عربي / إنجليزي) — الجلسة الحالية
@@ -89,7 +109,18 @@ GET  /api/public/*                — endpoints عامة (بدون auth)
 - ✅ ParentLoginPage — نموذج الدخول + بطاقات الميزات + زر ع|EN في الـ card
 - **التبديل:** `document.dir = 'ltr'/'rtl'` تلقائياً عند التغيير — محفوظ في localStorage
 
-## الميزات المكتملة — الجلسة الحالية (أحدث الإضافات)
+## الميزات المكتملة — أحدث جلسة (4 وحدات ضخمة جديدة)
+- ✅ **نظام المكتبة** (`/admin/library`) — كتالوج كتب، إعارة، إرجاع، غرامات، تنبيه كتب متأخرة، إحصائيات
+- ✅ **إدارة إجازات الموظفين** (`/admin/leaves`) — طلبات إجازة، موافقة/رفض، رصيد، أنواع (6 أنواع) مع seed تلقائي
+- ✅ **الواجبات المنزلية** (`/admin/homework`) — تعيين، تتبع تسليم، تقييم، ProgressRing، عرض مقارنة التسليمات
+- ✅ **سجل السلوك** (`/admin/conduct`) — تسجيل حوادث/مكافآت/تحذيرات، نقاط، أفضل الطلاب، تنبيه إبلاغ الأهل
+- ✅ **8 جداول قاعدة بيانات جديدة** — library_books، library_borrows، leave_types، employee_leaves، homework، homework_submissions، conduct_records (كلها IF NOT EXISTS + indexes)
+- ✅ **4 backend routes جديدة** — `/api/library/*`، `/api/leaves/*`، `/api/homework/*`، `/api/conduct/*` مسجّلة في index.ts
+- ✅ **4 API namespaces في client.ts** — libraryApi، leavesApi، homeworkApi، conductApi
+- ✅ **مجموعة nav جديدة** "الأكاديمي والسلوكي" في AdminLayout sidebar
+- ✅ **translations كاملة** للوحدات الجديدة (عربي + إنجليزي)
+
+## الميزات المكتملة — الجلسة السابقة
 - ✅ **Teacher Dashboard** (`/admin/teacher`) — لوحة معلم متكاملة: RingGauge charts، أداء الفصول، بارشارت المواد، جدول اليوم، Top Students
 - ✅ **Student ID Cards** (`/admin/id-cards`) — بطاقات هوية قابلة للطباعة (فردية وجماعية) مع QR code simulation، فلترة بالفصل، print CSS
 - ✅ **Performance Widget** — ودجت أداء المؤسسة في الداشبورد: متوسط الدرجات، معدل النجاح، تحصيل الرسوم، شريط مواد المقارنة
@@ -157,6 +188,11 @@ GET  /api/public/*                — endpoints عامة (بدون auth)
 - classes, subjects, attendance, grades
 - buses, bus_students, messages
 - news, events, settings, gallery, broadcasts
+- exams, fees, schedule, notifications, staff_public, achievements
+- **library_books, library_borrows** — نظام المكتبة
+- **leave_types, employee_leaves** — إجازات الموظفين
+- **homework, homework_submissions** — الواجبات المنزلية
+- **conduct_records** — سجل السلوك
 
 ## Workflows
 - `Backend Server`: `cd server && npm start` (port 3001)

@@ -209,3 +209,47 @@ export const examsApi = {
   update: (id: string, data: any) => api.put(`/exams/${id}`, data),
   delete: (id: string) => api.delete(`/exams/${id}`),
 }
+
+// Library
+export const libraryApi = {
+  books: (params?: any) => api.get('/library/books', { params }),
+  createBook: (data: any) => api.post('/library/books', data),
+  updateBook: (id: string, data: any) => api.put(`/library/books/${id}`, data),
+  deleteBook: (id: string) => api.delete(`/library/books/${id}`),
+  borrows: (params?: any) => api.get('/library/borrows', { params }),
+  borrow: (data: any) => api.post('/library/borrows', data),
+  returnBook: (id: string, data?: any) => api.put(`/library/borrows/${id}/return`, data || {}),
+  updateBorrow: (id: string, data: any) => api.put(`/library/borrows/${id}`, data),
+}
+
+// Employee Leaves
+export const leavesApi = {
+  types: () => api.get('/leaves/types'),
+  list: (params?: any) => api.get('/leaves', { params }),
+  create: (data: any) => api.post('/leaves', data),
+  approve: (id: string) => api.put(`/leaves/${id}/approve`),
+  reject: (id: string, data: any) => api.put(`/leaves/${id}/reject`, data),
+  update: (id: string, data: any) => api.put(`/leaves/${id}`, data),
+  cancel: (id: string) => api.delete(`/leaves/${id}`),
+  balance: (employeeId: string) => api.get(`/leaves/balance/${employeeId}`),
+}
+
+// Homework
+export const homeworkApi = {
+  list: (params?: any) => api.get('/homework', { params }),
+  create: (data: any) => api.post('/homework', data),
+  update: (id: string, data: any) => api.put(`/homework/${id}`, data),
+  delete: (id: string) => api.delete(`/homework/${id}`),
+  submissions: (id: string) => api.get(`/homework/${id}/submissions`),
+  gradeSubmission: (id: string, data: any) => api.put(`/homework/submissions/${id}/grade`, data),
+  updateSubmission: (id: string, data: any) => api.put(`/homework/submissions/${id}`, data),
+}
+
+// Conduct / Behavior
+export const conductApi = {
+  list: (params?: any) => api.get('/conduct', { params }),
+  create: (data: any) => api.post('/conduct', data),
+  update: (id: string, data: any) => api.put(`/conduct/${id}`, data),
+  delete: (id: string) => api.delete(`/conduct/${id}`),
+  studentSummary: (studentId: string) => api.get(`/conduct/student/${studentId}`),
+}

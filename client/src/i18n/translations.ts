@@ -32,6 +32,11 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.group.content':   'المحتوى والإدارة',
     'nav.teacher':         'لوحة المعلم',
     'nav.idCards':         'بطاقات الطلاب',
+    'nav.library':         'المكتبة المدرسية',
+    'nav.homework':        'الواجبات المنزلية',
+    'nav.conduct':         'سجل السلوك',
+    'nav.leaves':          'إجازات الموظفين',
+    'nav.group.academic':  'الأكاديمي والسلوكي',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'الرئيسية',
@@ -64,6 +69,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.superAdmin':    'الإدارة العليا',
     'breadcrumb.teacher':       'لوحة المعلم',
     'breadcrumb.idCards':       'بطاقات الطلاب',
+    'breadcrumb.library':       'المكتبة المدرسية',
+    'breadcrumb.homework':      'الواجبات المنزلية',
+    'breadcrumb.conduct':       'سجل السلوك',
+    'breadcrumb.leaves':        'إجازات الموظفين',
 
     /* ─── Common Actions ─── */
     'common.save':      'حفظ',
@@ -219,6 +228,11 @@ const translations: Record<Lang, Record<string, string>> = {
     'nav.group.content':   'Content & Admin',
     'nav.teacher':         'Teacher Dashboard',
     'nav.idCards':         'Student ID Cards',
+    'nav.library':         'School Library',
+    'nav.homework':        'Homework & Assignments',
+    'nav.conduct':         'Behavior Records',
+    'nav.leaves':          'Staff Leaves',
+    'nav.group.academic':  'Academic & Behavior',
 
     /* ─── Parent Nav Items ─── */
     'nav.home':            'Home',
@@ -251,6 +265,10 @@ const translations: Record<Lang, Record<string, string>> = {
     'breadcrumb.superAdmin':    'Super Admin',
     'breadcrumb.teacher':       'Teacher Dashboard',
     'breadcrumb.idCards':       'Student ID Cards',
+    'breadcrumb.library':       'School Library',
+    'breadcrumb.homework':      'Homework',
+    'breadcrumb.conduct':       'Behavior Records',
+    'breadcrumb.leaves':        'Staff Leaves',
 
     /* ─── Common Actions ─── */
     'common.save':      'Save',

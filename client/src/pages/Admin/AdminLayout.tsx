@@ -8,7 +8,7 @@ import {
   MessageSquare, Newspaper, Calendar, Palette, Settings, LogOut, Menu,
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
   DollarSign, CalendarDays, Home, Globe, Moon, Sun, Image, FileText, CreditCard,
-  School
+  School, BookMarked, ClipboardList
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
@@ -46,6 +46,15 @@ const menuGroups = [
       { to: '/admin/schedule',      icon: CalendarDays,  labelKey: 'nav.schedule' },
       { to: '/admin/news',          icon: Newspaper,     labelKey: 'nav.news' },
       { to: '/admin/events',        icon: Calendar,      labelKey: 'nav.events' },
+    ]
+  },
+  {
+    labelKey: 'nav.group.academic',
+    items: [
+      { to: '/admin/library',  icon: BookMarked,  labelKey: 'nav.library' },
+      { to: '/admin/homework', icon: ClipboardList, labelKey: 'nav.homework' },
+      { to: '/admin/conduct',  icon: Shield,      labelKey: 'nav.conduct' },
+      { to: '/admin/leaves',   icon: Calendar,    labelKey: 'nav.leaves' },
     ]
   },
   {
@@ -91,6 +100,10 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/super':         'breadcrumb.superAdmin',
   '/admin/teacher':       'breadcrumb.teacher',
   '/admin/id-cards':      'breadcrumb.idCards',
+  '/admin/library':       'breadcrumb.library',
+  '/admin/homework':      'breadcrumb.homework',
+  '/admin/conduct':       'breadcrumb.conduct',
+  '/admin/leaves':        'breadcrumb.leaves',
 }
 
 export default function AdminLayout() {

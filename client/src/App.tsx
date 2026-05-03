@@ -48,6 +48,10 @@ const SuperAdmin       = lazy(() => import('./pages/Admin/SuperAdmin'))
 const BillingAdmin     = lazy(() => import('./pages/Admin/BillingAdmin'))
 const TeacherDashboard = lazy(() => import('./pages/Admin/TeacherDashboard'))
 const StudentIdCards   = lazy(() => import('./pages/Admin/StudentIdCards'))
+const LibraryAdmin     = lazy(() => import('./pages/Admin/LibraryAdmin'))
+const LeavesAdmin      = lazy(() => import('./pages/Admin/LeavesAdmin'))
+const HomeworkAdmin    = lazy(() => import('./pages/Admin/HomeworkAdmin'))
+const ConductAdmin     = lazy(() => import('./pages/Admin/ConductAdmin'))
 
 const ParentLayout          = lazy(() => import('./pages/Parent/ParentLayout'))
 const ParentDashboard       = lazy(() => import('./pages/Parent/ParentDashboard'))
@@ -169,6 +173,10 @@ function RedirectCheck() {
           <Route path="billing"        element={<BillingAdmin />} />
           <Route path="teacher"        element={<TeacherDashboard />} />
           <Route path="id-cards"       element={<StudentIdCards />} />
+          <Route path="library"        element={<LibraryAdmin />} />
+          <Route path="leaves"         element={<LeavesAdmin />} />
+          <Route path="homework"       element={<HomeworkAdmin />} />
+          <Route path="conduct"        element={<ConductAdmin />} />
         </Route>
 
         {/* Parent Portal */}

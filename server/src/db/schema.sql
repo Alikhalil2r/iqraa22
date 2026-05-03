@@ -390,6 +390,142 @@ CREATE INDEX IF NOT EXISTS idx_exams_school ON exams(school_id);
 CREATE INDEX IF NOT EXISTS idx_exams_date ON exams(exam_date);
 
 -- Indexes
+-- ═══════════════════════════════════════════════════════════
+-- LIBRARY MANAGEMENT
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS library_books (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(300) NOT NULL,
+  author VARCHAR(200),
+  isbn VARCHAR(50),
+  category VARCHAR(100),
+  publisher VARCHAR(200),
+  published_year INTEGER,
+  copies_total INTEGER DEFAULT 1,
+  copies_available INTEGER DEFAULT 1,
+  shelf_location VARCHAR(100),
+  description TEXT,
+  cover_url TEXT,
+  language VARCHAR(50) DEFAULT 'العربية',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS library_borrows (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  book_id UUID REFERENCES library_books(id) ON DELETE CASCADE,
+  borrower_type VARCHAR(20) DEFAULT 'student' CHECK (borrower_type IN ('student','employee')),
+  borrower_id UUID NOT NULL,
+  borrow_date DATE DEFAULT CURRENT_DATE,
+  due_date DATE NOT NULL,
+  return_date DATE,
+  status VARCHAR(20) DEFAULT 'borrowed' CHECK (status IN ('borrowed','returned','overdue','lost')),
+  fine_amount DECIMAL(8,2) DEFAULT 0,
+  fine_paid BOOLEAN DEFAULT false,
+  notes TEXT,
+  issued_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_library_books_school ON library_books(school_id);
+CREATE INDEX IF NOT EXISTS idx_library_borrows_school ON library_borrows(school_id);
+CREATE INDEX IF NOT EXISTS idx_library_borrows_book ON library_borrows(book_id);
+CREATE INDEX IF NOT EXISTS idx_library_borrows_borrower ON library_borrows(borrower_id);
+
+-- ═══════════════════════════════════════════════════════════
+-- EMPLOYEE LEAVE MANAGEMENT
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS leave_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(100) NOT NULL,
+  name_en VARCHAR(100),
+  max_days_per_year INTEGER DEFAULT 15,
+  requires_approval BOOLEAN DEFAULT true,
+  is_paid BOOLEAN DEFAULT true,
+  color VARCHAR(20) DEFAULT '#6366f1',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS employee_leaves (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,
+  leave_type_id UUID REFERENCES leave_types(id),
+  leave_type_name VARCHAR(100),
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  days INTEGER NOT NULL,
+  reason TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','cancelled')),
+  approved_by UUID REFERENCES users(id),
+  approved_at TIMESTAMPTZ,
+  rejection_reason TEXT,
+  attachment_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_employee_leaves_school ON employee_leaves(school_id);
+CREATE INDEX IF NOT EXISTS idx_employee_leaves_employee ON employee_leaves(employee_id);
+CREATE INDEX IF NOT EXISTS idx_employee_leaves_status ON employee_leaves(status);
+
+-- ═══════════════════════════════════════════════════════════
+-- HOMEWORK / ASSIGNMENTS
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS homework (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  class_name VARCHAR(100),
+  subject_name VARCHAR(200),
+  title VARCHAR(300) NOT NULL,
+  description TEXT,
+  assigned_date DATE DEFAULT CURRENT_DATE,
+  due_date DATE NOT NULL,
+  max_score INTEGER DEFAULT 10,
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active','closed','archived')),
+  attachment_url TEXT,
+  created_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS homework_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  homework_id UUID REFERENCES homework(id) ON DELETE CASCADE,
+  student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+  submission_date DATE,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','submitted','graded','late')),
+  score INTEGER,
+  feedback TEXT,
+  attachment_url TEXT,
+  graded_by UUID REFERENCES users(id),
+  graded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(homework_id, student_id)
+);
+CREATE INDEX IF NOT EXISTS idx_homework_school ON homework(school_id);
+CREATE INDEX IF NOT EXISTS idx_homework_class ON homework(class_name);
+CREATE INDEX IF NOT EXISTS idx_hw_submissions_hw ON homework_submissions(homework_id);
+CREATE INDEX IF NOT EXISTS idx_hw_submissions_student ON homework_submissions(student_id);
+
+-- ═══════════════════════════════════════════════════════════
+-- STUDENT CONDUCT / BEHAVIOR
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS conduct_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  student_id UUID REFERENCES students(id) ON DELETE CASCADE,
+  record_type VARCHAR(20) NOT NULL CHECK (record_type IN ('incident','reward','warning','note')),
+  category VARCHAR(100),
+  title VARCHAR(300) NOT NULL,
+  description TEXT,
+  severity VARCHAR(20) DEFAULT 'low' CHECK (severity IN ('low','medium','high','critical')),
+  points INTEGER DEFAULT 0,
+  action_taken TEXT,
+  parent_notified BOOLEAN DEFAULT false,
+  record_date DATE DEFAULT CURRENT_DATE,
+  reported_by UUID REFERENCES users(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_conduct_school ON conduct_records(school_id);
+CREATE INDEX IF NOT EXISTS idx_conduct_student ON conduct_records(student_id);
+
 CREATE INDEX IF NOT EXISTS idx_fees_student ON fees(student_id);
 CREATE INDEX IF NOT EXISTS idx_fees_school ON fees(school_id);
 CREATE INDEX IF NOT EXISTS idx_fees_status ON fees(status);

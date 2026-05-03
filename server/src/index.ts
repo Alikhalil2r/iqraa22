@@ -27,6 +27,10 @@ import galleryRouter from './routes/gallery'
 import examsRouter from './routes/exams'
 import superadminRouter from './routes/superadmin'
 import teacherRouter from './routes/teacher'
+import libraryRouter from './routes/library'
+import leavesRouter  from './routes/leaves'
+import homeworkRouter from './routes/homework'
+import conductRouter  from './routes/conduct'
 
 dotenv.config()
 
@@ -122,7 +126,11 @@ app.use('/api/users', usersRouter)
 app.use('/api/gallery', galleryRouter)
 app.use('/api/exams', examsRouter)
 app.use('/api/super-admin', superadminRouter)
-app.use('/api/teacher', teacherRouter)
+app.use('/api/teacher',  teacherRouter)
+app.use('/api/library',  libraryRouter)
+app.use('/api/leaves',   leavesRouter)
+app.use('/api/homework', homeworkRouter)
+app.use('/api/conduct',  conductRouter)
 
 app.get('/api/health', (_, res) => res.json({ status: 'ok', time: new Date() }))
 
