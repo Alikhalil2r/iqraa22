@@ -21,11 +21,11 @@ export default function DevSignature({ variant = 'dark', className = '' }: DevSi
               Crafted by
             </span>
           </div>
-          <p className="text-[10px] font-black tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent leading-none">
+          <p className="text-[10px] font-black tracking-tight bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent leading-none text-center">
             NexGen Solutions
           </p>
           <p className="text-[9px] font-bold text-gray-300 group-hover:text-indigo-400 transition-colors tracking-wider">
-            ALI Khalil
+            (ALI Khalil)
           </p>
         </div>
       </div>
@@ -44,14 +44,13 @@ export default function DevSignature({ variant = 'dark', className = '' }: DevSi
             </svg>
             <div className="h-px w-8 bg-gradient-to-l from-transparent to-gray-200 group-hover:to-indigo-200 transition-colors" />
           </div>
-          <div className="flex items-baseline gap-1.5">
+          <div className="flex items-baseline gap-1.5" dir="ltr">
             <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-gray-300">Built by</span>
             <span className="text-[10px] font-black tracking-tight bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent
               group-hover:from-violet-600 group-hover:to-indigo-700 transition-all duration-300">
               NexGen Solutions
             </span>
-            <span className="text-[9px] font-bold text-gray-300">·</span>
-            <span className="text-[9px] font-bold text-gray-400 group-hover:text-indigo-500 transition-colors">ALI Khalil</span>
+            <span className="text-[9px] font-bold text-gray-400 group-hover:text-indigo-400 transition-colors">(ALI Khalil)</span>
           </div>
         </div>
       </div>
@@ -88,17 +87,16 @@ export default function DevSignature({ variant = 'dark', className = '' }: DevSi
             Crafted with Excellence by
           </span>
 
-          <div className="flex items-baseline gap-1.5 flex-wrap justify-center">
+          <div className="flex items-baseline gap-1.5 flex-wrap justify-center" dir="ltr">
             <span className="text-[11px] font-black tracking-tight
               bg-gradient-to-r from-violet-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent
               group-hover:from-violet-300 group-hover:via-indigo-300 group-hover:to-violet-300
               transition-all duration-500">
               NexGen Solutions
             </span>
-            <span className="text-white/15 text-[9px]">—</span>
             <span className="text-[10px] font-bold text-white/30
               group-hover:text-white/60 transition-colors duration-300 tracking-wide">
-              ALI Khalil
+              (ALI Khalil)
             </span>
           </div>
         </div>
