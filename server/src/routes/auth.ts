@@ -4,6 +4,7 @@ import speakeasy from 'speakeasy'
 import { body } from 'express-validator'
 import { query } from '../db'
 import { generateToken, authenticateToken, AuthRequest } from '../middleware/auth'
+import { issueRefreshToken, verifyRefreshToken, revokeRefreshToken, refreshCookieName, refreshCookieOptions } from '../utils/refreshToken'
 import { validate, validatePasswordStrength } from '../middleware/validate'
 import { authLimiter, passwordChangeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
@@ -55,6 +56,15 @@ router.post('/login',
         return res.status(403).json({ error: 'المدرسة موقوفة مؤقتاً' })
       }
 
+      const ADMIN_2FA_ROLES = ['super_admin', 'admin']
+      const require2FA = process.env.ADMIN_2FA_REQUIRED !== 'false' && process.env.DEMO_MODE !== 'true'
+      if (require2FA && ADMIN_2FA_ROLES.includes(user.role) && !user.totp_enabled) {
+        return res.status(403).json({
+          error: 'المصادقة الثنائية إلزامية لحسابات الإدارة',
+          requires2FASetup: true,
+        })
+      }
+
       if (user.totp_enabled) {
         if (!totpCode) {
           return res.status(401).json({ error: 'رمز المصادقة الثنائية مطلوب', requires2FA: true })
@@ -80,8 +90,15 @@ router.post('/login',
         name: user.name,
       })
 
+      const useCookie = process.env.AUTH_REFRESH_COOKIE === 'true'
+      const refreshToken = await issueRefreshToken(user.id)
+      if (useCookie) {
+        res.cookie(refreshCookieName(), refreshToken, refreshCookieOptions())
+      }
+
       res.json({
         token,
+        refreshToken: useCookie ? undefined : refreshToken,
         user: {
           id: user.id,
           name: user.name,
@@ -99,18 +116,38 @@ router.post('/login',
   }
 )
 
-// ─── Get current user ─────────────────────────────────────────────────────────
+// ─── Get current user (Prisma POC — #6) ───────────────────────────────────────
 router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const result = await query(
-      `SELECT u.id, u.name, u.username, u.role, u.email, u.phone, u.avatar, u.school_id,
-              s.name as school_name
-       FROM users u JOIN schools s ON s.id = u.school_id
-       WHERE u.id = $1 AND u.is_active = true`,
-      [req.user!.id]
-    )
-    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' })
-    res.json({ user: result.rows[0] })
+    const { prisma } = await import('../db/prisma')
+    const user = await prisma.user.findFirst({
+      where: { id: req.user!.id, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        username: true,
+        role: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        schoolId: true,
+        school: { select: { name: true } },
+      },
+    })
+    if (!user) return res.status(404).json({ error: 'User not found' })
+    res.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+        phone: user.phone,
+        avatar: user.avatar,
+        school_id: user.schoolId,
+        school_name: user.school.name,
+      },
+    })
   } catch (err) {
     log.error('GET /me failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
@@ -150,5 +187,46 @@ router.put('/password',
     }
   }
 )
+
+// ─── Refresh access token (httpOnly cookie or body) ───────────────────────────
+router.post('/refresh', async (req, res) => {
+  try {
+    const token = req.cookies?.[refreshCookieName()] || req.body?.refreshToken
+    if (!token) return res.status(401).json({ error: 'Refresh token required' })
+
+    const verified = await verifyRefreshToken(token)
+    if (!verified) return res.status(401).json({ error: 'Invalid refresh token' })
+
+    const result = await query(
+      `SELECT u.id, u.school_id, u.username, u.name, u.role, u.is_active, s.status AS school_status
+       FROM users u JOIN schools s ON s.id = u.school_id WHERE u.id = $1`,
+      [verified.userId]
+    )
+    const user = result.rows[0]
+    if (!user?.is_active) return res.status(401).json({ error: 'Account inactive' })
+    if (user.school_status === 'suspended' && user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'School suspended' })
+    }
+
+    const accessToken = generateToken({
+      id: user.id,
+      schoolId: user.school_id,
+      role: user.role,
+      username: user.username,
+      name: user.name,
+    })
+    res.json({ token: accessToken })
+  } catch (err) {
+    log.error('Refresh failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.post('/logout', async (req, res) => {
+  const token = req.cookies?.[refreshCookieName()] || req.body?.refreshToken
+  if (token) await revokeRefreshToken(token)
+  res.clearCookie(refreshCookieName(), { path: '/api/auth' })
+  res.json({ success: true })
+})
 
 export default router

@@ -2,8 +2,10 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
+import cookieParser from 'cookie-parser'
 import path from 'path'
 import dotenv from 'dotenv'
+import { initSentry, captureException } from './utils/sentry'
 import { initDB } from './db'
 import { globalLimiter } from './middleware/rateLimiter'
 import { assertJwtSecretStrength } from './utils/security'
@@ -41,9 +43,15 @@ import submissionsRouter from './routes/submissions'
 import contentRouter from './routes/content'
 import contentExtRouter from './routes/content-ext'
 import backupsRouter from './routes/backups'
+import paymentsRouter from './routes/payments'
+import studentPortalRouter from './routes/student'
+import notificationsRouter from './routes/notifications'
+import pdfRouter from './routes/pdf'
+import uploadsRouter from './routes/uploads'
 import { startBackupScheduler } from './services/backupScheduler'
 
 dotenv.config()
+initSentry()
 
 if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE === 'true') {
   console.error('FATAL: DEMO_MODE=true is not allowed in production')
@@ -124,6 +132,7 @@ app.use(cors({
 app.use('/api/', globalLimiter)
 
 // ─── Body Parsers ─────────────────────────────────────────────────────────────
+app.use(cookieParser())
 app.use(express.json({ limit: '500kb' }))
 app.use(express.urlencoded({ extended: true, limit: '500kb' }))
 
@@ -181,8 +190,13 @@ app.use('/api/2fa',          twofaRouter)
 app.use('/api/ai-insights',  aiInsightsRouter)
 app.use('/api/billing',      billingRouter)
 app.use('/api/platform',    platformRouter)
+app.use('/api/payments',    paymentsRouter)
+app.use('/api/student',     studentPortalRouter)
+app.use('/api/notifications', notificationsRouter)
+app.use('/api/pdf',         pdfRouter)
+app.use('/api/uploads',     uploadsRouter)
 
-app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
+app.get('/api/health', (_, res) => res.json({ status: 'ok', prisma: !!process.env.DATABASE_URL }))
 
 // ─── API 404 ──────────────────────────────────────────────────────────────────
 app.use('/api/*path', (_req, res) => res.status(404).json({ error: 'Not found' }))
@@ -192,7 +206,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   if (err.message === 'CORS policy violation') {
     return res.status(403).json({ error: 'Not allowed by CORS' })
   }
-  console.error('[SERVER ERROR]', err.message)
+  captureException(err)
   res.status(500).json({ error: 'Internal server error' })
 })
 

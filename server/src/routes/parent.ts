@@ -424,4 +424,21 @@ router.put('/notifications/:id/read', authenticateToken, requireRole('parent'), 
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
+router.get('/exams', authenticateToken, requireRole('parent'), async (req: AuthRequest, res) => {
+  try {
+    const child = await getChild(req.user!.id, req.user!.schoolId, req.query.childId as string)
+    if (!child) return res.json({ exams: [] })
+    const result = await query(
+      `SELECT e.id, e.subject_name, e.class_name, e.exam_type, e.exam_date, e.max_score, e.term, e.academic_year,
+              g.score, g.percentage, g.grade_letter
+       FROM exams e
+       LEFT JOIN grades g ON g.student_id = $1 AND g.subject_name = e.subject_name AND g.school_id = e.school_id
+       WHERE e.school_id = $2 AND (e.class_name = $3 OR e.class_name IS NULL)
+       ORDER BY e.exam_date DESC`,
+      [child.id, req.user!.schoolId, child.class_name]
+    )
+    res.json({ child, exams: result.rows })
+  } catch { res.status(500).json({ error: 'Server error' }) }
+})
+
 export default router

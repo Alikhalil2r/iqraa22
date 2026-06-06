@@ -21,6 +21,7 @@ const navItems = [
   { to: '/parent/attendance',    labelKey: 'nav.parentAttendance', icon: CalendarCheck, end: false, badge: null },
   { to: '/parent/homework',      labelKey: 'nav.parentHomework',   icon: ClipboardList, end: false, badge: 'pendingHw' },
   { to: '/parent/fees',          labelKey: 'nav.parentFees',       icon: DollarSign,    end: false, badge: 'unpaidFees' },
+  { to: '/parent/exams',         labelKey: 'nav.parentExams',      icon: GraduationCap, end: false, badge: null },
   { to: '/parent/conduct',       labelKey: 'nav.parentConduct',    icon: Shield,        end: false, badge: null },
   { to: '/parent/bus',           labelKey: 'nav.parentBus',        icon: Bus,           end: false, badge: null },
   { to: '/parent/messages',      labelKey: 'nav.parentMessages',   icon: MessageSquare, end: false, badge: 'unreadMsgs' },

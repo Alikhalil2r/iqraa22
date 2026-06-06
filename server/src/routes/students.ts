@@ -72,6 +72,23 @@ router.get('/classes', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), a
   }
 })
 
+// Prisma POC — list active students via Prisma Client (#6)
+router.get('/prisma-poc', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
+  try {
+    const { prisma } = await import('../db/prisma')
+    const students = await prisma.student.findMany({
+      where: { schoolId: req.user!.schoolId, status: 'active' },
+      select: { id: true, name: true, studentNumber: true, className: true, status: true },
+      orderBy: { name: 'asc' },
+      take: 50,
+    })
+    res.json({ source: 'prisma', count: students.length, students })
+  } catch (err) {
+    log.error('Prisma POC failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Prisma POC failed' })
+  }
+})
+
 router.get('/:id', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
   try {
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

@@ -255,6 +255,13 @@ export const parentApi = {
   notifications: () => api.get('/parent/notifications'),
   markNotificationRead: (id: string) => api.put(`/parent/notifications/${id}/read`),
   markAllNotificationsRead: () => api.put('/parent/notifications/read-all'),
+  exams: (params?: { childId?: string }) => api.get('/parent/exams', { params }),
+}
+
+export const paymentsApi = {
+  createSession: (data: { feeId: string; provider?: string }) => api.post('/payments/session', data),
+  webhook: (data: any) => api.post('/payments/webhook', data),
+  receipt: (id: string) => api.get(`/payments/receipt/${id}`),
 }
 
 // Reports

@@ -1,0 +1,62 @@
+// Iqraa School — Prisma schema (incremental migration from pg pool)
+// Full DB introspection: see prisma/INTROSPECT.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Multi-tenant school (maps to existing `schools` table)
+model School {
+  id     String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name   String  @db.VarChar(200)
+  status String? @default("active") @db.VarChar(20)
+
+  users    User[]
+  students Student[]
+
+  @@map("schools")
+}
+
+/// Auth users — admin, teacher, parent, etc. (maps to existing `users` table)
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId     String    @map("school_id") @db.Uuid
+  username     String    @db.VarChar(100)
+  passwordHash String    @map("password_hash") @db.VarChar(200)
+  name         String    @db.VarChar(200)
+  role         String    @db.VarChar(20)
+  email        String?   @db.VarChar(200)
+  phone        String?   @db.VarChar(50)
+  avatar       String?
+  isActive     Boolean   @default(true) @map("is_active")
+  totpSecret   String?   @map("totp_secret")
+  totpEnabled  Boolean   @default(false) @map("totp_enabled")
+  lastLogin    DateTime? @map("last_login") @db.Timestamptz(6)
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, username])
+  @@map("users")
+}
+
+/// Students (subset of columns for list POC — see INTROSPECT.md for full pull)
+model Student {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schoolId      String   @map("school_id") @db.Uuid
+  studentNumber String?  @map("student_number") @db.VarChar(50)
+  name          String   @db.VarChar(200)
+  className     String?  @map("class_name") @db.VarChar(100)
+  status        String?  @default("active") @db.VarChar(20)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@index([schoolId], map: "idx_students_school")
+  @@map("students")
+}

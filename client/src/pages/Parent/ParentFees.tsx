@@ -1,6 +1,7 @@
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { parentApi } from '../../api/client'
+import React, { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { parentApi, paymentsApi } from '../../api/client'
+import toast from 'react-hot-toast'
 import { useParentChild } from '../../context/ParentChildContext'
 import { DollarSign, Calendar, CheckCircle, AlertTriangle } from 'lucide-react'
 
@@ -12,6 +13,8 @@ const STATUS: Record<string, { label: string; color: string; bg: string }> = {
 }
 
 export default function ParentFees() {
+  const qc = useQueryClient()
+  const [payingId, setPayingId] = useState<string | null>(null)
   const { childParams, selectedChildId } = useParentChild()
   const { data, isLoading } = useQuery({
     queryKey: ['parent-fees', selectedChildId],
@@ -19,6 +22,24 @@ export default function ParentFees() {
   })
   const fees = data?.fees || []
   const summary = data?.summary || {}
+
+  const handlePay = async (feeId: string) => {
+    setPayingId(feeId)
+    try {
+      const res = await paymentsApi.createSession({ feeId, provider: 'thawani' })
+      if (res.data.mock) {
+        await paymentsApi.webhook({ sessionId: res.data.sessionId, status: 'completed' })
+        toast.success('تم الدفع بنجاح (وضع تجريبي)')
+        qc.invalidateQueries({ queryKey: ['parent-fees'] })
+      } else {
+        window.open(res.data.checkoutUrl, '_blank')
+      }
+    } catch {
+      toast.error('تعذّر إنشاء جلسة الدفع')
+    } finally {
+      setPayingId(null)
+    }
+  }
 
   if (isLoading) return (
     <div className="flex justify-center py-20">
@@ -78,10 +99,20 @@ export default function ParentFees() {
                     {fee.academic_year && <span>{fee.academic_year}</span>}
                   </div>
                 </div>
-                <div className="text-left">
+                <div className="text-left flex flex-col items-end gap-2">
                   <p className="text-lg font-black text-gray-800">{parseFloat(fee.amount).toFixed(2)} <span className="text-xs text-gray-400">ر.ع</span></p>
                   {parseFloat(fee.paid_amount) > 0 && fee.status === 'partial' && (
                     <p className="text-[10px] text-emerald-600">مدفوع: {parseFloat(fee.paid_amount).toFixed(2)} ر.ع</p>
+                  )}
+                  {fee.status !== 'paid' && fee.status !== 'waived' && (
+                    <button
+                      type="button"
+                      disabled={payingId === fee.id}
+                      onClick={() => handlePay(fee.id)}
+                      className="text-[10px] font-black px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      {payingId === fee.id ? 'جاري الدفع...' : 'ادفع الآن'}
+                    </button>
                   )}
                 </div>
               </div>

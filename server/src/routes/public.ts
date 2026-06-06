@@ -16,6 +16,56 @@ async function getDefaultSchoolId(): Promise<string | null> {
   return r.rows[0]?.id || null
 }
 
+async function getSchoolBySlug(slug: string): Promise<string | null> {
+  const r = await query(`SELECT id FROM schools WHERE slug=$1 AND status='active' LIMIT 1`, [slug])
+  return r.rows[0]?.id || null
+}
+
+// ── GET /api/public/school/:slug — multi-tenant public API (#17) ───────────
+router.get('/school/:slug', async (req, res) => {
+  try {
+    const schoolId = await getSchoolBySlug(req.params.slug)
+    if (!schoolId) return res.status(404).json({ error: 'School not found' })
+
+    const schoolResult = await query(
+      `SELECT id, name, name_en, tagline, tagline_en, logo_url, address, phone, email, website, slug
+       FROM schools WHERE id=$1`,
+      [schoolId]
+    )
+    const school = schoolResult.rows[0]
+    const settingsResult = await query(
+      `SELECT primary_color, primary_dark, primary_light, accent_color, accent_dark,
+              logo_url, show_parent_portal, show_jobs, founded_year, office_hours
+       FROM school_settings WHERE school_id=$1`,
+      [schoolId]
+    )
+    const s = settingsResult.rows[0] || {}
+    res.json({
+      school: {
+        id: school.id,
+        slug: school.slug,
+        name: school.name,
+        nameEn: school.name_en,
+        tagline: school.tagline,
+        address: school.address,
+        phone: school.phone,
+        email: school.email,
+      },
+      theme: {
+        primaryColor: s.primary_color || '#065f46',
+        primaryDark: s.primary_dark || '#064e3b',
+        primaryLight: s.primary_light || '#10b981',
+        accentColor: s.accent_color || '#fbbf24',
+        showParentPortal: s.show_parent_portal ?? true,
+        showJobs: s.show_jobs ?? true,
+      },
+    })
+  } catch (err) {
+    log.error('GET /school/:slug failed', { slug: req.params.slug, error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 // ── GET /api/public/school ─────────────────────────────────────────────────
 // Explicit columns only — never SELECT * on schools (may contain internal fields)
 router.get('/school', async (_req, res) => {

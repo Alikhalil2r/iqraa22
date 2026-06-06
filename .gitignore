@@ -40,3 +40,4 @@ backups/
 
 # TypeScript
 *.tsbuildinfo
+server/src/generated/

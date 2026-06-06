@@ -609,6 +609,7 @@ export async function syncDemoBranding(schoolId: string, adminId?: string) {
     await ensureSchoolOperational(schoolId)
     return
   }
+  await query(`UPDATE schools SET slug='al-noor' WHERE id=$1 AND (slug IS NULL OR slug = '')`, [schoolId])
   await applySchoolBranding(schoolId)
   await query(
     `UPDATE public_alerts SET message=$1, alert_type='info', is_active=true

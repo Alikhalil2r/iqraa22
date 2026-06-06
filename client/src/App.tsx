@@ -1,6 +1,7 @@
 import React, { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import RoleGuard from './components/RoleGuard'
 import { ThemeProvider } from './context/ThemeContext'
 import RouteProgress from './components/ux/RouteProgress'
 import ScrollToTop from './components/ux/ScrollToTop'
@@ -83,6 +84,12 @@ const ParentBus = lazy(() => import('./pages/Parent/ParentBus'))
 const ParentMessages = lazy(() => import('./pages/Parent/ParentMessages'))
 const ParentSchedule = lazy(() => import('./pages/Parent/ParentSchedule'))
 const ParentNotifications = lazy(() => import('./pages/Parent/ParentNotifications'))
+const ParentExams = lazy(() => import('./pages/Parent/ParentExams'))
+const StudentLayout = lazy(() => import('./pages/Student/StudentLayout'))
+const StudentDashboard = lazy(() => import('./pages/Student/StudentDashboard'))
+const StudentGrades = lazy(() => import('./pages/Student/StudentGrades'))
+const StudentHomework = lazy(() => import('./pages/Student/StudentHomework'))
+const StudentSchedule = lazy(() => import('./pages/Student/StudentSchedule'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 function PageLoader() {
@@ -148,7 +155,7 @@ function AppRoutes() {
             <Route path="employees" element={<Employees />} />
             <Route path="attendance" element={<Attendance />} />
             <Route path="grades" element={<Grades />} />
-            <Route path="fees" element={<FeesAdmin />} />
+            <Route path="fees" element={<RoleGuard permission="fees"><FeesAdmin /></RoleGuard>} />
             <Route path="buses" element={<Buses />} />
             <Route path="messages" element={<Messages />} />
             <Route path="announcements" element={<Announcements />} />
@@ -174,7 +181,7 @@ function AppRoutes() {
             <Route path="ai-insights" element={<AIInsights />} />
             <Route path="theme" element={<ThemeSettings />} />
             <Route path="settings" element={<SchoolSettings />} />
-            <Route path="users" element={<UsersAdmin />} />
+            <Route path="users" element={<RoleGuard roles={['super_admin','admin']}><UsersAdmin /></RoleGuard>} />
             <Route path="billing" element={<BillingAdmin />} />
             <Route path="audit-log" element={<AuditLog />} />
             <Route path="2fa" element={<TwoFactorSetup />} />
@@ -186,11 +193,18 @@ function AppRoutes() {
             <Route path="attendance" element={<ParentAttendance />} />
             <Route path="homework" element={<ParentHomework />} />
             <Route path="fees" element={<ParentFees />} />
+            <Route path="exams" element={<ParentExams />} />
             <Route path="conduct" element={<ParentConduct />} />
             <Route path="bus" element={<ParentBus />} />
             <Route path="messages" element={<ParentMessages />} />
             <Route path="schedule" element={<ParentSchedule />} />
             <Route path="notifications" element={<ParentNotifications />} />
+          </Route>
+          <Route path="/student" element={<ParentGuard><StudentLayout /></ParentGuard>}>
+            <Route index element={<StudentDashboard />} />
+            <Route path="grades" element={<StudentGrades />} />
+            <Route path="homework" element={<StudentHomework />} />
+            <Route path="schedule" element={<StudentSchedule />} />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

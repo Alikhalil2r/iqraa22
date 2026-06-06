@@ -9,9 +9,13 @@
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "start": "cd server && npm start",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test": "cd server && npm test",
+    "test:e2e": "playwright test",
+    "typecheck": "cd server && npm run typecheck && cd ../client && npx tsc --noEmit"
   },
   "devDependencies": {
+    "@playwright/test": "^1.51.0",
     "concurrently": "^8.2.2"
   }
 }
