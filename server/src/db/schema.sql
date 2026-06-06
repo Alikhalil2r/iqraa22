@@ -762,6 +762,30 @@ CREATE TABLE IF NOT EXISTS service_requests (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ticket conversation (client <-> admin on service requests)
+CREATE TABLE IF NOT EXISTS ticket_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID REFERENCES service_requests(id) ON DELETE CASCADE,
+  sender_type VARCHAR(20) NOT NULL DEFAULT 'client',
+  sender_name VARCHAR(200),
+  sender_email VARCHAR(200),
+  content TEXT NOT NULL,
+  is_internal BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Ticket change history (status, priority, etc.)
+CREATE TABLE IF NOT EXISTS ticket_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id UUID REFERENCES service_requests(id) ON DELETE CASCADE,
+  changed_by VARCHAR(200),
+  field VARCHAR(50) NOT NULL,
+  old_value TEXT,
+  new_value TEXT,
+  note TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Projects (approved from requests or direct)
 CREATE TABLE IF NOT EXISTS projects (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -878,9 +902,25 @@ CREATE TABLE IF NOT EXISTS company_settings (
   type VARCHAR(30) DEFAULT 'text'
 );
 
+-- Service request ticket tracking columns
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS client_rating INTEGER;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS client_feedback TEXT;
+ALTER TABLE service_requests ADD COLUMN IF NOT EXISTS resolved_at TIMESTAMPTZ;
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_requests_status ON service_requests(status);
 CREATE INDEX IF NOT EXISTS idx_requests_created ON service_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tmsg_request_time ON ticket_messages(request_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_thist_request_time ON ticket_history(request_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_sreq_status_created ON service_requests(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sreq_email ON service_requests(client_email);
+CREATE INDEX IF NOT EXISTS idx_sreq_ticket ON service_requests(ticket_number);
+CREATE INDEX IF NOT EXISTS idx_sreq_updated ON service_requests(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bclients_email ON business_clients(email);
+CREATE INDEX IF NOT EXISTS idx_bclients_created ON business_clients(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blog_pub ON blog_posts(status, published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_blog_category ON blog_posts(category);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
 CREATE INDEX IF NOT EXISTS idx_blog_slug ON blog_posts(slug);
