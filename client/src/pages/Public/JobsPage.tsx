@@ -1,5 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { Briefcase, FileUp, User, Phone, GraduationCap, Send, ChevronRight, CheckCircle2, Shield, Handshake, BadgeCheck, Calendar, X } from 'lucide-react'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { publicApi } from '../../api/client'
+import { Briefcase, FileUp, User, Phone, GraduationCap, Send, ChevronRight, CheckCircle2, Shield, Handshake, BadgeCheck, Calendar } from 'lucide-react'
+import { DEMO_JOBS, withDemoFallback } from '../../data/demoPublicFallback'
 import toast from 'react-hot-toast'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-sky-800 to-sky-900' }: any) {
@@ -12,12 +15,16 @@ function PageBanner({ title, subtitle, icon, gradient = 'from-sky-800 to-sky-900
   )
 }
 
-const JOBS = [
-  { id: 1, title: 'معلم رياضيات - مرحلة ثانوية', department: 'أكاديمي', type: 'دوام كامل', deadline: '2025-03-31', requirements: 'بكالوريوس رياضيات + دبلوم تربوي، خبرة 3 سنوات على الأقل', description: 'تدريس مادة الرياضيات للصفوف 10-12، المشاركة في الأنشطة والتصحيح', active: true },
-  { id: 2, title: 'معلمة علوم - مرحلة إعدادية', department: 'أكاديمي', type: 'دوام كامل', deadline: '2025-04-15', requirements: 'بكالوريوس علوم، خبرة 2 سنة فأكثر، إجادة العربية والإنجليزية', description: 'تدريس العلوم للصفوف 7-9 وإدارة مختبر العلوم', active: true },
-  { id: 3, title: 'مرشد طلابي اجتماعي', department: 'اجتماعي', type: 'دوام كامل', deadline: '2025-03-25', requirements: 'بكالوريوس علم النفس أو الخدمة الاجتماعية', description: 'متابعة شؤون الطلاب الاجتماعية والنفسية والتنسيق مع الأسر', active: true },
-  { id: 4, title: 'منسق أنشطة لاصفية', department: 'النشاط', type: 'دوام جزئي', deadline: '2025-04-01', requirements: 'خبرة في تنظيم الفعاليات، القدرة على إدارة المشاريع الطلابية', description: 'تخطيط وتنفيذ الأنشطة والفعاليات المدرسية اللاصفية', active: true },
-]
+type JobItem = {
+  id: string
+  title: string
+  department?: string
+  job_type?: string
+  deadline?: string
+  requirements?: string
+  description?: string
+  is_active?: boolean
+}
 
 const emptyForm = {
   name: '', nationality: '', idNumber: '', dob: '', gender: '', maritalStatus: '',
@@ -51,10 +58,14 @@ const inp = "w-full p-3 rounded-xl border text-sm border-gray-200 focus:border-s
 const sel = "w-full p-3 rounded-xl border text-sm border-gray-200 focus:border-sky-400 outline-none bg-white"
 
 export default function JobsPage() {
-  const [selected, setSelected] = useState<typeof JOBS[0] | null>(null)
+  const { data: jobsData } = useQuery({ queryKey: ['public-jobs'], queryFn: () => publicApi.jobs().then(r => r.data) })
+  const jobs = useMemo<JobItem[]>(() => withDemoFallback(jobsData?.jobs, DEMO_JOBS), [jobsData])
+
+  const [selected, setSelected] = useState<JobItem | null>(null)
   const [applying, setApplying] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [submitted, setSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [captcha, setCaptcha] = useState({ a: 0, b: 0, op: '+', answer: '', correct: 0 })
   const [captchaVerified, setCaptchaVerified] = useState(false)
 
@@ -83,15 +94,32 @@ export default function JobsPage() {
     }
   }
 
-  const handleApply = (e: React.FormEvent) => {
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!selected) return
     if (!form.name || !form.email || !form.phone || !form.education || !form.nationality || !form.specialization || !form.city) {
       toast.error('يرجى تعبئة جميع الحقول المطلوبة (*)')
       return
     }
     if (!captchaVerified) { toast.error('يرجى إكمال التحقق أولاً'); return }
-    setSubmitted(true)
-    toast.success('تم إرسال طلبك بنجاح!')
+    setSubmitting(true)
+    try {
+      const isUuid = /^[0-9a-f-]{36}$/i.test(selected.id)
+      await publicApi.applyJob({
+        job_id: isUuid ? selected.id : undefined,
+        job_title: selected.title,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        form_data: form,
+      })
+      setSubmitted(true)
+      toast.success('تم إرسال طلبك بنجاح!')
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'فشل إرسال الطلب. حاول مجدداً.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   if (submitted) return (
@@ -108,7 +136,7 @@ export default function JobsPage() {
 
   if (applying && selected) return (
     <div>
-      <PageBanner title={`التقديم: ${selected.title}`} subtitle={`${selected.department} — ${selected.type}`} icon={<FileUp size={36} />} />
+      <PageBanner title={`التقديم: ${selected.title}`} subtitle={`${selected.department} — ${selected.job_type}`} icon={<FileUp size={36} />} />
       <div className="max-w-4xl mx-auto px-4 py-10">
         <button onClick={() => setApplying(false)} className="mb-6 flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-emerald-600 transition">
           <ChevronRight size={16} /> العودة إلى قائمة الوظائف
@@ -221,9 +249,9 @@ export default function JobsPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={!captchaVerified}
-                className={`flex-1 py-3.5 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg ${captchaVerified ? 'bg-sky-700 text-white hover:bg-sky-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
-                <Send size={16} /> إرسال الطلب
+              <button type="submit" disabled={!captchaVerified || submitting}
+                className={`flex-1 py-3.5 rounded-2xl font-bold transition flex items-center justify-center gap-2 shadow-lg ${captchaVerified && !submitting ? 'bg-sky-700 text-white hover:bg-sky-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'}`}>
+                <Send size={16} /> {submitting ? 'جاري الإرسال...' : 'إرسال الطلب'}
               </button>
               <button type="button" onClick={() => setApplying(false)} className="px-6 py-3.5 rounded-2xl font-bold text-sm border-2 border-gray-200 text-gray-500 hover:bg-gray-50">
                 إلغاء
@@ -247,7 +275,7 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {JOBS.filter(j => j.active).length === 0 ? (
+        {jobs.filter(j => j.is_active).length === 0 ? (
           <div className="text-center py-16">
             <Briefcase size={48} className="mx-auto mb-4 text-gray-300" />
             <h3 className="text-xl font-bold mb-2 text-gray-500">لا توجد وظائف شاغرة حالياً</h3>
@@ -255,11 +283,11 @@ export default function JobsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {JOBS.filter(j => j.active).map(job => (
+            {jobs.filter(j => j.is_active).map(job => (
               <div key={job.id} className="rounded-3xl shadow-lg overflow-hidden border-t-4 border-sky-600 hover:shadow-2xl transition-all hover:-translate-y-1 bg-white flex flex-col">
                 <div className="p-6 flex-1">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-lg font-black bg-sky-50 text-sky-700">{job.type}</span>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-lg font-black bg-sky-50 text-sky-700">{job.job_type}</span>
                     <span className="text-[10px] px-2.5 py-0.5 rounded-lg font-bold bg-gray-100 text-gray-500">{job.department}</span>
                   </div>
                   <h3 className="text-lg font-black mb-2 text-gray-900">{job.title}</h3>

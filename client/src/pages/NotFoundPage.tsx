@@ -12,11 +12,11 @@ export default function NotFoundPage() {
     ? '/admin'
     : user?.role === 'parent'
     ? '/parent'
-    : '/'
+    : '/school'
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
-      <div className="text-center max-w-lg">
+      <div className="text-center max-w-lg page-enter">
         <div className="relative mb-8">
           <div className="text-[10rem] font-black text-indigo-100 leading-none select-none">
             404
@@ -58,8 +58,8 @@ export default function NotFoundPage() {
               { label: 'لوحة التحكم', href: '/admin' },
               { label: 'الطلاب', href: '/admin/students' },
               { label: 'التقارير', href: '/admin/reports' },
-              { label: 'بوابة الأولياء', href: '/parent-login' },
-              { label: 'الموقع العام', href: '/' },
+              { label: 'بوابة الأولياء', href: '/parent/login' },
+              { label: 'موقع المدرسة', href: '/school' },
             ].map(link => (
               <Link key={link.href} to={link.href}
                 className="px-3 py-1.5 rounded-xl text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 transition-colors">

@@ -259,19 +259,19 @@ export default function HomeworkAdmin() {
       <Modal open={modal} onClose={closeModal} title={editing ? 'تعديل واجب' : 'تعيين واجب جديد'}>
         <div className="space-y-3">
           <FormField label="الفصل الدراسي">
-            <Select value={form.className} onChange={v=>setForm(p=>({...p,className:v}))} options={CLASSES}/>
+            <Select value={form.className} onChange={e=>setForm(p=>({...p,className:e.target.value}))} options={CLASSES}/>
           </FormField>
           <FormField label="المادة">
-            <Select value={form.subjectName} onChange={v=>setForm(p=>({...p,subjectName:v}))} options={SUBJECTS}/>
+            <Select value={form.subjectName} onChange={e=>setForm(p=>({...p,subjectName:e.target.value}))} options={SUBJECTS}/>
           </FormField>
-          <FormField label="عنوان الواجب *"><Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))}/></FormField>
-          <FormField label="وصف الواجب"><Textarea value={form.description} onChange={v=>setForm(p=>({...p,description:v}))}/></FormField>
+          <FormField label="عنوان الواجب *"><Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))}/></FormField>
+          <FormField label="وصف الواجب"><Textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="تاريخ التسليم *">
               <input type="date" value={form.dueDate} onChange={e=>setForm(p=>({...p,dueDate:e.target.value}))} className="input w-full"/>
             </FormField>
             <FormField label="الدرجة الكاملة">
-              <Input type="number" value={form.maxScore} onChange={v=>setForm(p=>({...p,maxScore:v}))} min="1"/>
+              <Input type="number" value={form.maxScore} onChange={e=>setForm(p=>({...p,maxScore:e.target.value}))} min="1"/>
             </FormField>
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -323,7 +323,7 @@ export default function HomeworkAdmin() {
         message={`هل تريد أرشفة "${deleteTarget?.title}"؟`}
         onConfirm={()=>deleteMut.mutate(deleteTarget.id)}
         onCancel={()=>setDeleteTarget(null)}
-        isLoading={deleteMut.isPending}
+        loading={deleteMut.isPending}
       />
     </div>
   )

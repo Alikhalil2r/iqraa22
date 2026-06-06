@@ -1,11 +1,28 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, AppRole, STAFF_ROLES } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
+import { isValidUUID } from '../middleware/validate'
 
 const router = Router()
 const log = createLogger('MESSAGES')
+
+async function canMessageRecipient(schoolId: string, fromRole: AppRole, toUserId: string): Promise<boolean> {
+  if (!isValidUUID(toUserId)) return false
+  const r = await query(
+    'SELECT id, role, school_id FROM users WHERE id=$1 AND is_active=true',
+    [toUserId]
+  )
+  const recipient = r.rows[0]
+  if (!recipient || recipient.school_id !== schoolId) return false
+  const toRole = recipient.role as AppRole
+  if (fromRole === 'parent') return ['admin', 'teacher'].includes(toRole)
+  if (fromRole === 'teacher') return ['admin', 'teacher', 'parent'].includes(toRole)
+  if (fromRole === 'guard' || fromRole === 'librarian') return ['admin'].includes(toRole)
+  if (STAFF_ROLES.includes(fromRole)) return STAFF_ROLES.includes(toRole) || toRole === 'parent'
+  return false
+}
 
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   try {
@@ -65,8 +82,70 @@ router.get('/unread-count', authenticateToken, async (req: AuthRequest, res) => 
   }
 })
 
+router.get('/broadcasts', authenticateToken, requireRole('admin', 'super_admin'), async (req: AuthRequest, res) => {
+  try {
+    const result = await query(
+      `SELECT b.*, u.name as sent_by_name
+       FROM broadcasts b
+       LEFT JOIN users u ON u.id = b.sent_by
+       WHERE b.school_id = $1
+       ORDER BY b.created_at DESC
+       LIMIT 50`,
+      [req.user!.schoolId]
+    )
+    res.json({ broadcasts: result.rows })
+  } catch (err) {
+    log.error('GET /broadcasts failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
+router.post('/broadcast', authenticateToken, requireRole('admin', 'super_admin'), writeLimiter, async (req: AuthRequest, res) => {
+  try {
+    const { title, body } = req.body
+    if (!title?.trim() || !body?.trim()) {
+      return res.status(400).json({ error: 'العنوان والنص مطلوبان' })
+    }
+    if (title.length > 300) return res.status(400).json({ error: 'العنوان طويل جداً' })
+    if (body.length > 2000) return res.status(400).json({ error: 'النص طويل جداً' })
+
+    const { id: sentBy, schoolId } = req.user!
+    const parents = await query(
+      `SELECT id FROM users WHERE school_id = $1 AND role = 'parent' AND is_active = true`,
+      [schoolId]
+    )
+    const recipientCount = parents.rows.length
+
+    const broadcast = await query(
+      `INSERT INTO broadcasts (school_id, title, body, sent_by, recipient_count)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, title, body, recipient_count, created_at`,
+      [schoolId, title.trim(), body.trim(), sentBy, recipientCount]
+    )
+
+    if (recipientCount > 0) {
+      await query(
+        `INSERT INTO notifications (school_id, user_id, title, body, type, link)
+         SELECT $1, id, $2, $3, 'broadcast', '/parent/notifications'
+         FROM users
+         WHERE school_id = $1 AND role = 'parent' AND is_active = true`,
+        [schoolId, title.trim(), body.trim()]
+      )
+    }
+
+    log.info('Broadcast sent', { schoolId, recipientCount })
+    res.status(201).json({ broadcast: broadcast.rows[0], sentTo: recipientCount })
+  } catch (err) {
+    log.error('POST /broadcast failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
+})
+
 router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
   try {
+    if (!isValidUUID(req.params.id)) {
+      return res.status(404).json({ error: 'Not found' })
+    }
     const { id: userId, schoolId } = req.user!
     const result = await query(`
       SELECT m.id, m.subject, m.body, m.is_read, m.created_at, m.from_user_id, m.to_user_id,
@@ -115,6 +194,9 @@ router.post('/', authenticateToken, writeLimiter, async (req: AuthRequest, res) 
       targetId = adminRes.rows[0]?.id
     }
     if (!targetId) return res.status(400).json({ error: 'لم يُحدَّد المستلم' })
+    if (!(await canMessageRecipient(schoolId, req.user!.role, targetId))) {
+      return res.status(403).json({ error: 'لا يمكنك مراسلة هذا المستخدم' })
+    }
 
     const result = await query(`
       INSERT INTO messages (school_id, from_user_id, to_user_id, subject, body)

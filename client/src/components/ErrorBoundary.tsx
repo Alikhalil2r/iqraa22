@@ -44,14 +44,14 @@ export default class ErrorBoundary extends Component<Props, State> {
             )}
             <div className="flex gap-3">
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/school'}
                 className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-50"
               >
                 <Home size={16} /> الرئيسية
               </button>
               <button
-                onClick={() => this.setState({ hasError: false })}
-                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700"
+                onClick={() => window.location.reload()}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700"
               >
                 <RefreshCw size={16} /> إعادة المحاولة
               </button>

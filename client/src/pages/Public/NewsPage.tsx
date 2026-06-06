@@ -1,28 +1,23 @@
 import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
-import { Newspaper, Calendar, Search, Tag, X, Star, TrendingUp, Clock } from 'lucide-react'
+import { useLocalize } from '../../hooks/useLocalize'
+import { useLanguage } from '../../context/LanguageContext'
+import { Newspaper, Calendar, Search, Tag, X, Star, TrendingUp, Clock, ChevronLeft } from 'lucide-react'
+import { DEMO_NEWS, withDemoFallback } from '../../data/demoPublicFallback'
 
-const SAMPLE_NEWS = [
-  { id: 1, title: 'انطلاق الفصل الدراسي الثاني بزخم أكاديمي', summary: 'استقبلت المدرسة الفصل الدراسي الثاني بروح عالية وحماس كبير من الطلاب والمعلمين، وسط استعدادات مميزة.', image_url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80', category: 'إداري', publish_date: '2025-01-15', is_featured: true },
-  { id: 2, title: 'المدرسة تحصد المركز الأول في مسابقة العلوم والتقنية', summary: 'فريق طلاب المدرسة حقق المركز الأول على مستوى المحافظة في مسابقة العلوم والتقنية السنوية.', image_url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&q=80', category: 'إنجازات', publish_date: '2025-01-20', is_featured: true },
-  { id: 3, title: 'ختام مخيم القراءة الإثرائي الصيفي', summary: 'أُقيم حفل ختام مخيم القراءة بحضور أولياء الأمور وتكريم المشاركين المتميزين.', image_url: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80', category: 'أنشطة', publish_date: '2025-01-25', is_featured: false },
-  { id: 4, title: 'زيارة ميدانية لمشروع الطاقة الشمسية الوطني', summary: 'نظّمت المدرسة رحلة تعليمية لطلاب الصفوف العليا لمشروع الطاقة الشمسية الوطني.', image_url: 'https://images.unsplash.com/photo-1509391366360-2e959784a276?w=800&q=80', category: 'رحلات', publish_date: '2025-02-05', is_featured: false },
-  { id: 5, title: 'بطولة كرة القدم بين المدارس — المركز الثاني', summary: 'شارك فريقنا في البطولة الرياضية المدرسية وأحرز المركز الثاني بعد مباريات مثيرة.', image_url: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80', category: 'رياضي', publish_date: '2025-02-12', is_featured: false },
-  { id: 6, title: 'حفل تكريم المعلمين في يومهم العالمي', summary: 'أقامت إدارة المدرسة حفلاً بهيجاً بمناسبة اليوم العالمي للمعلم تقديراً لجهودهم المتميزة.', image_url: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80', category: 'مناسبات', publish_date: '2025-02-18', is_featured: false },
-  { id: 7, title: 'إطلاق مشروع المختبر الذكي الرقمي', summary: 'افتتحت المدرسة مختبرها الرقمي الجديد بتجهيزات حديثة لتعزيز التعليم القائم على التقنية.', image_url: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80', category: 'تقنية', publish_date: '2025-03-01', is_featured: false },
-  { id: 8, title: 'اليوم المفتوح السنوي — لقاء الأسرة التعليمية', summary: 'استقبلت المدرسة أولياء الأمور في يومها المفتوح السنوي لمناقشة تقدم الطلاب وتعزيز الشراكة.', image_url: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=800&q=80', category: 'إداري', publish_date: '2025-03-15', is_featured: false },
-]
+const SAMPLE_NEWS = DEMO_NEWS
 
 const CAT_COLORS: Record<string, string> = {
   'إداري': '#6366f1', 'إنجازات': '#10b981', 'أنشطة': '#8b5cf6', 'رحلات': '#f97316',
   'رياضي': '#f59e0b', 'مناسبات': '#ec4899', 'تقنية': '#0ea5e9', 'أخرى': '#6b7280',
 }
 
-function NewsCard({ n, featured }: { n: any; featured?: boolean }) {
-  const color = CAT_COLORS[n.category] || '#6b7280'
+function NewsCard({ n, featured, dateLocale }: { n: any; featured?: boolean; dateLocale: string }) {
+  const color = CAT_COLORS[n.category] || CAT_COLORS['أخرى'] || '#6b7280'
   return (
-    <article className={`group rounded-3xl overflow-hidden bg-white shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 ${featured ? 'md:flex' : ''}`}>
+    <Link to={`/school/news/${n.id}`} className={`group block rounded-3xl overflow-hidden bg-white shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 ${featured ? 'md:flex' : ''}`}>
       <div className={`relative overflow-hidden ${featured ? 'md:w-1/2 h-52 md:h-auto' : 'h-48'}`}>
         {n.image_url ? (
           <img src={n.image_url} alt={n.title}
@@ -39,7 +34,7 @@ function NewsCard({ n, featured }: { n: any; featured?: boolean }) {
             {n.category}
           </span>
           <span className="text-[9px] bg-black/40 backdrop-blur-sm text-white px-2 py-1 rounded-lg flex items-center gap-1">
-            <Calendar size={9} />{new Date(n.publish_date).toLocaleDateString('ar-OM')}
+            <Calendar size={9} />{new Date(n.publish_date).toLocaleDateString(dateLocale)}
           </span>
         </div>
         {n.is_featured && (
@@ -52,27 +47,37 @@ function NewsCard({ n, featured }: { n: any; featured?: boolean }) {
       <div className={`p-5 flex flex-col ${featured ? 'md:w-1/2 justify-center' : ''}`}>
         <h3 className={`font-black text-gray-800 mb-2 leading-snug group-hover:text-emerald-700 transition-colors ${featured ? 'text-lg md:text-xl' : 'text-sm line-clamp-2'}`}>{n.title}</h3>
         {n.summary && <p className={`text-gray-500 leading-relaxed ${featured ? 'text-sm line-clamp-3' : 'text-xs line-clamp-2'}`}>{n.summary}</p>}
-        <div className="flex items-center gap-2 mt-3">
-          <Clock size={11} className="text-gray-300" />
-          <span className="text-[10px] text-gray-400">{new Date(n.publish_date).toLocaleDateString('ar-OM', { year:'numeric', month:'long', day:'numeric' })}</span>
+        <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center gap-2">
+            <Clock size={11} className="text-gray-300" />
+            <span className="text-[10px] text-gray-400">{new Date(n.publish_date).toLocaleDateString(dateLocale, { year:'numeric', month:'long', day:'numeric' })}</span>
+          </div>
+          <span className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5 group-hover:gap-1 transition-all">
+            اقرأ المزيد <ChevronLeft size={11} />
+          </span>
         </div>
       </div>
-    </article>
+    </Link>
   )
 }
 
 export default function NewsPage() {
+  const { t } = useLanguage()
+  const { localizeNews, dateLocale, category, lang } = useLocalize()
   const { data: apiData } = useQuery({ queryKey: ['public-news'], queryFn: () => publicApi.news().then(r => r.data) })
   const [search,  setSearch]  = useState('')
   const [cat,     setCat]     = useState('all')
   const [showAll, setShowAll] = useState(false)
 
   const allNews = useMemo(
-    () => (apiData?.news?.length > 0 ? apiData.news : SAMPLE_NEWS) as typeof SAMPLE_NEWS,
-    [apiData]
+    () => withDemoFallback(apiData?.news, SAMPLE_NEWS).map((n: any) => localizeNews(n)),
+    [apiData, localizeNews, lang]
   )
 
-  const categories = useMemo(() => ['all', ...new Set(allNews.map((n: any) => n.category).filter(Boolean))], [allNews])
+  const categories = useMemo<string[]>(() => {
+    const cats = allNews.map((n: any) => String(n.category)).filter((c): c is string => Boolean(c))
+    return ['all', ...Array.from(new Set<string>(cats))]
+  }, [allNews])
   const featuredNews = useMemo(() => allNews.filter((n: any) => n.is_featured).slice(0, 1), [allNews])
 
   const filtered = useMemo(() => allNews.filter((n: any) => {
@@ -108,7 +113,7 @@ export default function NewsPage() {
               <Star size={16} className="text-amber-500" fill="currentColor" />
               <span className="font-black text-gray-700 text-sm">الخبر المميز</span>
             </div>
-            <NewsCard n={featuredNews[0]} featured />
+            <NewsCard n={featuredNews[0]} featured dateLocale={dateLocale} />
           </div>
         )}
 
@@ -166,7 +171,7 @@ export default function NewsPage() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {visibleNews.map((n: any) => (
-                <NewsCard key={n.id} n={n} />
+                <NewsCard key={n.id} n={n} dateLocale={dateLocale} />
               ))}
             </div>
 

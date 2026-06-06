@@ -1,11 +1,11 @@
 {
-  "name": "نظام إدارة المدرسة",
-  "short_name": "مدرستنا",
-  "description": "نظام متكامل لإدارة المدارس - SaaS",
-  "start_url": "/",
+  "name": "مدرسة النور العالمية — موقع تجريبي",
+  "short_name": "النور العالمية",
+  "description": "نظام إدارة المدارس الخاصة — عرض تجريبي في مسقط ببيانات وهمية",
+  "start_url": "/school",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#1e40af",
+  "theme_color": "#065f46",
   "orientation": "portrait-primary",
   "lang": "ar",
   "dir": "rtl",
@@ -34,10 +34,10 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "الطلاب",
-      "short_name": "Students",
-      "description": "إدارة الطلاب",
-      "url": "/admin/students",
+      "name": "بوابة الأولياء",
+      "short_name": "Parents",
+      "description": "بوابة أولياء الأمور",
+      "url": "/parent/login",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]

@@ -12,17 +12,18 @@ interface Theme {
   schoolName: string
   schoolNameEn?: string
   tagline?: string
+  taglineEn?: string
   favicon?: string
 }
 
 const defaultTheme: Theme = {
-  primaryColor: '#1e40af',
-  primaryDark: '#1e3a8a',
-  primaryLight: '#3b82f6',
+  primaryColor: '#065f46',
+  primaryDark: '#064e3b',
+  primaryLight: '#10b981',
   accentColor: '#f59e0b',
   accentDark: '#d97706',
-  schoolName: 'مدرسة اقرأ الخاصة',
-  tagline: 'نحو مستقبل أفضل'
+  schoolName: 'مدرسة النور العالمية',
+  tagline: 'نور العلم يضيء المستقبل'
 }
 
 interface ThemeContextType {

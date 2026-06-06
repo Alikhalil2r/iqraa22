@@ -1,16 +1,20 @@
 import React, { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
-import { Printer, FileText, Users, UserCheck, GraduationCap, ChevronLeft, Download, BookOpen, Award } from 'lucide-react'
+import { Printer, FileText, Users, UserCheck, GraduationCap, ChevronLeft, Download, BookOpen, Award, DollarSign } from 'lucide-react'
+import { exportToCSV } from '../../components/ExportButton'
+import { printCustom } from '../../utils/printExport'
+import { feeStatusLabel, formatOMR } from '../../utils/reportUtils'
 
 const api = (path: string) =>
   axios.get(`/api${path}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.data)
 
 const REPORT_TYPES = [
   { id: 'student_result', label: 'شهادة نتائج طالب', icon: Award, desc: 'كشف درجات الطالب لجميع المواد مع التحليل' },
-  { id: 'attendance_sheet', label: 'كشف الحضور الشهري', desc: 'تقرير حضور وغياب فصل دراسي لشهر محدد', icon: UserCheck },
-  { id: 'class_list', label: 'قائمة الفصل', desc: 'قائمة بأسماء طلاب الفصل وبياناتهم الأساسية', icon: Users },
-  { id: 'employee_list', label: 'كشف الموظفين', desc: 'قائمة بجميع الموظفين النشطين وبياناتهم', icon: GraduationCap },
+  { id: 'attendance_sheet', label: 'كشف الحضور الشهري', icon: UserCheck, desc: 'تقرير حضور وغياب فصل دراسي لشهر محدد' },
+  { id: 'class_list', label: 'قائمة الفصل', icon: Users, desc: 'قائمة بأسماء طلاب الفصل وبياناتهم الأساسية' },
+  { id: 'employee_list', label: 'كشف الموظفين', icon: GraduationCap, desc: 'قائمة بجميع الموظفين النشطين وبياناتهم' },
+  { id: 'fees_report', label: 'كشف الرسوم المالية', icon: DollarSign, desc: 'تقرير رسوم الطلاب — مستحق، محصل، ومتبقي' },
 ]
 
 const GRADE_LABEL = (g: number) => {
@@ -47,6 +51,12 @@ export default function PDFReports() {
     enabled: !!selectedClass && reportType === 'attendance_sheet',
   })
 
+  const { data: feesData } = useQuery({
+    queryKey: ['pdf-fees'],
+    queryFn: () => api('/reports/fees-summary'),
+    enabled: reportType === 'fees_report',
+  })
+
   const students  = studentsData?.students || []
   const classes   = classesData?.classes || []
   const employees = employeesData?.employees || []
@@ -72,17 +82,38 @@ export default function PDFReports() {
     ? `${MONTHS_AR[parseInt(selectedMonth.split('-')[1])-1]} ${selectedMonth.split('-')[0]}`
     : ''
 
+  const feesReport: any[] = feesData?.report || []
+  const feesTotals = feesData?.totals || {}
+
   const handlePrint = () => {
-    window.print()
+    if (!printRef.current) return
+    printCustom('تقرير المدرسة', printRef.current.innerHTML)
+  }
+
+  const handleExportCsv = () => {
+    if (reportType === 'employee_list') {
+      exportToCSV(employees.filter((e: any) => e.status === 'active'), [
+        { key: 'name', label: 'الاسم' }, { key: 'position', label: 'المنصب' },
+        { key: 'department', label: 'القسم' }, { key: 'phone', label: 'الهاتف' }, { key: 'email', label: 'البريد' },
+      ], 'كشف_الموظفين')
+    } else if (reportType === 'class_list') {
+      exportToCSV(classStudents, [
+        { key: 'name', label: 'الاسم' }, { key: 'student_number', label: 'الرقم' },
+        { key: 'class_name', label: 'الفصل' }, { key: 'gender', label: 'الجنس' },
+      ], 'قائمة_الفصل')
+    } else if (reportType === 'fees_report') {
+      exportToCSV(feesReport, [
+        { key: 'student_name', label: 'الطالب' }, { key: 'fee_type', label: 'النوع' },
+        { key: 'amount', label: 'المبلغ' }, { key: 'paid_amount', label: 'المدفوع' },
+        { key: 'remaining', label: 'المتبقي' }, { key: 'status', label: 'الحالة' },
+      ], 'كشف_الرسوم')
+    }
   }
 
   return (
     <div className="space-y-6 pdf-reports-page">
       <style>{`
         @media print {
-          body * { visibility: hidden !important; }
-          .print-area, .print-area * { visibility: visible !important; }
-          .print-area { position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; margin: 0 !important; padding: 0 !important; }
           .no-print { display: none !important; }
         }
       `}</style>
@@ -172,6 +203,10 @@ export default function PDFReports() {
             <p className="text-sm text-gray-400 py-4 text-center">سيتم تضمين جميع الموظفين النشطين في التقرير</p>
           )}
 
+          {reportType === 'fees_report' && (
+            <p className="text-sm text-gray-400 py-4 text-center">تقرير شامل لجميع رسوم الطلاب — {feesReport.length} سجل</p>
+          )}
+
           <div className="mt-6 space-y-2">
             <button onClick={() => setShowPreview(true)}
               className="w-full py-2.5 rounded-xl font-black text-sm text-white transition-all hover:opacity-90"
@@ -179,10 +214,18 @@ export default function PDFReports() {
               معاينة التقرير
             </button>
             {showPreview && (
-              <button onClick={handlePrint}
-                className="w-full py-2.5 rounded-xl font-black text-sm bg-gray-800 text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-all">
-                <Printer size={15} /> طباعة / حفظ PDF
-              </button>
+              <>
+                <button onClick={handlePrint}
+                  className="w-full py-2.5 rounded-xl font-black text-sm bg-gray-800 text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-all">
+                  <Printer size={15} /> طباعة / حفظ PDF
+                </button>
+                {['employee_list', 'class_list', 'fees_report'].includes(reportType) && (
+                  <button onClick={handleExportCsv}
+                    className="w-full py-2.5 rounded-xl font-black text-sm border border-gray-200 text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition-all">
+                    <Download size={15} /> تصدير CSV
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -214,10 +257,8 @@ export default function PDFReports() {
       {/* ════════════════ PRINT AREA ════════════════ */}
       {showPreview && (
         <div className="print-area" ref={printRef}>
-
-          {/* ── Student Result Card ── */}
           {reportType === 'student_result' && selStudent && (
-            <div className="no-print" style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
               <StudentResultCard
                 student={selStudent} grades={studentGradeList}
                 totalScore={totalScore} maxScore={maxScore} avgPct={avgPct} gradeInfo={gradeInfo}
@@ -226,15 +267,14 @@ export default function PDFReports() {
             </div>
           )}
           {reportType === 'student_result' && !selStudent && (
-            <div className="no-print card text-center py-12 text-gray-400">
+            <div className="card text-center py-12 text-gray-400">
               <Award size={40} className="mx-auto mb-3 opacity-30" />
               <p className="font-bold">اختر طالباً لعرض شهادة النتائج</p>
             </div>
           )}
 
-          {/* ── Attendance Sheet ── */}
           {reportType === 'attendance_sheet' && (
-            <div className="no-print" style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
               <AttendanceSheet
                 students={classStudents} attendance={attendanceList}
                 month={monthLabel} className={classes.find((c: any) => (c.id || c.name) === selectedClass)?.name || selectedClass}
@@ -243,9 +283,8 @@ export default function PDFReports() {
             </div>
           )}
 
-          {/* ── Class List ── */}
           {reportType === 'class_list' && (
-            <div className="no-print" style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
               <ClassList
                 students={classStudents}
                 className={classes.find((c: any) => (c.id || c.name) === selectedClass)?.name || selectedClass}
@@ -254,9 +293,8 @@ export default function PDFReports() {
             </div>
           )}
 
-          {/* ── Employee List ── */}
           {reportType === 'employee_list' && (
-            <div className="no-print" style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+            <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
               <EmployeeList
                 employees={employees.filter((e: any) => e.status === 'active')}
                 schoolName={schoolName} primaryColor={primaryColor}
@@ -264,28 +302,11 @@ export default function PDFReports() {
             </div>
           )}
 
-          {/* ACTUAL PRINT TEMPLATE (hidden in screen, shown in print) */}
-          <div style={{ display: 'none' }} className="print-show">
-            {reportType === 'student_result' && selStudent && (
-              <StudentResultCard student={selStudent} grades={studentGradeList}
-                totalScore={totalScore} maxScore={maxScore} avgPct={avgPct} gradeInfo={gradeInfo}
-                schoolName={schoolName} primaryColor={primaryColor} />
-            )}
-            {reportType === 'attendance_sheet' && (
-              <AttendanceSheet students={classStudents} attendance={attendanceList}
-                month={monthLabel} className={classes.find((c: any) => (c.id || c.name) === selectedClass)?.name || ''}
-                schoolName={schoolName} primaryColor={primaryColor} />
-            )}
-            {reportType === 'class_list' && (
-              <ClassList students={classStudents}
-                className={classes.find((c: any) => (c.id || c.name) === selectedClass)?.name || ''}
-                schoolName={schoolName} primaryColor={primaryColor} />
-            )}
-            {reportType === 'employee_list' && (
-              <EmployeeList employees={employees.filter((e: any) => e.status === 'active')}
-                schoolName={schoolName} primaryColor={primaryColor} />
-            )}
-          </div>
+          {reportType === 'fees_report' && (
+            <div style={{ background: 'white', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+              <FeesReport fees={feesReport} totals={feesTotals} schoolName={schoolName} primaryColor={primaryColor} />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -518,7 +539,7 @@ function EmployeeList({ employees, schoolName, primaryColor }: any) {
                 <td style={{ padding: '10px 12px' }}>{e.department || '—'}</td>
                 <td style={{ padding: '10px 12px', direction: 'ltr', textAlign: 'right' }}>{e.phone || '—'}</td>
                 <td style={{ padding: '10px 12px', direction: 'ltr', textAlign: 'right', fontSize: 11 }}>{e.email || '—'}</td>
-                <td style={{ padding: '10px 12px' }}>{e.hire_date ? new Date(e.hire_date).toLocaleDateString('ar-OM') : '—'}</td>
+                <td style={{ padding: '10px 12px' }}>{e.join_date ? new Date(e.join_date).toLocaleDateString('ar-OM') : '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -526,6 +547,61 @@ function EmployeeList({ employees, schoolName, primaryColor }: any) {
         <p style={{ marginTop: 16, fontSize: 12, color: '#9ca3af', textAlign: 'left' }}>
           إجمالي الموظفين: <strong>{employees.length}</strong>
         </p>
+      </div>
+      <PrintFooter primaryColor={primaryColor} />
+    </div>
+  )
+}
+
+function FeesReport({ fees, totals, schoolName, primaryColor }: any) {
+  return (
+    <div style={{ fontFamily: 'Cairo, Arial, sans-serif', direction: 'rtl', background: 'white' }}>
+      <PrintHeader schoolName={schoolName} primaryColor={primaryColor}
+        title="كشف الرسوم المالية" subtitle={`المحصل: ${formatOMR(totals.total_collected)} — المتبقي: ${formatOMR(totals.outstanding)}`} />
+      <div style={{ padding: '24px 40px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12, marginBottom: 24 }}>
+          {[
+            { label: 'إجمالي المستحق', value: formatOMR(totals.total_due), color: primaryColor },
+            { label: 'المحصل', value: formatOMR(totals.total_collected), color: '#16a34a' },
+            { label: 'المتبقي', value: formatOMR(totals.outstanding), color: '#dc2626' },
+            { label: 'سجلات معلقة', value: totals.pending_count || 0, color: '#d97706' },
+          ].map(s => (
+            <div key={s.label} style={{ background: s.color + '10', border: `1px solid ${s.color}30`, borderRadius: 12, padding: '12px 14px', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: 10, color: '#6b7280', fontWeight: 700 }}>{s.label}</p>
+              <p style={{ margin: '6px 0 0', fontSize: 16, fontWeight: 900, color: s.color }}>{s.value}</p>
+            </div>
+          ))}
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: primaryColor, color: 'white' }}>
+              {['#', 'الطالب', 'الفصل', 'نوع الرسوم', 'المبلغ', 'المدفوع', 'المتبقي', 'الحالة'].map(h => (
+                <th key={h} style={{ padding: '10px 10px', textAlign: 'right', fontSize: 11, fontWeight: 900 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {fees.length === 0 ? (
+              <tr><td colSpan={8} style={{ padding: 24, textAlign: 'center', color: '#9ca3af' }}>لا توجد رسوم</td></tr>
+            ) : fees.map((f: any, i: number) => {
+              const st = feeStatusLabel(f.status)
+              return (
+                <tr key={f.id} style={{ background: i % 2 === 0 ? '#fff' : '#f9fafb', borderBottom: '1px solid #f3f4f6' }}>
+                  <td style={{ padding: '9px 10px', color: '#9ca3af' }}>{i + 1}</td>
+                  <td style={{ padding: '9px 10px', fontWeight: 700 }}>{f.student_name}</td>
+                  <td style={{ padding: '9px 10px' }}>{f.class_name || '—'}</td>
+                  <td style={{ padding: '9px 10px' }}>{f.fee_type}</td>
+                  <td style={{ padding: '9px 10px' }}>{formatOMR(f.amount)}</td>
+                  <td style={{ padding: '9px 10px', color: '#16a34a', fontWeight: 700 }}>{formatOMR(f.paid_amount)}</td>
+                  <td style={{ padding: '9px 10px', color: '#dc2626', fontWeight: 700 }}>{formatOMR(f.remaining)}</td>
+                  <td style={{ padding: '9px 10px' }}>
+                    <span style={{ background: st.color + '18', color: st.color, padding: '2px 8px', borderRadius: 20, fontSize: 10, fontWeight: 900 }}>{st.label}</span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
       <PrintFooter primaryColor={primaryColor} />
     </div>

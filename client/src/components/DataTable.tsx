@@ -102,10 +102,13 @@ export default function DataTable({
 
   return (
     <>
-      <div className="card !p-0 overflow-hidden">
+      <div className="card dash-data-table !p-0 overflow-hidden hover-lift">
         {/* Header */}
-        <div className="p-4 md:p-5 border-b border-gray-100 flex flex-wrap items-center gap-3">
-          <h2 className="text-base md:text-lg font-black text-gray-800 flex-1">{title}</h2>
+        <div className="dash-data-table-header p-4 md:p-5 flex flex-wrap items-center gap-3">
+          <h2 className="text-base md:text-lg font-black text-gray-800 flex-1 flex items-center gap-2">
+            <span className="w-1 h-5 rounded-full" style={{ background: 'var(--color-primary)' }} />
+            {title}
+          </h2>
           {searchKeys.length > 0 && (
             <div className="relative">
               <Search size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
@@ -275,7 +278,11 @@ export default function DataTable({
       <ConfirmDialog
         open={!!confirmRow}
         title="تأكيد الحذف"
-        message={deleteMessage ? deleteMessage(confirmRow) : `هل تريد حذف هذا السجل بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.`}
+        message={
+          confirmRow
+            ? (deleteMessage ? deleteMessage(confirmRow) : `هل تريد حذف هذا السجل بشكل نهائي؟ لا يمكن التراجع عن هذا الإجراء.`)
+            : ''
+        }
         confirmLabel="نعم، احذف"
         danger
         onConfirm={doDelete}

@@ -3,6 +3,7 @@ import speakeasy from 'speakeasy'
 import QRCode from 'qrcode'
 import { query } from '../db'
 import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { totpLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 import { logAudit } from './audit'
 
@@ -42,7 +43,7 @@ router.post('/setup', async (req: AuthRequest, res) => {
 })
 
 // POST /api/2fa/verify — verify token and enable 2FA
-router.post('/verify', async (req: AuthRequest, res) => {
+router.post('/verify', totpLimiter, async (req: AuthRequest, res) => {
   try {
     const { id: userId, schoolId, name } = req.user!
     const { token } = req.body
@@ -86,7 +87,7 @@ router.post('/verify', async (req: AuthRequest, res) => {
 })
 
 // POST /api/2fa/disable — disable 2FA
-router.post('/disable', async (req: AuthRequest, res) => {
+router.post('/disable', totpLimiter, async (req: AuthRequest, res) => {
   try {
     const { id: userId, schoolId, name } = req.user!
     const { token } = req.body

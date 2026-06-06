@@ -39,7 +39,7 @@ router.get('/types', async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requireRole('super_admin', 'admin', 'hr_manager', 'teacher'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { status, employeeId, year, page = '1', limit = '100' } = req.query
@@ -81,7 +81,7 @@ router.get('/', async (req: AuthRequest, res) => {
   }
 })
 
-router.post('/', writeLimiter, async (req: AuthRequest, res) => {
+router.post('/', writeLimiter, requireRole('admin', 'hr_manager'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { employeeId, leaveTypeId, leaveTypeName, startDate, endDate, days, reason } = req.body
@@ -140,18 +140,18 @@ router.put('/:id/reject', writeLimiter, requireRole('admin', 'hr_manager'), asyn
   }
 })
 
-router.put('/:id', writeLimiter, async (req: AuthRequest, res) => {
+router.put('/:id', writeLimiter, requireRole('admin', 'hr_manager'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
-    const { leaveTypeName, startDate, endDate, days, reason, status } = req.body
+    const { leaveTypeName, startDate, endDate, days, reason } = req.body
     const result = await query(`
       UPDATE employee_leaves SET
         leave_type_name=COALESCE($1,leave_type_name),
         start_date=COALESCE($2,start_date), end_date=COALESCE($3,end_date),
-        days=COALESCE($4,days), reason=COALESCE($5,reason), status=COALESCE($6,status)
-      WHERE id=$7 AND school_id=$8 RETURNING *`,
+        days=COALESCE($4,days), reason=COALESCE($5,reason)
+      WHERE id=$6 AND school_id=$7 AND status='pending' RETURNING *`,
       [leaveTypeName, startDate, endDate, days ? parseInt(String(days)) : null,
-       reason?.slice(0, 1000), status, req.params.id, schoolId]
+       reason?.slice(0, 1000), req.params.id, schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })
     res.json({ leave: result.rows[0] })
@@ -161,7 +161,7 @@ router.put('/:id', writeLimiter, async (req: AuthRequest, res) => {
   }
 })
 
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', requireRole('admin', 'hr_manager'), async (req: AuthRequest, res) => {
   try {
     await query(`UPDATE employee_leaves SET status='cancelled' WHERE id=$1 AND school_id=$2`,
       [req.params.id, req.user!.schoolId])
@@ -172,7 +172,7 @@ router.delete('/:id', async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/balance/:employeeId', async (req: AuthRequest, res) => {
+router.get('/balance/:employeeId', requireRole('admin', 'hr_manager'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const year = new Date().getFullYear()

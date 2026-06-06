@@ -340,21 +340,21 @@ export default function LibraryAdmin() {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
-              <FormField label="عنوان الكتاب *"><Input value={bookForm.title} onChange={v=>setBookForm(p=>({...p,title:v}))}/></FormField>
+              <FormField label="عنوان الكتاب *"><Input value={bookForm.title} onChange={e=>setBookForm(p=>({...p,title:e.target.value}))}/></FormField>
             </div>
-            <FormField label="المؤلف"><Input value={bookForm.author} onChange={v=>setBookForm(p=>({...p,author:v}))}/></FormField>
-            <FormField label="ISBN"><Input value={bookForm.isbn} onChange={v=>setBookForm(p=>({...p,isbn:v}))}/></FormField>
-            <FormField label="التصنيف"><Select value={bookForm.category} onChange={v=>setBookForm(p=>({...p,category:v}))} options={CATEGORIES}/></FormField>
-            <FormField label="اللغة"><Select value={bookForm.language} onChange={v=>setBookForm(p=>({...p,language:v}))} options={LANGUAGES}/></FormField>
-            <FormField label="الناشر"><Input value={bookForm.publisher} onChange={v=>setBookForm(p=>({...p,publisher:v}))}/></FormField>
-            <FormField label="سنة النشر"><Input type="number" value={bookForm.publishedYear} onChange={v=>setBookForm(p=>({...p,publishedYear:v}))}/></FormField>
-            <FormField label="عدد النسخ"><Input type="number" value={bookForm.copiesTotal} onChange={v=>setBookForm(p=>({...p,copiesTotal:v}))}/></FormField>
-            <FormField label="رقم الرف"><Input value={bookForm.shelfLocation} onChange={v=>setBookForm(p=>({...p,shelfLocation:v}))}/></FormField>
+            <FormField label="المؤلف"><Input value={bookForm.author} onChange={e=>setBookForm(p=>({...p,author:e.target.value}))}/></FormField>
+            <FormField label="ISBN"><Input value={bookForm.isbn} onChange={e=>setBookForm(p=>({...p,isbn:e.target.value}))}/></FormField>
+            <FormField label="التصنيف"><Select value={bookForm.category} onChange={e=>setBookForm(p=>({...p,category:e.target.value}))} options={CATEGORIES}/></FormField>
+            <FormField label="اللغة"><Select value={bookForm.language} onChange={e=>setBookForm(p=>({...p,language:e.target.value}))} options={LANGUAGES}/></FormField>
+            <FormField label="الناشر"><Input value={bookForm.publisher} onChange={e=>setBookForm(p=>({...p,publisher:e.target.value}))}/></FormField>
+            <FormField label="سنة النشر"><Input type="number" value={bookForm.publishedYear} onChange={e=>setBookForm(p=>({...p,publishedYear:e.target.value}))}/></FormField>
+            <FormField label="عدد النسخ"><Input type="number" value={bookForm.copiesTotal} onChange={e=>setBookForm(p=>({...p,copiesTotal:e.target.value}))}/></FormField>
+            <FormField label="رقم الرف"><Input value={bookForm.shelfLocation} onChange={e=>setBookForm(p=>({...p,shelfLocation:e.target.value}))}/></FormField>
             <div className="col-span-2">
-              <FormField label="رابط الغلاف"><Input value={bookForm.coverUrl} onChange={v=>setBookForm(p=>({...p,coverUrl:v}))} placeholder="https://..."/></FormField>
+              <FormField label="رابط الغلاف"><Input value={bookForm.coverUrl} onChange={e=>setBookForm(p=>({...p,coverUrl:e.target.value}))} placeholder="https://..."/></FormField>
             </div>
             <div className="col-span-2">
-              <FormField label="ملاحظات"><Textarea value={bookForm.description} onChange={v=>setBookForm(p=>({...p,description:v}))}/></FormField>
+              <FormField label="ملاحظات"><Textarea value={bookForm.description} onChange={e=>setBookForm(p=>({...p,description:e.target.value}))}/></FormField>
             </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
@@ -389,7 +389,7 @@ export default function LibraryAdmin() {
             <input type="date" value={borrowForm.dueDate} onChange={e=>setBorrowForm(p=>({...p,dueDate:e.target.value}))}
               className="input w-full" min={new Date().toISOString().split('T')[0]}/>
           </FormField>
-          <FormField label="ملاحظات"><Textarea value={borrowForm.notes} onChange={v=>setBorrowForm(p=>({...p,notes:v}))}/></FormField>
+          <FormField label="ملاحظات"><Textarea value={borrowForm.notes} onChange={e=>setBorrowForm(p=>({...p,notes:e.target.value}))}/></FormField>
           <div className="flex justify-end gap-2">
             <button onClick={closeModal} className="btn-secondary">إلغاء</button>
             <button onClick={submitBorrow} disabled={createBorrow.isPending} className="btn-primary">تأكيد الإعارة</button>
@@ -411,9 +411,9 @@ export default function LibraryAdmin() {
               )}
             </div>
             <FormField label="مبلغ الغرامة (ر.ع.)">
-              <Input type="number" value={returnForm.fineAmount} onChange={v=>setReturnForm(p=>({...p,fineAmount:v}))}/>
+              <Input type="number" value={returnForm.fineAmount} onChange={e=>setReturnForm(p=>({...p,fineAmount:e.target.value}))}/>
             </FormField>
-            <FormField label="ملاحظات"><Textarea value={returnForm.notes} onChange={v=>setReturnForm(p=>({...p,notes:v}))}/></FormField>
+            <FormField label="ملاحظات"><Textarea value={returnForm.notes} onChange={e=>setReturnForm(p=>({...p,notes:e.target.value}))}/></FormField>
             <div className="flex justify-end gap-2">
               <button onClick={()=>setReturnTarget(null)} className="btn-secondary">إلغاء</button>
               <button onClick={submitReturn} disabled={returnBook.isPending} className="btn-primary flex items-center gap-2">
@@ -429,7 +429,7 @@ export default function LibraryAdmin() {
         message={`هل أنت متأكد من حذف "${deleteTarget?.title}"؟`}
         onConfirm={() => deleteBook.mutate(deleteTarget.id)}
         onCancel={() => setDeleteTarget(null)}
-        isLoading={deleteBook.isPending}
+        loading={deleteBook.isPending}
       />
     </div>
   )

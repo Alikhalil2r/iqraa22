@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /school
+Disallow: /admin
+Disallow: /parent
+Disallow: /login
+Disallow: /api/
+
+Sitemap: /sitemap.xml

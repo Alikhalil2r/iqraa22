@@ -1,12 +1,12 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, STAFF_ROLES } from '../middleware/auth'
 import { createLogger } from '../utils/logger'
 
 const router = Router()
 const log = createLogger('DASHBOARD')
 
-router.get('/stats', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/stats', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const today = new Date().toISOString().split('T')[0]
@@ -62,7 +62,7 @@ router.get('/stats', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/activity', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/activity', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const [news, events, messages] = await Promise.all([

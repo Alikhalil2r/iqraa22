@@ -76,7 +76,7 @@ function RequestDrawer({ req, onClose }: { req: any; onClose: () => void }) {
   })
 
   const copyLink = () => {
-    const url = `${window.location.origin}/track/${req.ticket_number}?email=${encodeURIComponent(req.client_email || '')}`
+    const url = `${window.location.origin}/platform/track/${req.ticket_number}?email=${encodeURIComponent(req.client_email || '')}`
     navigator.clipboard.writeText(url)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
@@ -111,7 +111,7 @@ function RequestDrawer({ req, onClose }: { req: any; onClose: () => void }) {
               className="p-2 rounded-xl bg-gray-100 hover:bg-violet-50 text-gray-500 hover:text-violet-600 transition-colors">
               {copied ? <Check size={14} className="text-emerald-600"/> : <Copy size={14}/>}
             </button>
-            <a href={`/track/${req.ticket_number}?email=${encodeURIComponent(req.client_email || '')}`} target="_blank" rel="noreferrer"
+            <a href={`/platform/track/${req.ticket_number}?email=${encodeURIComponent(req.client_email || '')}`} target="_blank" rel="noreferrer"
               className="p-2 rounded-xl bg-gray-100 hover:bg-violet-50 text-gray-500 hover:text-violet-600 transition-colors" title="فتح صفحة التتبع">
               <ExternalLink size={14}/>
             </a>

@@ -257,7 +257,7 @@ export default function ConductAdmin() {
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="النوع *">
-              <Select value={form.recordType} onChange={v=>setForm(p=>({...p,recordType:v,category:''}))} options={TYPES}/>
+              <Select value={form.recordType} onChange={e=>setForm(p=>({...p,recordType:e.target.value,category:''}))} options={TYPES}/>
             </FormField>
             <FormField label="التصنيف">
               <select value={form.category} onChange={e=>setForm(p=>({...p,category:e.target.value}))} className="input w-full">
@@ -266,17 +266,17 @@ export default function ConductAdmin() {
               </select>
             </FormField>
           </div>
-          <FormField label="العنوان *"><Input value={form.title} onChange={v=>setForm(p=>({...p,title:v}))}/></FormField>
-          <FormField label="التفاصيل"><Textarea value={form.description} onChange={v=>setForm(p=>({...p,description:v}))}/></FormField>
+          <FormField label="العنوان *"><Input value={form.title} onChange={e=>setForm(p=>({...p,title:e.target.value}))}/></FormField>
+          <FormField label="التفاصيل"><Textarea value={form.description} onChange={e=>setForm(p=>({...p,description:e.target.value}))}/></FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="مستوى الخطورة">
-              <Select value={form.severity} onChange={v=>setForm(p=>({...p,severity:v}))} options={SEVERITIES}/>
+              <Select value={form.severity} onChange={e=>setForm(p=>({...p,severity:e.target.value}))} options={SEVERITIES}/>
             </FormField>
             <FormField label="النقاط">
-              <Input type="number" value={form.points} onChange={v=>setForm(p=>({...p,points:v}))} min="0"/>
+              <Input type="number" value={form.points} onChange={e=>setForm(p=>({...p,points:e.target.value}))} min="0"/>
             </FormField>
           </div>
-          <FormField label="الإجراء المتخذ"><Textarea value={form.actionTaken} onChange={v=>setForm(p=>({...p,actionTaken:v}))}/></FormField>
+          <FormField label="الإجراء المتخذ"><Textarea value={form.actionTaken} onChange={e=>setForm(p=>({...p,actionTaken:e.target.value}))}/></FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="التاريخ">
               <input type="date" value={form.recordDate} onChange={e=>setForm(p=>({...p,recordDate:e.target.value}))} className="input w-full"/>
@@ -302,7 +302,7 @@ export default function ConductAdmin() {
         message={`هل تريد حذف "${deleteTarget?.title}"؟`}
         onConfirm={()=>deleteMut.mutate(deleteTarget.id)}
         onCancel={()=>setDeleteTarget(null)}
-        isLoading={deleteMut.isPending}
+        loading={deleteMut.isPending}
       />
     </div>
   )

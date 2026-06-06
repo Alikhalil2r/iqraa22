@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer } from 'recharts'
-import { studentsApi, busesApi, gradesApi, attendanceApi } from '../../api/client'
+import { studentsApi, busesApi, gradesApi, attendanceApi, usersAdminApi } from '../../api/client'
+import { useAuth } from '../../context/AuthContext'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { FormField, Input, Select, Textarea } from '../../components/FormField'
@@ -28,7 +29,7 @@ const studentSchema = z.object({
 const emptyStudent = {
   name: '', nameEn: '', studentNumber: '', gender: 'M', dateOfBirth: '', nationality: 'عُماني',
   className: '', academicYear: '2024-2025', status: 'active',
-  parentName: '', parentPhone: '', parentEmail: '', parentRelation: 'أب',
+  parentId: '', parentName: '', parentPhone: '', parentEmail: '', parentRelation: 'أب',
   address: '', bloodType: '', medicalNotes: '', busId: '', photo: '', notes: ''
 }
 
@@ -366,6 +367,8 @@ function StudentProfile({ student, onClose }: { student: any; onClose: () => voi
 }
 
 export default function Students() {
+  const { hasPermission } = useAuth()
+  const canManageParents = hasPermission('users')
   const [modal,   setModal]   = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form,    setForm]    = useState(emptyStudent)
@@ -381,6 +384,11 @@ export default function Students() {
   const { data: busesData } = useQuery({
     queryKey: ['buses'],
     queryFn: () => busesApi.list().then(r => r.data)
+  })
+  const { data: parentsData } = useQuery({
+    queryKey: ['users-parents'],
+    queryFn: () => usersAdminApi.list({ role: 'parent' }).then(r => r.data),
+    enabled: canManageParents,
   })
 
   const createMut = useMutation({
@@ -407,7 +415,7 @@ export default function Students() {
       gender: row.gender || 'M', dateOfBirth: row.date_of_birth?.split('T')[0] || '',
       nationality: row.nationality || 'عُماني', className: row.class_name || '',
       academicYear: row.academic_year || '2024-2025', status: row.status || 'active',
-      parentName: row.parent_name || '', parentPhone: row.parent_phone || '',
+      parentId: row.parent_id || '', parentName: row.parent_name || '', parentPhone: row.parent_phone || '',
       parentEmail: row.parent_email || '', parentRelation: row.parent_relation || 'أب',
       address: row.address || '', bloodType: row.blood_type || '',
       medicalNotes: row.medical_notes || '', busId: row.bus_id || '',
@@ -421,16 +429,18 @@ export default function Students() {
     e.preventDefault()
     const validation = studentSchema.safeParse(form)
     if (!validation.success) {
-      toast.error(validation.error.errors[0].message)
+      toast.error(validation.error.issues[0]?.message || 'بيانات غير صالحة')
       return
     }
-    const d = { ...form, busId: form.busId || null }
+    const d = { ...form, busId: form.busId || null, parentId: form.parentId || null }
     if (editing) updateMut.mutate({ id: editing.id, ...d })
     else createMut.mutate(d)
   }
 
   const buses = busesData?.buses || []
   const busOptions = [{ value: '', label: 'لا حافلة' }, ...buses.map((b: any) => ({ value: b.id, label: `${b.bus_number} — ${b.route_name || ''}` }))]
+  const parentUsers = parentsData?.users || []
+  const parentOptions = [{ value: '', label: '— بدون حساب بوابة —' }, ...parentUsers.map((u: any) => ({ value: u.id, label: `${u.name} (${u.username})` }))]
 
   const allStudents = data?.students || []
   const classes = [...new Set(allStudents.map((s: any) => s.class_name).filter(Boolean))].sort()
@@ -598,6 +608,11 @@ export default function Students() {
             <User size={14} /> بيانات ولي الأمر
           </p>
           <div className="grid grid-cols-2 gap-4">
+            {canManageParents && (
+              <FormField label="حساب بوابة ولي الأمر" className="col-span-2">
+                <Select value={form.parentId} onChange={e => setForm({ ...form, parentId: e.target.value })} options={parentOptions} />
+              </FormField>
+            )}
             <FormField label="اسم ولي الأمر">
               <Input value={form.parentName} onChange={e => setForm({ ...form, parentName: e.target.value })} />
             </FormField>

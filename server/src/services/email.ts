@@ -29,7 +29,7 @@ export async function sendEmail(opts: EmailOptions): Promise<{ ok: boolean; erro
       port: config.smtp_port || 587,
       secure: config.smtp_port === 465,
       auth: { user: config.smtp_user, pass: config.smtp_pass },
-      tls: { rejectUnauthorized: false },
+      tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
     })
 
     await transporter.sendMail({
@@ -55,7 +55,7 @@ export async function testEmailConfig(schoolId: string): Promise<{ ok: boolean; 
       port: config.smtp_port || 587,
       secure: config.smtp_port === 465,
       auth: { user: config.smtp_user, pass: config.smtp_pass },
-      tls: { rejectUnauthorized: false },
+      tls: { rejectUnauthorized: process.env.NODE_ENV === 'production' },
     })
     await transporter.verify()
     return { ok: true }

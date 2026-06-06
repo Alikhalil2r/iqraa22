@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, TEACHING_ROLES } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
+import { notifyParentOfStudent } from '../utils/parentNotify'
+import { getTeacherScope, teacherCanAccessStudent, isTeacherRole } from '../utils/teacherScope'
 
 const router = Router()
 router.use(authenticateToken)
@@ -11,7 +13,7 @@ const log = createLogger('CONDUCT')
 const VALID_TYPES     = ['incident', 'reward', 'warning', 'note'] as const
 const VALID_SEVERITIES = ['low', 'medium', 'high', 'critical'] as const
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requireRole(...TEACHING_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { studentId, type, severity, startDate, endDate, className, page = '1', limit = '100' } = req.query
@@ -69,6 +71,18 @@ router.post('/', writeLimiter, requireRole('admin', 'teacher'), async (req: Auth
     if (!VALID_TYPES.includes(recordType))
       return res.status(400).json({ error: 'نوع السجل غير صالح' })
 
+    if (isTeacherRole(req.user!.role)) {
+      const studentRow = await query(
+        'SELECT id, class_id, class_name FROM students WHERE id=$1 AND school_id=$2',
+        [studentId, schoolId]
+      )
+      if (!studentRow.rows[0]) return res.status(404).json({ error: 'الطالب غير موجود' })
+      const scope = await getTeacherScope(schoolId, userId)
+      if (!teacherCanAccessStudent(scope, studentRow.rows[0])) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لإضافة سجل لهذا الطالب' })
+      }
+    }
+
     const result = await query(`
       INSERT INTO conduct_records (school_id, student_id, record_type, category, title, description,
         severity, points, action_taken, parent_notified, record_date, reported_by)
@@ -79,6 +93,15 @@ router.post('/', writeLimiter, requireRole('admin', 'teacher'), async (req: Auth
        recordDate || new Date().toISOString().split('T')[0], userId]
     )
     log.info('Conduct record created', { recordId: result.rows[0].id, type: recordType })
+    if (parentNotified) {
+      const typeLabel = recordType === 'reward' ? 'مكافأة' : recordType === 'incident' ? 'مخالفة' : recordType === 'warning' ? 'تحذير' : 'ملاحظة'
+      await notifyParentOfStudent(
+        schoolId, studentId,
+        `سجل سلوكي — ${typeLabel}`,
+        title,
+        'conduct', '/parent/conduct'
+      )
+    }
     res.status(201).json({ record: result.rows[0] })
   } catch (err) {
     log.error('POST / failed', { error: (err as Error).message })
@@ -88,7 +111,23 @@ router.post('/', writeLimiter, requireRole('admin', 'teacher'), async (req: Auth
 
 router.put('/:id', writeLimiter, requireRole('admin', 'teacher'), async (req: AuthRequest, res) => {
   try {
-    const { schoolId } = req.user!
+    const { schoolId, id: userId, role } = req.user!
+    const before = await query(
+      `SELECT cr.student_id, cr.parent_notified, cr.title, s.class_id, s.class_name
+       FROM conduct_records cr
+       JOIN students s ON s.id = cr.student_id
+       WHERE cr.id=$1 AND cr.school_id=$2`,
+      [req.params.id, schoolId]
+    )
+    if (!before.rows[0]) return res.status(404).json({ error: 'Not found' })
+
+    if (isTeacherRole(role)) {
+      const scope = await getTeacherScope(schoolId, userId)
+      if (!teacherCanAccessStudent(scope, before.rows[0])) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لتعديل هذا السجل' })
+      }
+    }
+
     const { category, title, description, severity, points, actionTaken, parentNotified } = req.body
     const result = await query(`
       UPDATE conduct_records SET
@@ -102,7 +141,16 @@ router.put('/:id', writeLimiter, requireRole('admin', 'teacher'), async (req: Au
        actionTaken?.slice(0, 1000), parentNotified, req.params.id, schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })
-    res.json({ record: result.rows[0] })
+    const record = result.rows[0]
+    if (parentNotified && !before.rows[0]?.parent_notified) {
+      await notifyParentOfStudent(
+        schoolId, record.student_id,
+        'إشعار سلوكي',
+        record.title || before.rows[0]?.title,
+        'conduct', '/parent/conduct'
+      )
+    }
+    res.json({ record })
   } catch (err) {
     log.error('PUT /:id failed', { id: req.params.id, error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
@@ -119,7 +167,7 @@ router.delete('/:id', requireRole('admin'), async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/student/:studentId', async (req: AuthRequest, res) => {
+router.get('/student/:studentId', requireRole(...TEACHING_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const [records, summary] = await Promise.all([

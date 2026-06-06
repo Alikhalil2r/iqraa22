@@ -6,6 +6,7 @@ import path from 'path'
 import dotenv from 'dotenv'
 import { initDB } from './db'
 import { globalLimiter } from './middleware/rateLimiter'
+import { assertJwtSecretStrength } from './utils/security'
 import authRouter from './routes/auth'
 import dashboardRouter from './routes/dashboard'
 import studentsRouter from './routes/students'
@@ -36,13 +37,24 @@ import twofaRouter    from './routes/twofa'
 import aiInsightsRouter from './routes/ai-insights'
 import billingRouter  from './routes/billing'
 import platformRouter from './routes/platform'
+import submissionsRouter from './routes/submissions'
+import contentRouter from './routes/content'
+import contentExtRouter from './routes/content-ext'
+import backupsRouter from './routes/backups'
+import { startBackupScheduler } from './services/backupScheduler'
 
 dotenv.config()
+
+if (process.env.NODE_ENV === 'production' && process.env.DEMO_MODE === 'true') {
+  console.error('FATAL: DEMO_MODE=true is not allowed in production')
+  process.exit(1)
+}
 
 if (!process.env.JWT_SECRET) {
   console.error('FATAL ERROR: JWT_SECRET environment variable is not set.')
   process.exit(1)
 }
+assertJwtSecretStrength()
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -93,7 +105,12 @@ const allowedOriginPatterns = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true)
+    const extra = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean)
+    if (!origin) {
+      if (process.env.NODE_ENV === 'production') return callback(new Error('CORS policy violation'))
+      return callback(null, true)
+    }
+    if (extra.includes(origin)) return callback(null, true)
     const allowed = allowedOriginPatterns.some(pattern => pattern.test(origin))
     if (allowed) return callback(null, true)
     callback(new Error('CORS policy violation'))
@@ -140,8 +157,12 @@ app.use('/api/buses', busesRouter)
 app.use('/api/messages', messagesRouter)
 app.use('/api/news', newsRouter)
 app.use('/api/settings', settingsRouter)
+app.use('/api/backups', backupsRouter)
 app.use('/api/parent', parentRouter)
 app.use('/api/public', publicRouter)
+app.use('/api/submissions', submissionsRouter)
+app.use('/api/content', contentRouter)
+app.use('/api/content', contentExtRouter)
 app.use('/api/events', eventsRouter)
 app.use('/api/reports', reportsRouter)
 app.use('/api/fees', feesRouter)
@@ -196,6 +217,7 @@ async function start() {
     await initDB()
     const { seedDatabase } = await import('./db/seed')
     await seedDatabase()
+    startBackupScheduler()
     app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`)
       console.log(`🔒 Helmet ✓ | Rate Limiting ✓ | CORS ✓ | JWT ✓`)

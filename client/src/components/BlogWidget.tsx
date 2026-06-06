@@ -93,7 +93,7 @@ export default function BlogWidget() {
         <Link to="/admin/blog" className="flex-1 py-2 text-center text-[11px] font-black rounded-xl bg-cyan-600 text-white hover:bg-cyan-700 transition-colors flex items-center justify-center gap-1">
           <PenLine size={11}/> مقالة جديدة
         </Link>
-        <a href="/blog" target="_blank" className="flex-1 py-2 text-center text-[11px] font-black rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
+        <a href="/platform/blog" target="_blank" className="flex-1 py-2 text-center text-[11px] font-black rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-1">
           <Globe size={11}/> عرض المدونة
         </a>
       </div>

@@ -6,7 +6,7 @@ import { createLogger } from '../utils/logger'
 const router = Router()
 const log = createLogger('BUSES')
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, requireRole('super_admin', 'admin', 'guard'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const result = await query(`
@@ -78,7 +78,7 @@ router.delete('/:id', authenticateToken, requireRole('admin'), async (req: AuthR
   }
 })
 
-router.get('/:id/students', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/:id/students', authenticateToken, requireRole('super_admin', 'admin', 'guard'), async (req: AuthRequest, res) => {
   try {
     const busCheck = await query('SELECT id FROM buses WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
     if (!busCheck.rows[0]) return res.status(404).json({ error: 'Not found' })

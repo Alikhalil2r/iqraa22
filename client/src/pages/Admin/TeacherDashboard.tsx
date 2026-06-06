@@ -2,14 +2,16 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
-import { studentsApi, gradesApi, attendanceApi, scheduleApi } from '../../api/client'
+import { studentsApi, teacherApi } from '../../api/client'
 import { Link } from 'react-router-dom'
 import {
   GraduationCap, ClipboardCheck, BarChart3, Calendar, BookOpen,
   TrendingUp, Award, AlertTriangle, CheckCircle, Clock, Users,
-  ChevronLeft, Star, Target, Activity, Zap, ArrowLeft
+  ChevronLeft, Star, Target, Activity, Zap, ArrowLeft, School
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, LineChart, Line } from 'recharts'
+import PageHeader from '../../components/dashboard/PageHeader'
+import DashboardStatCard from '../../components/dashboard/DashboardStatCard'
 
 const API = (path: string) =>
   fetch(`/api${path}`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }).then(r => r.json())
@@ -41,148 +43,97 @@ function RingGauge({ value, max = 100, color, label, sub }: { value: number; max
   )
 }
 
-function StatCard({ icon: Icon, label, value, sub, color, href }: any) {
-  const content = (
-    <div className="card flex items-start gap-3 !py-4 hover:shadow-md transition-all cursor-pointer group border-r-4"
-      style={{ borderRightColor: color }}>
-      <div className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: color + '18' }}>
-        <Icon size={20} style={{ color }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold text-gray-400 mb-0.5">{label}</p>
-        <p className="text-2xl font-black text-gray-800">{value}</p>
-        {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
-      </div>
-      {href && <ArrowLeft size={14} className="text-gray-300 group-hover:text-gray-500 mt-1 flex-shrink-0" />}
-    </div>
-  )
-  return href ? <Link to={href}>{content}</Link> : content
-}
-
 export default function TeacherDashboard() {
   const { user } = useAuth()
   const { lang } = useLanguage()
   const [activeClass, setActiveClass] = useState<string>('all')
 
+  const dashQ = useQuery({
+    queryKey: ['teacher-dashboard'],
+    queryFn: () => teacherApi.dashboard().then(r => r.data)
+  })
+  const classesQ = useQuery({
+    queryKey: ['teacher-my-classes'],
+    queryFn: () => teacherApi.myClasses().then(r => r.data)
+  })
+  const perfQ = useQuery({
+    queryKey: ['teacher-subject-perf'],
+    queryFn: () => teacherApi.subjectPerformance().then(r => r.data)
+  })
   const studentsQ = useQuery({
     queryKey: ['teacher-students'],
     queryFn: () => studentsApi.list({ status: 'active' }).then(r => r.data)
   })
-  const gradesQ = useQuery({
-    queryKey: ['teacher-grades'],
-    queryFn: () => gradesApi.list().then(r => r.data)
-  })
-  const scheduleQ = useQuery({
-    queryKey: ['teacher-schedule'],
-    queryFn: () => scheduleApi.list().then(r => r.data)
-  })
 
+  const dash = dashQ.data || {}
   const students: any[] = studentsQ.data?.students || []
-  const grades: any[] = gradesQ.data?.grades || []
-  const schedule: any[] = scheduleQ.data?.schedule || []
-
-  const classes = Array.from(new Set(students.map((s: any) => s.class_name).filter(Boolean)))
+  const todaySchedule: any[] = dash.todaySchedule || []
+  const classes = (classesQ.data?.classes || []).map((c: any) => c.class_name).filter(Boolean)
+  const gradesCount = dash.grades ?? dash.total ?? 0
 
   const filteredStudents = activeClass === 'all' ? students : students.filter(s => s.class_name === activeClass)
 
-  const gradeStats = React.useMemo(() => {
-    if (!grades.length) return { avg: 0, pass: 0, fail: 0, dist: [] }
-    const scores = grades.map((g: any) => parseFloat(g.score) || 0)
-    const avg = scores.reduce((a, b) => a + b, 0) / scores.length
-    const max = grades.map((g: any) => parseFloat(g.max_score) || 100)
-    const pcts = scores.map((s, i) => (s / (max[i] || 100)) * 100)
-    const pass = pcts.filter(p => p >= 50).length
-    const dist = [
-      { name: 'ممتاز', count: pcts.filter(p => p >= 90).length },
-      { name: 'جيد جداً', count: pcts.filter(p => p >= 75 && p < 90).length },
-      { name: 'جيد', count: pcts.filter(p => p >= 60 && p < 75).length },
-      { name: 'مقبول', count: pcts.filter(p => p >= 50 && p < 60).length },
-      { name: 'ضعيف', count: pcts.filter(p => p < 50).length },
-    ]
-    return { avg: Math.round(avg), pass, fail: grades.length - pass, dist }
-  }, [grades])
-
-  const todayDay = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'][new Date().getDay()] || 'الأحد'
-  const todaySchedule = schedule.filter((s: any) =>
-    !s.day_of_week || s.day_of_week === todayDay || s.day_of_week === new Date().getDay()
-  ).slice(0, 5)
+  const gradeStats = {
+    avg: dash.avgGrade ?? 0,
+    pass: dash.passed ?? 0,
+    fail: Math.max(0, (dash.total ?? 0) - (dash.passed ?? 0)),
+    dist: [] as { name: string; count: number }[],
+  }
 
   const subjectPerf = React.useMemo(() => {
-    const map: Record<string, number[]> = {}
-    grades.forEach((g: any) => {
-      const sub = g.subject_name || 'أخرى'
-      const pct = (parseFloat(g.score) / (parseFloat(g.max_score) || 100)) * 100
-      if (!map[sub]) map[sub] = []
-      map[sub].push(pct)
-    })
-    return Object.entries(map).map(([subject, pcts]) => ({
-      subject,
-      avg: Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length)
+    return (perfQ.data?.performance || []).map((p: any) => ({
+      subject: p.subject_name,
+      avg: Math.round(parseFloat(p.avg_pct) || 0),
     })).slice(0, 6)
-  }, [grades])
+  }, [perfQ.data])
 
   const topStudents = React.useMemo(() => {
-    const map: Record<string, { name: string; scores: number[] }> = {}
-    grades.forEach((g: any) => {
-      const id = g.student_id || g.id
-      const pct = (parseFloat(g.score) / (parseFloat(g.max_score) || 100)) * 100
-      if (!map[id]) map[id] = { name: g.student_name || '—', scores: [] }
-      map[id].scores.push(pct)
-    })
-    return Object.values(map)
-      .map(s => ({ ...s, avg: Math.round(s.scores.reduce((a, b) => a + b, 0) / s.scores.length) }))
-      .sort((a, b) => b.avg - a.avg)
+    return [...filteredStudents]
+      .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ar'))
       .slice(0, 5)
-  }, [grades])
+      .map(s => ({ name: s.name, avg: 0 as number | null }))
+  }, [filteredStudents])
 
+  const todayDay = dash.todayDay || new Date().toLocaleDateString(lang === 'en' ? 'en-US' : 'ar-SA', { weekday: 'long' })
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'صباح الخير' : hour < 17 ? 'مساء الخير' : 'مساء النور'
 
   return (
     <div className="space-y-6 animate-fadeUp">
 
-      {/* Welcome Banner */}
-      <div className="relative rounded-2xl overflow-hidden p-6 text-white shadow-lg" style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #0ea5e9 100%)' }}>
-        <div className="absolute inset-0 opacity-10">
-          {[...Array(8)].map((_, i) => (
-            <div key={`bubble-${i}`} className="absolute rounded-full bg-white"
-              style={{ width: 60 + i * 20, height: 60 + i * 20, right: -20 + i * 40, top: -20 + i * 15, opacity: 0.3 }} />
-          ))}
-        </div>
-        <div className="relative flex items-center justify-between flex-wrap gap-4">
-          <div>
-            <p className="text-blue-100 text-sm font-bold mb-1">👨‍🏫 {greeting}،</p>
-            <h1 className="text-2xl font-black">{user?.name}</h1>
-            <p className="text-blue-100 mt-1 text-sm">
-              {new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="bg-white/20 backdrop-blur rounded-xl p-3 text-center min-w-[70px]">
+      <PageHeader
+        variant="banner"
+        badge={`👨‍🏫 ${greeting}`}
+        title={user?.name || ''}
+        subtitle={new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        icon={School}
+        actions={
+          <div className="flex gap-2">
+            <div className="bg-white/15 backdrop-blur rounded-xl px-4 py-2.5 text-center min-w-[70px] border border-white/20">
               <p className="text-xl font-black">{students.length}</p>
-              <p className="text-[10px] text-blue-100">طالب</p>
+              <p className="text-[10px] text-white/70">طالب</p>
             </div>
-            <div className="bg-white/20 backdrop-blur rounded-xl p-3 text-center min-w-[70px]">
+            <div className="bg-white/15 backdrop-blur rounded-xl px-4 py-2.5 text-center min-w-[70px] border border-white/20">
               <p className="text-xl font-black">{classes.length}</p>
-              <p className="text-[10px] text-blue-100">فصل</p>
+              <p className="text-[10px] text-white/70">فصل</p>
             </div>
-            <div className="bg-white/20 backdrop-blur rounded-xl p-3 text-center min-w-[70px]">
+            <div className="bg-white/15 backdrop-blur rounded-xl px-4 py-2.5 text-center min-w-[70px] border border-white/20">
               <p className="text-xl font-black">{gradeStats.avg}%</p>
-              <p className="text-[10px] text-blue-100">متوسط</p>
+              <p className="text-[10px] text-white/70">متوسط</p>
             </div>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={GraduationCap} label="إجمالي الطلاب" value={students.length}
+        <DashboardStatCard icon={GraduationCap} label="إجمالي الطلاب" value={students.length}
           sub="طالب نشط" color="#3b82f6" href="/admin/students" />
-        <StatCard icon={ClipboardCheck} label="نتائج مدخلة" value={grades.length}
+        <DashboardStatCard icon={ClipboardCheck} label="نتائج مدخلة" value={gradesCount}
           sub="درجة محفوظة" color="#10b981" href="/admin/grades" />
-        <StatCard icon={Award} label="معدل النجاح" value={grades.length ? `${Math.round(gradeStats.pass / grades.length * 100)}%` : '—'}
+        <DashboardStatCard icon={Award} label="معدل النجاح" value={gradesCount ? `${Math.round(gradeStats.pass / gradesCount * 100)}%` : '—'}
           sub="من الطلاب ناجحون" color="#f59e0b" />
-        <StatCard icon={Users} label="الفصول" value={classes.length}
+        <DashboardStatCard icon={Users} label="الفصول" value={classes.length}
           sub="فصل دراسي" color="#8b5cf6" />
       </div>
 
@@ -198,7 +149,7 @@ export default function TeacherDashboard() {
               إدارة الدرجات <ArrowLeft size={12} />
             </Link>
           </div>
-          {grades.length > 0 ? (
+          {gradesCount > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={gradeStats.dist} barSize={36}>
                 <XAxis dataKey="name" tick={{ fontFamily: 'Cairo', fontSize: 11 }} />
@@ -232,7 +183,7 @@ export default function TeacherDashboard() {
               label="متوسط الدرجات" sub={`${gradeStats.avg}/100`}
             />
             <RingGauge
-              value={grades.length ? Math.round(gradeStats.pass / grades.length * 100) : 0}
+              value={gradesCount ? Math.round(gradeStats.pass / gradesCount * 100) : 0}
               color="#10b981" label="نسبة النجاح"
             />
           </div>
@@ -316,14 +267,13 @@ export default function TeacherDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-0.5">
                       <p className="text-xs font-black text-gray-800 truncate">{s.name}</p>
-                      <span className="text-xs font-black ml-2 flex-shrink-0"
-                        style={{ color: s.avg >= 90 ? '#10b981' : s.avg >= 75 ? '#3b82f6' : '#f59e0b' }}>
-                        {s.avg}%
+                      <span className="text-xs font-black ml-2 flex-shrink-0 text-gray-400">
+                        —
                       </span>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${s.avg}%`, background: s.avg >= 90 ? '#10b981' : s.avg >= 75 ? '#3b82f6' : '#f59e0b' }} />
+                        style={{ width: '0%', background: '#d1d5db' }} />
                     </div>
                   </div>
                 </div>

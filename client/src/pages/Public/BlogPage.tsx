@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Calendar, Eye, Tag, Search, ArrowLeft, BookOpen, Sparkles } from 'lucide-react'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+import { platformApi } from '../../api/platformApi'
 
 const CATEGORIES = ['الكل', 'تقنية', 'تصميم', 'تسويق', 'نصائح', 'ريادة أعمال', 'ذكاء اصطناعي']
 
@@ -16,12 +16,12 @@ export default function BlogPage() {
   const [search, setSearch]   = useState('')
   const [page, setPage]       = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['blog-public', category, page],
     queryFn: async () => {
       const cat = category === 'الكل' ? '' : category
-      const res = await fetch(`${API}/api/platform/blog?page=${page}&limit=6${cat ? `&category=${encodeURIComponent(cat)}` : ''}`)
-      return res.json()
+      const res = await platformApi.blog({ page, limit: 6, category: cat || undefined })
+      return res.data
     }
   })
 
@@ -34,12 +34,12 @@ export default function BlogPage() {
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-gray-950/90 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 font-black text-xl">
+          <Link to="/platform" className="flex items-center gap-2.5 font-black text-xl">
             <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-xs font-black">&lt;/&gt;</span>
             <span>اكسبو التقنية</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/" className="text-sm text-gray-400 hover:text-white transition-colors">الرئيسية</Link>
+            <Link to="/platform" className="text-sm text-gray-400 hover:text-white transition-colors">الرئيسية</Link>
             <Link to="/request" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-bold transition-colors">ابدأ مشروعك</Link>
           </div>
         </div>
@@ -107,7 +107,7 @@ export default function BlogPage() {
             {posts.map((post: any, i: number) => (
               <Link
                 key={post.id}
-                to={`/blog/${post.slug}`}
+                to={`/platform/blog/${post.slug}`}
                 className="group block rounded-2xl overflow-hidden bg-white/5 border border-white/8 hover:border-violet-500/40 hover:bg-white/8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-900/20"
               >
                 {/* Image */}

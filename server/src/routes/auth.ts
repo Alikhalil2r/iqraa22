@@ -1,10 +1,11 @@
 import { Router } from 'express'
 import bcrypt from 'bcryptjs'
+import speakeasy from 'speakeasy'
 import { body } from 'express-validator'
 import { query } from '../db'
 import { generateToken, authenticateToken, AuthRequest } from '../middleware/auth'
 import { validate, validatePasswordStrength } from '../middleware/validate'
-import { authLimiter } from '../middleware/rateLimiter'
+import { authLimiter, passwordChangeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('AUTH')
@@ -20,10 +21,13 @@ router.post('/login',
   ]),
   async (req, res) => {
     try {
-      const { username, password, role } = req.body
+      const { username, password, role, totpCode } = req.body
 
       const result = await query(
-        `SELECT u.*, s.name as school_name FROM users u
+        `SELECT u.id, u.school_id, u.username, u.name, u.role, u.password_hash,
+                u.is_active, u.totp_enabled, u.totp_secret, u.avatar,
+                s.name AS school_name, s.status AS school_status
+         FROM users u
          JOIN schools s ON s.id = u.school_id
          WHERE u.username = $1 AND u.is_active = true`,
         [username.trim().toLowerCase()]
@@ -46,6 +50,24 @@ router.post('/login',
       }
       if (role === 'admin' && !ADMIN_ROLES.includes(user.role)) {
         return res.status(401).json({ error: 'بيانات الدخول غير صحيحة' })
+      }
+      if (user.school_status === 'suspended' && user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'المدرسة موقوفة مؤقتاً' })
+      }
+
+      if (user.totp_enabled) {
+        if (!totpCode) {
+          return res.status(401).json({ error: 'رمز المصادقة الثنائية مطلوب', requires2FA: true })
+        }
+        const totpValid = speakeasy.totp.verify({
+          secret: user.totp_secret,
+          encoding: 'base32',
+          token: String(totpCode).replace(/\s/g, ''),
+          window: 1,
+        })
+        if (!totpValid) {
+          return res.status(401).json({ error: 'رمز المصادقة الثنائية غير صحيح' })
+        }
       }
 
       await query('UPDATE users SET last_login = NOW() WHERE id = $1', [user.id])
@@ -98,6 +120,7 @@ router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
 // ─── Change password ──────────────────────────────────────────────────────────
 router.put('/password',
   authenticateToken,
+  passwordChangeLimiter,
   validate([
     body('oldPassword').isLength({ min: 1 }).withMessage('كلمة المرور القديمة مطلوبة'),
     body('newPassword').isLength({ min: 8, max: 128 }).withMessage('كلمة المرور الجديدة قصيرة جداً'),

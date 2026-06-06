@@ -1,9 +1,10 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
 import {
   Bell, MessageSquare, Calendar, BookOpen, CalendarCheck,
-  DollarSign, CheckCheck, Megaphone, Info, Trash2, Clock
+  DollarSign, CheckCheck, Megaphone, Info, Trash2, Clock, ClipboardList, Shield
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -13,6 +14,8 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bg: string; label:
   grade:        { icon: BookOpen,      color: '#10b981', bg: '#f0fdf4', label: 'نتائج' },
   attendance:   { icon: CalendarCheck, color: '#f59e0b', bg: '#fffbeb', label: 'حضور' },
   fee:          { icon: DollarSign,    color: '#ef4444', bg: '#fef2f2', label: 'رسوم' },
+  homework:     { icon: ClipboardList, color: '#6366f1', bg: '#eef2ff', label: 'واجب' },
+  conduct:      { icon: Shield,        color: '#14b8a6', bg: '#f0fdfa', label: 'سلوك' },
   event:        { icon: Calendar,      color: '#0ea5e9', bg: '#f0f9ff', label: 'فعالية' },
   announcement: { icon: Megaphone,     color: '#8b5cf6', bg: '#f5f3ff', label: 'إعلان' },
 }
@@ -48,6 +51,7 @@ function groupByDate(notifications: any[]) {
 
 export default function ParentNotifications() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   const { data, isLoading } = useQuery({
     queryKey: ['parent-notifications'],
@@ -133,7 +137,10 @@ export default function ParentNotifications() {
                   return (
                     <div
                       key={n.id}
-                      onClick={() => !n.is_read && readMut.mutate(n.id)}
+                      onClick={() => {
+                        if (!n.is_read) readMut.mutate(n.id)
+                        if (n.link) navigate(n.link)
+                      }}
                       className={`flex items-start gap-4 p-4 rounded-2xl border transition-all cursor-pointer group ${
                         !n.is_read
                           ? 'border-blue-100 bg-blue-50/50 hover:bg-blue-50'

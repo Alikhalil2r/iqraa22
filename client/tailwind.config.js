@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        arabic: ['Cairo', 'Tajawal', 'sans-serif'],
+        sans: ['Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', 'sans-serif'],
+        arabic: ['Cairo', 'Tajawal', 'Segoe UI', 'Tahoma', 'sans-serif'],
       },
       colors: {
         primary: 'var(--color-primary)',

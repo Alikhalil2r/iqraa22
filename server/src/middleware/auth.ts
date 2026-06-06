@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
+import { query } from '../db'
 dotenv.config()
 
 const ACCESS_TOKEN_EXPIRY = '2h'
@@ -19,6 +20,13 @@ export const ROLE_PERMISSIONS: Record<AppRole, string[]> = {
 }
 
 export const ADMIN_ROLES: AppRole[] = ['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']
+export const STAFF_ROLES: AppRole[] = ADMIN_ROLES
+export const STUDENTS_VIEW_ROLES: AppRole[] = STAFF_ROLES
+export const FINANCE_ROLES: AppRole[] = ['super_admin','admin','accountant']
+export const HR_ROLES: AppRole[] = ['super_admin','admin','hr_manager']
+export const TEACHING_ROLES: AppRole[] = ['super_admin','admin','teacher']
+export const SETTINGS_ROLES: AppRole[] = ['super_admin','admin']
+export const MANAGED_USER_ROLES = ['admin','teacher','parent','accountant','librarian','hr_manager','guard'] as const
 
 function getSecret(): string {
   const secret = process.env.JWT_SECRET
@@ -37,14 +45,41 @@ export interface AuthRequest extends Request {
   }
 }
 
-export function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authenticateToken(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
   if (!token) return res.status(401).json({ error: 'لم يتم تقديم رمز المصادقة' })
   try {
-    const decoded = jwt.verify(token, getSecret()) as any
+    const decoded = jwt.verify(token, getSecret()) as {
+      id: string; schoolId: string; role: AppRole; username: string; name: string; tokenType: string
+    }
     if (decoded.tokenType !== 'access') return res.status(401).json({ error: 'نوع الرمز غير صالح' })
-    req.user = decoded
+
+    const result = await query(
+      `SELECT u.id, u.school_id, u.role, u.username, u.name, u.is_active, s.status AS school_status
+       FROM users u JOIN schools s ON s.id = u.school_id
+       WHERE u.id = $1`,
+      [decoded.id]
+    )
+    const user = result.rows[0]
+    if (!user || !user.is_active) {
+      return res.status(401).json({ error: 'الحساب غير نشط أو غير موجود' })
+    }
+    if (user.role !== decoded.role) {
+      return res.status(401).json({ error: 'انتهت صلاحية الجلسة — سجّل الدخول مجدداً', expired: true })
+    }
+    if (user.school_status === 'suspended' && user.role !== 'super_admin') {
+      return res.status(403).json({ error: 'المدرسة موقوفة مؤقتاً' })
+    }
+
+    req.user = {
+      id: user.id,
+      schoolId: user.school_id,
+      role: user.role as AppRole,
+      username: user.username,
+      name: user.name,
+      tokenType: 'access',
+    }
     next()
   } catch (err: any) {
     if (err.name === 'TokenExpiredError') return res.status(401).json({ error: 'انتهت صلاحية رمز المصادقة', expired: true })

@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { publicApi } from '../../api/client'
 import { GraduationCap, Briefcase, MapPin, Star, Send, User, Phone, Mail, ChevronDown, CheckCircle } from 'lucide-react'
+import { DEMO_ALUMNI, withDemoFallback } from '../../data/demoPublicFallback'
 import toast from 'react-hot-toast'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-indigo-800 to-indigo-900' }: any) {
@@ -12,27 +15,46 @@ function PageBanner({ title, subtitle, icon, gradient = 'from-indigo-800 to-indi
   )
 }
 
-const ALUMNI = [
-  { id: 1, name: 'الدكتورة سارة المسكري', year: '2012', job: 'طبيبة متخصصة في قلب الأطفال', city: 'مسقط', image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=300&q=80', story: 'تخرجت من كلية الطب بجامعة السلطان قابوس وحازت على منحة دكتوراه في بريطانيا', achievement: 'جائزة الطبيب المتميز 2023' },
-  { id: 2, name: 'المهندس سعود الرحبي', year: '2010', job: 'مدير مشاريع في شركة أرامكو', city: 'الرياض', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&q=80', story: 'أسس شركة استشارات هندسية متخصصة في الطاقة المتجددة', achievement: 'مبتكر العام 2022' },
-  { id: 3, name: 'الأستاذة منال الهاشمي', year: '2015', job: 'مديرة مدرسة وكاتبة', city: 'صلالة', image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&q=80', story: 'نشرت 3 كتب في تطوير التعليم وأسست مبادرة القراءة للجميع', achievement: 'جائزة التربوي المميز' },
-  { id: 4, name: 'الرياضي تركي العمري', year: '2018', job: 'لاعب كرة قدم دولي', city: 'مسقط', image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&q=80', story: 'يمثل المنتخب الوطني العُماني في كأس الخليج وعدة بطولات دولية', achievement: 'أفضل لاعب خليجي شاب 2024' },
-  { id: 5, name: 'المبتكرة ليلى الصالحي', year: '2014', job: 'مؤسسة شركة تقنية ناشئة', city: 'دبي', image: 'https://images.unsplash.com/photo-1580894732444-8ecded7900cd?w=300&q=80', story: 'حصلت شركتها على تمويل بـ 2 مليون دولار لتطوير تطبيقات التعليم الذكي', achievement: 'رائدة أعمال الخليج 2023' },
-  { id: 6, name: 'الفنان عبدالله الهنائي', year: '2016', job: 'مصمم جرافيكي دولي', city: 'لندن', image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=300&q=80', story: 'يعمل مع كبرى شركات الإعلام العالمية وعارض أعماله في 12 دولة', achievement: 'جائزة أفضل مصمم عربي 2023' },
-]
-
 export default function AlumniPage() {
+  const { data: alumniData } = useQuery({ queryKey: ['public-alumni'], queryFn: () => publicApi.alumni().then(r => r.data) })
+
+  const alumniList = useMemo(() => {
+    const fromApi = withDemoFallback(alumniData?.alumni, DEMO_ALUMNI).map((a: any) => ({
+      id: a.id,
+      name: a.name,
+      year: String(a.graduation_year),
+      job: a.job_title,
+      city: a.city,
+      image: a.image_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(a.name)}&size=300&background=3730a3&color=fff`,
+      story: a.story,
+      achievement: a.achievement,
+    }))
+    return fromApi
+  }, [alumniData])
+
   const [filter, setFilter] = useState('all')
   const [showForm, setShowForm] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [form, setForm] = useState({ name: '', year: '', job: '', city: '', email: '', phone: '', story: '', achievement: '' })
-  const years = useMemo(() => ['all', ...new Set(ALUMNI.map(a => a.year)).values()].sort().reverse(), [])
-  const filtered = filter === 'all' ? ALUMNI : ALUMNI.filter(a => a.year === filter)
+  const years = useMemo<string[]>(() => {
+    const ys = alumniList.map(a => String(a.year)).filter((y): y is string => Boolean(y))
+    return ['all', ...Array.from(new Set<string>(ys)).sort().reverse()]
+  }, [alumniList])
+  const filtered = filter === 'all' ? alumniList : alumniList.filter(a => a.year === filter)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast.success('شكراً! سيتم مراجعة بياناتك وإضافتها قريباً.')
-    setForm({ name: '', year: '', job: '', city: '', email: '', phone: '', story: '', achievement: '' })
-    setShowForm(false)
+    setLoading(true)
+    try {
+      await publicApi.registerAlumni(form)
+      toast.success('شكراً! سيتم مراجعة بياناتك وإضافتها قريباً.')
+      setForm({ name: '', year: '', job: '', city: '', email: '', phone: '', story: '', achievement: '' })
+      setShowForm(false)
+    } catch (err: any) {
+      toast.error(err.response?.data?.error || 'فشل إرسال البيانات. حاول مجدداً.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -65,7 +87,7 @@ export default function AlumniPage() {
               <div><label className="text-xs font-bold text-gray-600 mb-1 block">قصة نجاحك *</label><textarea value={form.story} onChange={e => setForm({ ...form, story: e.target.value })} required rows={4} placeholder="شارك قصة مسيرتك المهنية والمحطات المهمة في حياتك..." className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:border-indigo-400 outline-none resize-none" /></div>
               <div><label className="text-xs font-bold text-gray-600 mb-1 block">أبرز إنجازاتك</label><input value={form.achievement} onChange={e => setForm({ ...form, achievement: e.target.value })} placeholder="جوائز، شهادات، مشاريع بارزة..." className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:border-indigo-400 outline-none" /></div>
               <div className="flex gap-3 pt-2">
-                <button type="submit" className="flex-1 bg-indigo-700 text-white py-3.5 rounded-2xl font-bold hover:bg-indigo-800 transition flex items-center justify-center gap-2"><Send size={16} /> إرسال بياناتي</button>
+                <button type="submit" disabled={loading} className="flex-1 bg-indigo-700 disabled:opacity-60 text-white py-3.5 rounded-2xl font-bold hover:bg-indigo-800 transition flex items-center justify-center gap-2"><Send size={16} /> {loading ? 'جاري الإرسال...' : 'إرسال بياناتي'}</button>
                 <button type="button" onClick={() => setShowForm(false)} className="px-6 py-3.5 rounded-2xl font-bold text-sm border-2 border-gray-200 text-gray-500 hover:bg-gray-50">إلغاء</button>
               </div>
             </form>

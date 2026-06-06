@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
+import { useParentChild } from '../../context/ParentChildContext'
 import { BookOpen, Award, TrendingUp, AlertTriangle, Printer } from 'lucide-react'
 import { useTheme } from '../../context/ThemeContext'
 
@@ -16,15 +17,16 @@ export default function ParentGrades() {
   const [term, setTerm] = useState('')
   const [year, setYear] = useState('2024-2025')
   const { theme } = useTheme()
+  const { childParams, selectedChildId } = useParentChild()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['parent-grades', term, year],
-    queryFn: () => parentApi.grades({ term, academicYear: year }).then(r => r.data)
+    queryKey: ['parent-grades', selectedChildId, term, year],
+    queryFn: () => parentApi.grades({ ...childParams, term, academicYear: year }).then(r => r.data)
   })
 
   const { data: dashData } = useQuery({
-    queryKey: ['parent-dash'],
-    queryFn: () => parentApi.dashboard().then(r => r.data)
+    queryKey: ['parent-dash', selectedChildId],
+    queryFn: () => parentApi.dashboard(childParams).then(r => r.data)
   })
 
   const grades = data?.grades || []

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Shield, Eye, EyeOff, GraduationCap, Users, BarChart3, BookOpen, Lock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
-import DevSignature from '../../components/DevSignature'
+import DemoCredentialsBox from '../../components/DemoCredentialsBox'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -53,7 +53,7 @@ export default function LoginPage() {
             <BookOpen size={48} className="text-white" />
           </div>
           <h1 className="text-4xl font-black mb-3">
-            {lang === 'ar' ? 'نظام إدارة المدرسة' : 'School Management System'}
+            {lang === 'ar' ? 'مدرسة النور العالمية — مسقط' : 'Al-Noor International School — Muscat'}
           </h1>
           <p className="text-lg text-white/80 leading-relaxed mb-10">
             {lang === 'ar'
@@ -153,23 +153,20 @@ export default function LoginPage() {
               </button>
             </form>
 
-            {/* Footer */}
-            <div className="mt-6 flex items-center justify-center">
-              <Link to="/parent-login" className="text-sm font-bold hover:underline transition-colors" style={{ color: 'var(--color-primary)' }}>
+            <div className="mt-4 flex items-center justify-center">
+              <Link to="/parent/login" className="text-sm font-bold hover:underline transition-colors" style={{ color: 'var(--color-primary)' }}>
                 {t('auth.parentPortal')} ←
               </Link>
             </div>
+
+            <DemoCredentialsBox lang={lang} variant="staff" className="mt-6" />
           </div>
 
           {/* Back to site */}
           <div className="mt-4 text-center">
-            <Link to="/" className="text-white/70 text-sm hover:text-white transition-colors">
-              ← {t('auth.backToSite')}
+            <Link to="/school" className="text-white/70 text-sm hover:text-white transition-colors">
+              ← {lang === 'ar' ? 'العودة لموقع المدرسة' : 'Back to school site'}
             </Link>
-          </div>
-
-          <div className="mt-6">
-            <DevSignature variant="dark" />
           </div>
         </div>
       </div>

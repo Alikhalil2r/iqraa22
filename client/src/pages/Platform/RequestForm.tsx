@@ -1,15 +1,17 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { platformApi, apiErrorMessage } from '../../api/platformApi'
+import ServiceQualityStrip from '../../components/ServiceQualityStrip'
 import {
   CheckCircle, ArrowRight, Globe, Smartphone, Palette,
-  TrendingUp, Brain, Cloud, Upload, Calendar, DollarSign,
-  FileText, User, Phone, Mail, Building2, Rocket, Code2, Search
+  TrendingUp, Brain, Cloud, Calendar, DollarSign,
+  FileText, User, Phone, Mail, Building2, Rocket, Code2, Search, GraduationCap
 } from 'lucide-react'
 
-const API = (p: string) => fetch(`/api${p}`).then(r => r.json())
-
 const SERVICE_TYPES = [
+  { id:'school',  label:'نظام إدارة مدارس',     Icon:GraduationCap, color:'#059669' },
   { id:'web',     label:'تطوير موقع إلكتروني', Icon:Globe,       color:'#7c3aed' },
   { id:'mobile',  label:'تطبيق جوال',           Icon:Smartphone,  color:'#2563eb' },
   { id:'design',  label:'تصميم UI/UX',          Icon:Palette,     color:'#059669' },
@@ -19,10 +21,11 @@ const SERVICE_TYPES = [
   { id:'other',   label:'أخرى / متعددة',        Icon:Rocket,      color:'#6b7280' },
 ]
 const BUDGETS = [
-  { id:'lt500',    label:'أقل من 500 ريال' },
-  { id:'500_2000', label:'500 - 2,000 ريال' },
-  { id:'2000_5000',label:'2,000 - 5,000 ريال' },
-  { id:'5000_plus',label:'أكثر من 5,000 ريال' },
+  { id:'school_offer', label:'عرض المدارس — 250 ر.ع لعامين' },
+  { id:'lt500',    label:'أقل من 500 ر.ع' },
+  { id:'500_2000', label:'500 - 2,000 ر.ع' },
+  { id:'2000_5000',label:'2,000 - 5,000 ر.ع' },
+  { id:'5000_plus',label:'أكثر من 5,000 ر.ع' },
   { id:'tbd',      label:'لم أحدد بعد' },
 ]
 
@@ -40,13 +43,29 @@ interface FormState {
 }
 
 export default function RequestForm() {
+  const [searchParams] = useSearchParams()
+  const schoolIntent = searchParams.get('intent') === 'school-offer'
+
   const [step, setStep] = useState<Step>(1)
   const [form, setForm] = useState<FormState>({ service_type:'', title:'', description:'', budget:'', expected_date:'', client_name:'', client_email:'', client_phone:'', client_company:'' })
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ ticket: string } | null>(null)
   const [error, setError]   = useState('')
 
-  const { data: cfg = {} as Record<string,string> } = useQuery({ queryKey:['plat-settings'], queryFn:() => API('/platform/settings'), staleTime:600_000 })
+  useEffect(() => {
+    if (!schoolIntent) return
+    setForm(f => ({
+      ...f,
+      service_type: 'school',
+      title: 'اشتراك عرض نظام إدارة المدارس — 250 ر.ع لعامين',
+      description: 'أرغب بالاشتراك في عرض المدارس: نظام إدارة متكامل + استضافة + دومين .com + 5 جيجا + دعم فني مستمر + خصم 50% على التجديد لعامين.',
+      budget: 'school_offer',
+    }))
+    setStep(2)
+  }, [schoolIntent])
+
+  const { data: cfgRes } = useQuery({ queryKey:['plat-settings'], queryFn:() => platformApi.settings(), staleTime:600_000 })
+  const cfg = (cfgRes?.data || {}) as Record<string, string>
 
   const set = (k: keyof FormState, v: string) => setForm(f => ({ ...f, [k]:v }))
 
@@ -63,6 +82,7 @@ export default function RequestForm() {
     setError('')
     try {
       const budgetMap: Record<string,{min:number,max:number}> = {
+        school_offer: { min:250, max:250 },
         lt500:    { min:0,    max:500 },
         '500_2000':{ min:500,  max:2000 },
         '2000_5000':{ min:2000, max:5000 },
@@ -70,27 +90,24 @@ export default function RequestForm() {
         tbd:      { min:0,    max:0 },
       }
       const bud = budgetMap[form.budget] || { min:0, max:0 }
-      const resp = await fetch('/api/platform/request', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json' },
-        body: JSON.stringify({
-          client_name:    form.client_name,
-          client_email:   form.client_email,
-          client_phone:   form.client_phone,
-          client_company: form.client_company,
-          service_type:   form.service_type,
-          title:          form.title,
-          description:    form.description,
-          budget_min:     bud.min || null,
-          budget_max:     bud.max || null,
-          expected_date:  form.expected_date || null,
-        })
+      const { data } = await platformApi.submitRequest({
+        client_name:    form.client_name,
+        client_email:   form.client_email,
+        client_phone:   form.client_phone,
+        client_company: form.client_company,
+        service_type:   form.service_type,
+        title:          form.title,
+        description:    form.description,
+        budget_min:     bud.min || null,
+        budget_max:     bud.max || null,
+        expected_date:  form.expected_date || null,
       })
-      const data = await resp.json()
-      if (!resp.ok) throw new Error(data.error || 'فشل الإرسال')
       setResult({ ticket: data.ticket })
-    } catch (e: any) {
-      setError(e.message)
+      toast.success('تم استلام طلبك — سنتواصل خلال 24 ساعة عمل')
+    } catch (e: unknown) {
+      const msg = apiErrorMessage(e, 'فشل الإرسال')
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -99,7 +116,7 @@ export default function RequestForm() {
   const companyName = cfg.company_name_ar || 'اكسبو التقنية'
 
   if (result) {
-    const trackUrl = `/track/${result.ticket}?email=${encodeURIComponent(form.client_email)}`
+    const trackUrl = `/platform/track/${result.ticket}?email=${encodeURIComponent(form.client_email)}`
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)' }} dir="rtl">
         <div className="bg-white rounded-3xl p-10 max-w-lg w-full text-center shadow-2xl">
@@ -128,7 +145,7 @@ export default function RequestForm() {
               style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
               <Search size={18}/> تتبع طلبي الآن
             </Link>
-            <Link to="/"
+            <Link to="/platform"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all text-sm">
               العودة للرئيسية
             </Link>
@@ -143,7 +160,7 @@ export default function RequestForm() {
       {/* Header */}
       <div className="max-w-3xl mx-auto px-4 pt-8 pb-6">
         <div className="flex items-center gap-3 mb-8">
-          <Link to="/" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm font-bold">
+          <Link to="/platform" className="flex items-center gap-2 text-gray-300 hover:text-white transition-colors text-sm font-bold">
             <ArrowRight size={16}/> العودة
           </Link>
         </div>
@@ -177,7 +194,9 @@ export default function RequestForm() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 pb-16">
+      <div className="max-w-3xl mx-auto px-4 pb-16 space-y-6">
+        <ServiceQualityStrip variant="platform" className="!bg-white/10 !border-white/15 [&_.service-quality-icon]:!bg-white/10 [&_.service-quality-icon]:!border-white/20 [&_.service-quality-icon]:!text-emerald-300 [&_.service-quality-label]:!text-white [&_.service-quality-sub]:!text-white/50" />
+
         <div className="bg-white rounded-3xl p-6 md:p-8 shadow-2xl">
           {/* STEP 1 — Service type */}
           {step === 1 && (

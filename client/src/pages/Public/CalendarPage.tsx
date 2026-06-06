@@ -1,5 +1,8 @@
 import React, { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { publicApi } from '../../api/client'
 import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Flag, Tag } from 'lucide-react'
+import { DEMO_EVENTS, withDemoFallback } from '../../data/demoPublicFallback'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-cyan-800 to-cyan-900' }: any) {
   return (
@@ -10,19 +13,6 @@ function PageBanner({ title, subtitle, icon, gradient = 'from-cyan-800 to-cyan-9
     </div>
   )
 }
-
-const CALENDAR_EVENTS = [
-  { id: 1, title: 'انطلاق الفصل الدراسي الثاني', date: '2025-01-12', type: 'أكاديمي', description: 'بداية رسمية للفصل الدراسي الثاني للعام 2024/2025', location: 'المدرسة', color: 'bg-emerald-500' },
-  { id: 2, title: 'اختبارات منتصف الفصل الثاني', date: '2025-02-09', type: 'اختبارات', description: 'اختبارات الفصل الثاني لجميع الصفوف', location: 'قاعات الاختبار', color: 'bg-red-500' },
-  { id: 3, title: 'اليوم الوطني لعُمان', date: '2025-11-18', type: 'إجازة', description: 'إجازة اليوم الوطني العُماني', location: '', color: 'bg-amber-500' },
-  { id: 4, title: 'المعرض العلمي السنوي', date: '2025-02-25', type: 'فعالية', description: 'المعرض السنوي لمشاريع الطلاب العلمية', location: 'ساحة المدرسة', color: 'bg-sky-500' },
-  { id: 5, title: 'أسبوع القراءة العُماني', date: '2025-03-01', type: 'فعالية', description: 'فعاليات ومسابقات بمناسبة أسبوع القراءة', location: 'المكتبة المدرسية', color: 'bg-purple-500' },
-  { id: 6, title: 'اختبارات نهاية الفصل الثاني', date: '2025-04-15', type: 'اختبارات', description: 'الاختبارات النهائية للفصل الدراسي الثاني', location: 'قاعات الاختبار', color: 'bg-red-500' },
-  { id: 7, title: 'حفل تكريم المتفوقين', date: '2025-04-30', type: 'حفل', description: 'تكريم الطلاب المتفوقين أكاديمياً', location: 'قاعة الاحتفالات', color: 'bg-yellow-500' },
-  { id: 8, title: 'اليوم المفتوح للأولياء', date: '2025-03-20', type: 'فعالية', description: 'لقاء أولياء الأمور مع المعلمين', location: 'قاعات الدراسة', color: 'bg-teal-500' },
-  { id: 9, title: 'رحلة اليوم الوطني', date: '2025-11-16', type: 'رحلة', description: 'رحلة مدرسية ترفيهية وتثقيفية', location: 'مسقط', color: 'bg-orange-500' },
-  { id: 10, title: 'بداية الإجازة الصيفية', date: '2025-06-05', type: 'إجازة', description: 'انطلاق الإجازة الصيفية الكبرى', location: '', color: 'bg-amber-500' },
-]
 
 const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   أكاديمي:  { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
@@ -51,22 +41,44 @@ function CountdownTimer({ targetDate }: { targetDate: string }) {
   )
 }
 
+const TYPE_BG: Record<string, string> = {
+  أكاديمي: 'bg-emerald-500', اختبارات: 'bg-red-500', إجازة: 'bg-amber-500', فعالية: 'bg-sky-500',
+  حفل: 'bg-yellow-500', رحلة: 'bg-orange-500', 'نشاط مدرسي': 'bg-purple-500', 'إداري': 'bg-teal-500',
+}
+
 export default function CalendarPage() {
+  const { data: eventsData } = useQuery({ queryKey: ['public-events'], queryFn: () => publicApi.events().then(r => r.data) })
   const [filter, setFilter] = useState('all')
   const [viewMonth, setViewMonth] = useState(new Date().getMonth())
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
 
-  const today = new Date().toISOString().split('T')[0]
-  const types = useMemo(() => ['all', ...new Set(CALENDAR_EVENTS.map(e => e.type))], [])
+  const calendarEvents = useMemo(() => withDemoFallback(eventsData?.events, DEMO_EVENTS).map((e: any) => {
+    const type = e.event_type || 'فعالية'
+    return {
+      id: e.id,
+      title: e.title,
+      date: (e.start_date || '').split('T')[0],
+      type,
+      description: e.description || '',
+      location: e.location || '',
+      color: TYPE_BG[type] || 'bg-sky-500',
+    }
+  }), [eventsData])
 
-  const filtered = CALENDAR_EVENTS
+  const today = new Date().toISOString().split('T')[0]
+  const types = useMemo<string[]>(() => {
+    const ts = calendarEvents.map(e => String(e.type)).filter((t): t is string => Boolean(t))
+    return ['all', ...Array.from(new Set<string>(ts))]
+  }, [calendarEvents])
+
+  const filtered = calendarEvents
     .filter(e => filter === 'all' || e.type === filter)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
 
   const upcoming = filtered.filter(e => e.date >= today)
   const past = filtered.filter(e => e.date < today)
 
-  const monthEvents = CALENDAR_EVENTS.filter(e => {
+  const monthEvents = calendarEvents.filter(e => {
     const d = new Date(e.date)
     return d.getMonth() === viewMonth && d.getFullYear() === viewYear
   })

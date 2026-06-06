@@ -4,11 +4,12 @@ import { settingsApi } from '../../api/client'
 import { FormField, Input, Textarea } from '../../components/FormField'
 import {
   Settings, Save, School, Phone, Globe, BookOpen,
-  User, Image, Link, Award, FileText, CheckCircle
+  User, Image, Link, Award, FileText, CheckCircle, Database
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BackupPanel from './BackupPanel'
 
-type Tab = 'basic' | 'contact' | 'about' | 'principal' | 'social' | 'links'
+type Tab = 'basic' | 'contact' | 'about' | 'principal' | 'social' | 'links' | 'backup'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'basic',     label: 'المعلومات الأساسية', icon: <School size={15} /> },
@@ -17,6 +18,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'principal', label: 'كلمة المدير',          icon: <User size={15} /> },
   { id: 'social',    label: 'وسائل التواصل',        icon: <Globe size={15} /> },
   { id: 'links',     label: 'الروابط والصور',       icon: <Image size={15} /> },
+  { id: 'backup',    label: 'النسخ الاحتياطي',       icon: <Database size={15} /> },
 ]
 
 const emptyForm = {
@@ -77,7 +79,7 @@ export default function SchoolSettings() {
         phone: s.phone || '', phone2: st.phone2 || '', email: s.email || '', email2: st.email2 || '',
         website: s.website || '', fax: st.fax || '',
         aboutText: st.about_text || '', vision: st.vision || '', mission: st.mission || '',
-        values: st.values || '', objectives: st.objectives || '',
+        values: st.values_text || st.values || '', objectives: st.objectives || '',
         principalName: st.principal_name || '', principalTitle: st.principal_title || '',
         principalEmail: st.principal_email || '', principalPhone: st.principal_phone || '',
         principalMessage: st.principal_message || '', principalImage: st.principal_image || '',
@@ -332,6 +334,12 @@ export default function SchoolSettings() {
                   <Input value={form.bannerColor} onChange={f('bannerColor')} placeholder="#064e3b" />
                 </div>
               </FormField>
+            </div>
+          )}
+
+          {tab === 'backup' && (
+            <div className="card">
+              <BackupPanel />
             </div>
           )}
 

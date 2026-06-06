@@ -18,8 +18,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   })
 
   useEffect(() => {
-    document.documentElement.dir  = lang === 'ar' ? 'rtl' : 'ltr'
+    const rtl = lang === 'ar'
+    document.documentElement.dir  = rtl ? 'rtl' : 'ltr'
     document.documentElement.lang = lang
+    document.body.classList.remove('lang-ar', 'lang-en', 'dir-rtl', 'dir-ltr')
+    document.body.classList.add(rtl ? 'lang-ar' : 'lang-en', rtl ? 'dir-rtl' : 'dir-ltr')
     localStorage.setItem('lang', lang)
   }, [lang])
 

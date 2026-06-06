@@ -1,11 +1,11 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
 import { testEmailConfig } from '../services/email'
 import crypto from 'crypto'
 
 const router = Router()
-router.use(authenticateToken)
+router.use(authenticateToken, requireRole('super_admin'))
 
 router.get('/stats', async (_req: AuthRequest, res) => {
   try {
@@ -85,7 +85,7 @@ router.post('/schools', async (req: AuthRequest, res) => {
 
     const rawPass = crypto.randomBytes(5).toString('hex')
     const bcrypt = await import('bcryptjs')
-    const hashed = await bcrypt.default.hash(rawPass, 10)
+    const hashed = await bcrypt.default.hash(rawPass, 12)
     const adminUsername = name.replace(/\s+/g, '').toLowerCase().slice(0, 12) + '_admin'
 
     await query(`
@@ -95,7 +95,9 @@ router.post('/schools', async (req: AuthRequest, res) => {
 
     res.status(201).json({
       school,
-      credentials: { username: adminUsername, password: rawPass },
+      adminUsername,
+      adminPassword: rawPass,
+      message: 'تم إنشاء المدرسة — احفظ كلمة مرور المدير الآن، لن تُعرض مرة أخرى',
     })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })

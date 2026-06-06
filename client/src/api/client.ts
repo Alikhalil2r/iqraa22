@@ -16,11 +16,12 @@ api.interceptors.response.use(
   res => res,
   err => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      // Smart redirect: parent users go to parent-login, others go to login
       const path = window.location.pathname
-      const isParentArea = path.startsWith('/parent')
-      window.location.href = isParentArea ? '/parent-login' : '/login'
+      const isAuthPage = path === '/login' || path === '/parent/login' || path === '/parent-login'
+      if (!isAuthPage) {
+        localStorage.removeItem('token')
+        window.location.href = path.startsWith('/parent') ? '/parent/login' : '/login'
+      }
     }
     return Promise.reject(err)
   }
@@ -121,6 +122,18 @@ export const eventsApi = {
   delete: (id: string) => api.delete(`/events/${id}`),
 }
 
+// Billing
+export const billingApi = {
+  get: () => api.get('/billing'),
+  usage: () => api.get('/billing/usage'),
+  changePlan: (plan: string, billingCycle?: 'monthly' | 'yearly') =>
+    api.patch('/billing/plan', { plan, billingCycle }),
+  cancel: () => api.post('/billing/cancel'),
+  createInvoice: (data: { plan: string; amount: number; due_date?: string; notes?: string }) =>
+    api.post('/billing/invoice', data),
+  markPaid: (id: string) => api.patch(`/billing/invoice/${id}/pay`),
+}
+
 // Settings
 export const settingsApi = {
   get: () => api.get('/settings'),
@@ -129,25 +142,116 @@ export const settingsApi = {
   updateTheme: (data: any) => api.put('/settings/theme', data),
 }
 
+// Backups
+export const backupsApi = {
+  status: () => api.get('/backups/status'),
+  list: () => api.get('/backups'),
+  create: () => api.post('/backups', {}, { timeout: 120000 }),
+  downloadUrl: (filename: string) => `/api/backups/${encodeURIComponent(filename)}/download`,
+  restore: (filename: string) =>
+    api.post(`/backups/${encodeURIComponent(filename)}/restore`, { confirm: 'RESTORE' }, { timeout: 120000 }),
+  remove: (filename: string) => api.delete(`/backups/${encodeURIComponent(filename)}`),
+}
+
 // Public
 export const publicApi = {
   school: () => api.get('/public/school'),
   news: (params?: any) => api.get('/public/news', { params }),
+  newsItem: (id: string) => api.get(`/public/news/${id}`),
   events: (params?: any) => api.get('/public/events', { params }),
   gallery: () => api.get('/public/gallery'),
   staff: () => api.get('/public/staff'),
   achievements: () => api.get('/public/achievements'),
+  alerts: () => api.get('/public/alerts'),
+  faqs: () => api.get('/public/faqs'),
+  jobs: () => api.get('/public/jobs'),
+  alumni: () => api.get('/public/alumni'),
+  submitContact: (data: { name: string; phone?: string; email: string; subject?: string; message: string }) =>
+    api.post('/public/contact', data),
+  submitAdmission: (data: { parentName: string; studentName: string; grade: string; phone: string; email: string; notes?: string }) =>
+    api.post('/public/admission', data),
+  applyJob: (data: { job_id?: string; job_title: string; name: string; email: string; phone?: string; form_data?: Record<string, string> }) =>
+    api.post('/public/jobs/apply', data),
+  registerAlumni: (data: { name: string; year: string | number; job: string; city?: string; email: string; phone?: string; story: string; achievement?: string }) =>
+    api.post('/public/alumni/register', data),
+  videos: () => api.get('/public/videos'),
+  articles: (params?: { type?: 'student' | 'teacher' }) => api.get('/public/articles', { params }),
+  teams: () => api.get('/public/teams'),
+  hallOfFame: () => api.get('/public/hall-of-fame'),
+  learningSupport: () => api.get('/public/learning-support'),
+}
+
+// Site content admin (achievements, staff, alerts, faqs)
+export const contentApi = {
+  achievements: () => api.get('/content/achievements'),
+  createAchievement: (data: any) => api.post('/content/achievements', data),
+  updateAchievement: (id: string, data: any) => api.put(`/content/achievements/${id}`, data),
+  deleteAchievement: (id: string) => api.delete(`/content/achievements/${id}`),
+  staff: () => api.get('/content/staff'),
+  createStaff: (data: any) => api.post('/content/staff', data),
+  updateStaff: (id: string, data: any) => api.put(`/content/staff/${id}`, data),
+  deleteStaff: (id: string) => api.delete(`/content/staff/${id}`),
+  alerts: () => api.get('/content/alerts'),
+  createAlert: (data: any) => api.post('/content/alerts', data),
+  updateAlert: (id: string, data: any) => api.put(`/content/alerts/${id}`, data),
+  deleteAlert: (id: string) => api.delete(`/content/alerts/${id}`),
+  faqs: () => api.get('/content/faqs'),
+  createFaq: (data: any) => api.post('/content/faqs', data),
+  updateFaq: (id: string, data: any) => api.put(`/content/faqs/${id}`, data),
+  deleteFaq: (id: string) => api.delete(`/content/faqs/${id}`),
+  videos: () => api.get('/content/videos'),
+  createVideo: (data: any) => api.post('/content/videos', data),
+  deleteVideo: (id: string) => api.delete(`/content/videos/${id}`),
+  articles: (params?: { type?: string }) => api.get('/content/articles', { params }),
+  createArticle: (data: any) => api.post('/content/articles', data),
+  deleteArticle: (id: string) => api.delete(`/content/articles/${id}`),
+  teams: () => api.get('/content/teams'),
+  createTeam: (data: any) => api.post('/content/teams', data),
+  deleteTeam: (id: string) => api.delete(`/content/teams/${id}`),
+  hallOfFame: () => api.get('/content/hall-of-fame'),
+  createHallEntry: (data: any) => api.post('/content/hall-of-fame', data),
+  deleteHallEntry: (id: string) => api.delete(`/content/hall-of-fame/${id}`),
+  learningSupport: () => api.get('/content/learning-support'),
+  updateLearningSettings: (data: { aboutText: string }) => api.put('/content/learning-support/settings', data),
+  createLsService: (data: any) => api.post('/content/learning-support/services', data),
+  deleteLsService: (id: string) => api.delete(`/content/learning-support/services/${id}`),
+  createLsSpecialist: (data: any) => api.post('/content/learning-support/specialists', data),
+  deleteLsSpecialist: (id: string) => api.delete(`/content/learning-support/specialists/${id}`),
+  createLsArticle: (data: any) => api.post('/content/learning-support/articles', data),
+  deleteLsArticle: (id: string) => api.delete(`/content/learning-support/articles/${id}`),
+  createLsGallery: (data: any) => api.post('/content/learning-support/gallery', data),
+  deleteLsGallery: (id: string) => api.delete(`/content/learning-support/gallery/${id}`),
+}
+
+// Public form submissions (admin)
+export const submissionsApi = {
+  counts: () => api.get('/submissions/counts'),
+  contact: (params?: { status?: string }) => api.get('/submissions/contact', { params }),
+  updateContact: (id: string, status: string) => api.patch(`/submissions/contact/${id}`, { status }),
+  jobs: (params?: { status?: string }) => api.get('/submissions/jobs', { params }),
+  updateJob: (id: string, status: string) => api.patch(`/submissions/jobs/${id}`, { status }),
+  alumni: (params?: { status?: string }) => api.get('/submissions/alumni', { params }),
+  updateAlumni: (id: string, status: string) => api.patch(`/submissions/alumni/${id}`, { status }),
 }
 
 // Parent portal
 export const parentApi = {
-  dashboard: () => api.get('/parent/dashboard'),
-  grades: (params?: any) => api.get('/parent/grades', { params }),
-  attendance: (params?: any) => api.get('/parent/attendance', { params }),
+  children: () => api.get('/parent/children'),
+  dashboard: (params?: { childId?: string }) => api.get('/parent/dashboard', { params }),
+  child: (params?: { childId?: string }) => api.get('/parent/child', { params }),
+  grades: (params?: { childId?: string; term?: string; academicYear?: string }) => api.get('/parent/grades', { params }),
+  attendance: (params?: { childId?: string; month?: string; year?: string }) => api.get('/parent/attendance', { params }),
+  homework: (params?: { childId?: string }) => api.get('/parent/homework', { params }),
+  fees: (params?: { childId?: string }) => api.get('/parent/fees', { params }),
+  conduct: (params?: { childId?: string }) => api.get('/parent/conduct', { params }),
+  bus: (params?: { childId?: string }) => api.get('/parent/bus', { params }),
   messages: () => api.get('/parent/messages'),
+  messageRecipients: () => api.get('/parent/messages/recipients'),
+  getMessage: (id: string) => api.get(`/parent/messages/${id}`),
   sendMessage: (data: any) => api.post('/parent/messages', data),
+  replyMessage: (id: string, data: { body: string }) => api.post(`/parent/messages/${id}/reply`, data),
   markMessageRead: (id: string) => api.put(`/parent/messages/${id}/read`),
-  schedule: () => api.get('/parent/schedule'),
+  schedule: (params?: { childId?: string }) => api.get('/parent/schedule', { params }),
   notifications: () => api.get('/parent/notifications'),
   markNotificationRead: (id: string) => api.put(`/parent/notifications/${id}/read`),
   markAllNotificationsRead: () => api.put('/parent/notifications/read-all'),
@@ -155,9 +259,11 @@ export const parentApi = {
 
 // Reports
 export const reportsApi = {
-  attendance: (params?: any) => api.get('/reports/attendance', { params }),
-  grades: (params?: any) => api.get('/reports/grades', { params }),
-  students: (params?: any) => api.get('/reports/students', { params }),
+  attendance: (params?: any) => api.get('/reports/attendance-summary', { params }),
+  grades: (params?: any) => api.get('/reports/grades-summary', { params }),
+  students: (params?: any) => api.get('/reports/students-summary', { params }),
+  fees: (params?: any) => api.get('/reports/fees-summary', { params }),
+  hr: () => api.get('/reports/hr-summary'),
   summary: () => api.get('/reports/summary'),
 }
 
@@ -185,12 +291,16 @@ export const usersAdminApi = {
   update: (id: string, data: any) => api.put(`/users/${id}`, data),
   delete: (id: string) => api.delete(`/users/${id}`),
   resetPassword: (id: string, data: any) => api.put(`/users/${id}/password`, data),
+  getTeachingProfile: (id: string) => api.get(`/users/${id}/teaching-profile`),
+  saveTeachingProfile: (id: string, data: { homeroomClassId?: string | null; subjects?: { name: string; classId?: string }[] }) =>
+    api.put(`/users/${id}/teaching-profile`, data),
 }
 
 // Teacher
 export const teacherApi = {
   dashboard: () => api.get('/teacher/dashboard'),
   myClasses: () => api.get('/teacher/my-classes'),
+  mySchedule: () => api.get('/teacher/my-schedule'),
   subjectPerformance: () => api.get('/teacher/subject-performance'),
 }
 

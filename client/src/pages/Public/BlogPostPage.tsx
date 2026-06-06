@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Calendar, Eye, Tag, ArrowRight, BookOpen, Share2, Twitter, Linkedin, Copy, Clock } from 'lucide-react'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+import { platformApi } from '../../api/platformApi'
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -21,9 +21,8 @@ export default function BlogPostPage() {
   const { data: post, isLoading, isError } = useQuery({
     queryKey: ['blog-post', slug],
     queryFn: async () => {
-      const res = await fetch(`${API}/api/platform/blog/${slug}`)
-      if (!res.ok) throw new Error('Not found')
-      return res.json()
+      const res = await platformApi.blogPost(slug!)
+      return res.data
     }
   })
 
@@ -31,9 +30,8 @@ export default function BlogPostPage() {
     queryKey: ['blog-related', post?.category],
     enabled: !!post?.category,
     queryFn: async () => {
-      const res = await fetch(`${API}/api/platform/blog?category=${encodeURIComponent(post.category)}&limit=3`)
-      const d = await res.json()
-      return d.posts?.filter((p: any) => p.slug !== slug).slice(0, 3) || []
+      const res = await platformApi.blog({ category: post.category, limit: 3 })
+      return res.data?.posts?.filter((p: { slug: string }) => p.slug !== slug).slice(0, 3) || []
     }
   })
 
@@ -63,7 +61,7 @@ export default function BlogPostPage() {
           <BookOpen size={64} className="mx-auto mb-4 text-gray-600"/>
           <h1 className="text-2xl font-black mb-2">المقالة غير موجودة</h1>
           <p className="text-gray-400 mb-6">لا يمكن العثور على هذه المقالة</p>
-          <Link to="/blog" className="px-6 py-3 rounded-xl bg-violet-600 font-bold">العودة للمدونة</Link>
+          <Link to="/platform/blog" className="px-6 py-3 rounded-xl bg-violet-600 font-bold">العودة للمدونة</Link>
         </div>
       </div>
     )
@@ -74,12 +72,12 @@ export default function BlogPostPage() {
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-gray-950/90 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 font-black text-xl">
+          <Link to="/platform" className="flex items-center gap-2.5 font-black text-xl">
             <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-xs font-black">&lt;/&gt;</span>
             <span>اكسبو التقنية</span>
           </Link>
           <div className="flex items-center gap-4">
-            <Link to="/blog" className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-1">
+            <Link to="/platform/blog" className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-1">
               <ArrowRight size={14}/> المدونة
             </Link>
             <Link to="/request" className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-bold transition-colors">ابدأ مشروعك</Link>
@@ -99,9 +97,9 @@ export default function BlogPostPage() {
       <div className={`max-w-3xl mx-auto px-6 pb-20 ${post.image_url ? '-mt-20 relative z-10' : 'pt-28'}`}>
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <Link to="/" className="hover:text-white transition-colors">الرئيسية</Link>
+          <Link to="/platform" className="hover:text-white transition-colors">الرئيسية</Link>
           <span>/</span>
-          <Link to="/blog" className="hover:text-white transition-colors">المدونة</Link>
+          <Link to="/platform/blog" className="hover:text-white transition-colors">المدونة</Link>
           <span>/</span>
           <span className="text-gray-300 truncate">{post.title}</span>
         </div>
@@ -182,7 +180,7 @@ export default function BlogPostPage() {
             <h3 className="text-xl font-black mb-6">مقالات ذات صلة</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {related.map((p: any) => (
-                <Link key={p.id} to={`/blog/${p.slug}`} className="group block rounded-xl overflow-hidden bg-white/5 border border-white/8 hover:border-violet-500/40 transition-all">
+                <Link key={p.id} to={`/platform/blog/${p.slug}`} className="group block rounded-xl overflow-hidden bg-white/5 border border-white/8 hover:border-violet-500/40 transition-all">
                   {p.image_url && (
                     <div className="h-32 overflow-hidden">
                       <img src={p.image_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>

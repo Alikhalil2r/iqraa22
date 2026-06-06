@@ -3,13 +3,14 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Globe, Smartphone, Palette, TrendingUp, Brain, Cloud,
-  ChevronDown, ChevronUp, ArrowLeft, Star, CheckCircle,
+  ChevronDown, ChevronUp, ArrowLeft, Star, CheckCircle, Sparkles,
   Phone, Mail, MessageCircle, Shield, Zap, Award, Users,
   BarChart3, Code2, Layers, Rocket, ExternalLink, Quote, Menu, X
 } from 'lucide-react'
 import DevSignature from '../../components/DevSignature'
-
-const API = (p: string) => fetch(`/api${p}`).then(r => r.json())
+import ServiceQualityStrip from '../../components/ServiceQualityStrip'
+import { platformApi } from '../../api/platformApi'
+import { parseFeatures } from '../../utils/parseFeatures'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Globe, Smartphone, Palette, TrendingUp, Brain, Cloud, Shield, Zap, Award, Users, BarChart3, Code2, Layers, Rocket
@@ -52,12 +53,20 @@ export default function HomePage() {
   const [portfolioCat, setPortfolioCat] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
 
-  const { data: services = [] }     = useQuery({ queryKey: ['plat-services'],       queryFn: () => API('/platform/services'),    staleTime: 600_000 })
-  const { data: portfolio = [] }    = useQuery({ queryKey: ['plat-portfolio', portfolioCat], queryFn: () => API(`/platform/portfolio?category=${portfolioCat}`), staleTime: 300_000 })
-  const { data: testimonials = [] } = useQuery({ queryKey: ['plat-testimonials'],   queryFn: () => API('/platform/testimonials'), staleTime: 600_000 })
-  const { data: faq = [] }          = useQuery({ queryKey: ['plat-faq'],            queryFn: () => API('/platform/faq'),          staleTime: 600_000 })
-  const { data: pricing = [] }      = useQuery({ queryKey: ['plat-pricing'],        queryFn: () => API('/platform/pricing'),      staleTime: 600_000 })
-  const { data: cfg = {} as Record<string,string> } = useQuery({ queryKey: ['plat-settings'], queryFn: () => API('/platform/settings'), staleTime: 600_000 })
+  const servicesQ     = useQuery({ queryKey: ['plat-services'], queryFn: () => platformApi.services().then(r => r.data), staleTime: 600_000, retry: 2 })
+  const portfolioQ    = useQuery({ queryKey: ['plat-portfolio', portfolioCat], queryFn: () => platformApi.portfolio(portfolioCat).then(r => r.data), staleTime: 300_000, retry: 2 })
+  const testimonialsQ = useQuery({ queryKey: ['plat-testimonials'], queryFn: () => platformApi.testimonials().then(r => r.data), staleTime: 600_000, retry: 2 })
+  const faqQ          = useQuery({ queryKey: ['plat-faq'], queryFn: () => platformApi.faq().then(r => r.data), staleTime: 600_000, retry: 2 })
+  const pricingQ      = useQuery({ queryKey: ['plat-pricing'], queryFn: () => platformApi.pricing().then(r => r.data), staleTime: 600_000, retry: 2 })
+  const cfgQ          = useQuery({ queryKey: ['plat-settings'], queryFn: () => platformApi.settings().then(r => r.data), staleTime: 600_000, retry: 2 })
+
+  const services     = Array.isArray(servicesQ.data) ? servicesQ.data : []
+  const portfolio    = Array.isArray(portfolioQ.data) ? portfolioQ.data : []
+  const testimonials = Array.isArray(testimonialsQ.data) ? testimonialsQ.data : []
+  const faq          = Array.isArray(faqQ.data) ? faqQ.data : []
+  const pricing      = Array.isArray(pricingQ.data) ? pricingQ.data : []
+  const cfg          = (cfgQ.data || {}) as Record<string, string>
+  const usingDemoContent = servicesQ.isError || (!servicesQ.isLoading && services.length === 0)
 
   const scrollTo = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenuOpen(false) }
 
@@ -123,8 +132,11 @@ export default function HomePage() {
             {[['services','خدماتنا'],['portfolio','أعمالنا'],['process','كيف نعمل'],['pricing','الأسعار'],['faq','الأسئلة']].map(([id,lbl]) => (
               <button key={id} onClick={() => scrollTo(id)} className="hover:text-purple-600 transition-colors">{lbl}</button>
             ))}
-            <a href="/blog" className="hover:text-purple-600 transition-colors">المدونة</a>
-            <a href="/track" className="hover:text-purple-600 transition-colors flex items-center gap-1">
+            <Link to="/platform/offer" className="hover:text-purple-600 transition-colors flex items-center gap-1.5 text-amber-600">
+              <Sparkles size={13} /> عرض المدارس
+            </Link>
+            <a href="/platform/blog" className="hover:text-purple-600 transition-colors">المدونة</a>
+            <a href="/platform/track" className="hover:text-purple-600 transition-colors flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block"/>
               تتبع طلبك
             </a>
@@ -142,7 +154,8 @@ export default function HomePage() {
             {[['services','خدماتنا'],['portfolio','أعمالنا'],['process','كيف نعمل'],['pricing','الأسعار'],['faq','الأسئلة'],['contact','تواصل معنا']].map(([id,lbl]) => (
               <button key={id} onClick={() => scrollTo(id)} className="block w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold text-gray-700 hover:bg-purple-50 transition-colors">{lbl}</button>
             ))}
-            <a href="/login" className="block text-center bg-purple-600 text-white font-black py-2.5 rounded-xl text-sm mt-2">دخول الإدارة</a>
+            <Link to="/platform/offer" className="block text-center bg-amber-500 text-white font-black py-2.5 rounded-xl text-sm mt-2">عرض المدارس — 250 ر.ع</Link>
+            <a href="/login" className="block text-center bg-purple-600 text-white font-black py-2.5 rounded-xl text-sm mt-1">دخول الإدارة</a>
           </div>
         )}
       </nav>
@@ -160,14 +173,14 @@ export default function HomePage() {
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
                 نبني{' '}
-                <span style={{ background:'linear-gradient(90deg,#a78bfa,#60a5fa,#34d399)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>المستقبل</span>
+                <span className="text-purple-300" style={{ background:'linear-gradient(90deg,#a78bfa,#60a5fa,#34d399)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>المستقبل</span>
                 <br/>الرقمي معاً
               </h1>
               <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8 max-w-xl mx-auto lg:mx-0">
                 من المواقع الاحترافية إلى تطبيقات الجوال والذكاء الاصطناعي — نحوّل أفكارك إلى منتجات رقمية تُحدث فارقاً حقيقياً في سوقك.
               </p>
               <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                <Link to="/request" className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-black text-white text-sm hover:shadow-2xl hover:-translate-y-0.5 transition-all" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
+                <Link to="/platform/request" className="group inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-black text-white text-sm hover:shadow-2xl hover:-translate-y-0.5 transition-all" style={{ background:'linear-gradient(135deg,#7c3aed,#2563eb)' }}>
                   ابدأ مشروعك الآن <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/>
                 </Link>
                 <button onClick={() => scrollTo('portfolio')} className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl font-black text-white text-sm border border-white/20 hover:bg-white/10 transition-all">
@@ -241,6 +254,13 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ───── SERVICE QUALITY ───────────────────────────────── */}
+      <section className="py-8 bg-white border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <ServiceQualityStrip variant="platform" />
+        </div>
+      </section>
+
       {/* ───── SERVICES ──────────────────────────────────────── */}
       <section id="services" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -248,11 +268,16 @@ export default function HomePage() {
             <span className="inline-block px-4 py-1.5 rounded-full bg-purple-100 text-purple-700 text-xs font-black mb-4">خدماتنا</span>
             <h2 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">ماذا نقدم لك؟</h2>
             <p className="text-gray-500 text-sm max-w-lg mx-auto leading-relaxed">حلول رقمية شاملة مصمّمة لتحقيق أهداف عملك وتعزيز تنافسيتك في السوق</p>
+            {usingDemoContent && (
+              <p className="mt-3 text-xs font-bold text-amber-600 bg-amber-50 inline-block px-3 py-1 rounded-full border border-amber-200">
+                عرض تجريبي — المحتوى الافتراضي حتى تُفعّل لوحة إدارة المنصة
+              </p>
+            )}
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {svcList.map((svc: any) => {
               const Icon = ICON_MAP[svc.icon] || Globe
-              const features: string[] = Array.isArray(svc.features) ? svc.features : JSON.parse(svc.features || '[]')
+              const features = parseFeatures(svc.features)
               return (
                 <div key={svc.id} className="group bg-white rounded-3xl p-6 border border-gray-100 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
                   <div className="absolute inset-0 rounded-3xl opacity-0 group-hover:opacity-5 transition-opacity" style={{ background:svc.color }}/>
@@ -409,9 +434,31 @@ export default function HomePage() {
             <h2 className="text-3xl md:text-4xl font-black text-white mb-3">شفافية كاملة في التسعير</h2>
             <p className="text-gray-400 text-sm max-w-lg mx-auto">اختر الخطة التي تناسب مشروعك. لا توجد تكاليف خفية.</p>
           </div>
+          <Link to="/platform/offer"
+            className="block mb-10 p-6 md:p-8 rounded-3xl border border-amber-400/30 bg-gradient-to-l from-amber-500/15 via-purple-500/10 to-transparent hover:border-amber-400/50 transition-all group">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+              <div>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-black mb-3">
+                  <Sparkles size={12} /> عرض حصري للمدارس
+                </span>
+                <h3 className="text-xl md:text-2xl font-black text-white mb-2">نظام إدارة مدارس — 250 ر.ع لعامين</h3>
+                <p className="text-gray-400 text-sm max-w-xl">استضافة + دومين .com + 5 جيجا + دعم فني مستمر + خصم 50% على التجديد السنوي لعامين</p>
+              </div>
+              <div className="flex items-center gap-4 flex-shrink-0">
+                <div className="text-center">
+                  <span className="block text-white/40 line-through text-sm font-bold">500</span>
+                  <span className="block text-4xl font-black text-amber-300">250 <span className="text-lg">ر.ع</span></span>
+                </div>
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-400 text-amber-950 font-black text-sm group-hover:scale-105 transition-transform">
+                  اكتشف العرض <ArrowLeft size={16} />
+                </span>
+              </div>
+            </div>
+          </Link>
+
           <div className="grid md:grid-cols-3 gap-6 items-center">
             {pricList.map((plan: any) => {
-              const features: string[] = Array.isArray(plan.features) ? plan.features : JSON.parse(plan.features || '[]')
+              const features = parseFeatures(plan.features)
               return (
                 <div key={plan.id} className={`rounded-3xl p-7 relative transition-all hover:scale-105 ${plan.is_popular ? 'scale-105 shadow-2xl shadow-purple-900/50' : 'bg-white/5 backdrop-blur border border-white/10'}`}
                   style={plan.is_popular ? { background:'linear-gradient(160deg,#7c3aed,#4f46e5,#2563eb)' } : {}}>
@@ -433,7 +480,7 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/request" className={`block text-center w-full py-3 rounded-2xl font-black text-sm transition-all ${plan.is_popular ? 'bg-white text-purple-700 hover:bg-yellow-50' : 'border border-white/30 text-white hover:bg-white/10'}`}>
+                  <Link to="/platform/request" className={`block text-center w-full py-3 rounded-2xl font-black text-sm transition-all ${plan.is_popular ? 'bg-white text-purple-700 hover:bg-yellow-50' : 'border border-white/30 text-white hover:bg-white/10'}`}>
                     {plan.price > 0 ? 'ابدأ الآن' : 'احصل على عرض سعر'}
                   </Link>
                 </div>
@@ -506,7 +553,7 @@ export default function HomePage() {
               </a>
             ))}
           </div>
-          <Link to="/request" className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-white text-purple-700 font-black text-base hover:shadow-2xl hover:-translate-y-1 transition-all">
+          <Link to="/platform/request" className="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-white text-purple-700 font-black text-base hover:shadow-2xl hover:-translate-y-1 transition-all">
             <Rocket size={18}/> ابدأ مشروعك الآن <ArrowLeft size={16}/>
           </Link>
         </div>
@@ -543,7 +590,7 @@ export default function HomePage() {
             <div>
               <h4 className="text-white font-black text-sm mb-4">روابط سريعة</h4>
               <ul className="space-y-2 text-xs">
-                {[['#portfolio','أعمالنا'],['#pricing','الأسعار'],['#faq','الأسئلة الشائعة'],['#contact','تواصل معنا'],['/blog','المدونة التقنية'],['/track','تتبع طلبك'],['/request','ابدأ مشروعك'],['/login','دخول الإدارة']].map(([to,lbl]) => (
+                {[['#portfolio','أعمالنا'],['#pricing','الأسعار'],['#faq','الأسئلة الشائعة'],['#contact','تواصل معنا'],['/platform/offer','عرض المدارس 250 ر.ع'],['/platform/blog','المدونة التقنية'],['/platform/track','تتبع طلبك'],['/platform/request','ابدأ مشروعك'],['/school','نموذج مدرسة النور'],['/login','دخول الإدارة']].map(([to,lbl]) => (
                   <li key={lbl}><Link to={to} className="hover:text-white transition-colors">{lbl}</Link></li>
                 ))}
               </ul>
@@ -554,7 +601,7 @@ export default function HomePage() {
             <p className="hidden md:block text-gray-500">{address}</p>
           </div>
           <div className="mt-5 pt-4 border-t border-white/5">
-            <DevSignature variant="dark" />
+            <DevSignature variant="dark" scope="platform" />
           </div>
         </div>
       </footer>

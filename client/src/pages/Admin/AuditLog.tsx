@@ -14,6 +14,7 @@ const ACTION_LABELS: Record<string, string> = {
   CREATE_INVOICE: 'إنشاء فاتورة', PAY_INVOICE: 'سداد فاتورة',
   ENABLE_2FA: 'تفعيل 2FA', DISABLE_2FA: 'إلغاء 2FA',
   UPDATE_SETTINGS: 'تعديل الإعدادات', UPDATE_THEME: 'تعديل الثيم',
+  CREATE_BACKUP: 'نسخة احتياطية', RESTORE_BACKUP: 'استعادة نسخة', DELETE_BACKUP: 'حذف نسخة',
 }
 
 const ACTION_COLORS: Record<string, string> = {

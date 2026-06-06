@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
+import { useParentChild } from '../../context/ParentChildContext'
 import { Link } from 'react-router-dom'
 import {
   BookOpen, CalendarCheck, MessageSquare, Calendar, AlertCircle,
   Bell, Bus, TrendingUp, Award, Clock, CheckCircle, XCircle,
-  ChevronLeft, BarChart2, Star, ArrowUp, ArrowDown
+  ChevronLeft, BarChart2, Star, ArrowUp, ArrowDown,
+  ClipboardList, DollarSign, Shield
 } from 'lucide-react'
 
 function MiniDonut({ present, absent, late, excused }: { present: number; absent: number; late: number; excused: number }) {
@@ -53,19 +55,21 @@ function GradeBar({ subject, grade, max = 100 }: { subject: string; grade: numbe
 }
 
 export default function ParentDashboard() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['parent-dash'],
-    queryFn: () => parentApi.dashboard().then(r => r.data),
-    refetchInterval: 60000
+  const { childParams, selectedChildId, isReady } = useParentChild()
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['parent-dash', selectedChildId],
+    queryFn: () => parentApi.dashboard(childParams).then(r => r.data),
+    refetchInterval: 60000,
+    enabled: isReady,
   })
 
-  if (isLoading) return (
+  if (!isReady || isLoading) return (
     <div className="flex items-center justify-center h-64">
       <div className="w-10 h-10 rounded-full border-4 border-amber-200 border-t-amber-500 animate-spin"/>
     </div>
   )
 
-  if (!data?.child) return (
+  if (isError || !data?.child) return (
     <div className="text-center py-20">
       <AlertCircle size={48} className="mx-auto text-gray-300 mb-4"/>
       <h2 className="text-xl font-black text-gray-500">لم يتم ربط حسابك بطالب</h2>
@@ -73,7 +77,8 @@ export default function ParentDashboard() {
     </div>
   )
 
-  const { child, stats } = data
+  const { child } = data
+  const stats = data.stats ?? {}
   const attMonth = stats.attendanceMonth || {}
   const totalDays = (attMonth.present || 0) + (attMonth.absent || 0) + (attMonth.late || 0) + (attMonth.excused || 0)
   const attRate = totalDays > 0 ? Math.round((attMonth.present || 0) / totalDays * 100) : 0
@@ -85,11 +90,11 @@ export default function ParentDashboard() {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Hero Welcome Banner */}
-      <div className="rounded-3xl text-white relative overflow-hidden" style={{ background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)' }}>
-        <div className="absolute inset-0 opacity-10" style={{ background: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }} />
-        <div className="p-6 relative">
-          <p className="text-white/70 text-xs mb-1">بوابة أولياء الأمور</p>
-          <h1 className="text-2xl font-black mb-4">متابعة الطالب: {child.name}</h1>
+      <div className="dash-welcome-banner">
+        <div className="dash-welcome-pattern" />
+        <div className="relative">
+          <span className="dash-welcome-badge">بوابة أولياء الأمور</span>
+          <h1 className="dash-welcome-title mb-4">متابعة الطالب: {child.name}</h1>
           <div className="flex flex-wrap gap-2.5">
             <div className="bg-white/15 backdrop-blur rounded-2xl px-4 py-2.5">
               <p className="text-white/60 text-[9px] uppercase tracking-wider">الفصل</p>
@@ -164,6 +169,47 @@ export default function ParentDashboard() {
             {new Date().toLocaleDateString('ar-OM', { weekday: 'short' })}
           </p>
           <p className="text-[9px] text-gray-400 mt-1">اضغط لعرض الجدول</p>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <Link to="/parent/homework" className="card hover:shadow-md transition-all group border-b-2 border-indigo-400 hover:-translate-y-0.5 relative">
+          {(stats.pendingHomework || 0) > 0 && (
+            <span className="absolute top-3 left-3 w-5 h-5 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{stats.pendingHomework}</span>
+          )}
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+            <ClipboardList size={20} className="text-indigo-600" />
+          </div>
+          <p className="text-[10px] text-gray-400 font-bold mb-0.5">الواجبات</p>
+          <p className="text-2xl font-black text-indigo-600">{stats.pendingHomework || 0}</p>
+          <p className="text-[9px] text-gray-400 mt-1">واجبات قيد الانتظار</p>
+        </Link>
+        <Link to="/parent/fees" className="card hover:shadow-md transition-all group border-b-2 border-rose-400 hover:-translate-y-0.5 relative">
+          {(stats.unpaidFees || 0) > 0 && (
+            <span className="absolute top-3 left-3 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{stats.unpaidFees}</span>
+          )}
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-rose-50 group-hover:bg-rose-100 transition-colors">
+            <DollarSign size={20} className="text-rose-600" />
+          </div>
+          <p className="text-[10px] text-gray-400 font-bold mb-0.5">الرسوم</p>
+          <p className="text-2xl font-black text-rose-600">{stats.unpaidFees || 0}</p>
+          <p className="text-[9px] text-gray-400 mt-1">فواتير معلقة</p>
+        </Link>
+        <Link to="/parent/conduct" className="card hover:shadow-md transition-all group border-b-2 border-teal-400 hover:-translate-y-0.5">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-teal-50 group-hover:bg-teal-100 transition-colors">
+            <Shield size={20} className="text-teal-600" />
+          </div>
+          <p className="text-[10px] text-gray-400 font-bold mb-0.5">السلوك</p>
+          <p className="text-lg font-black text-teal-600">سجل الطالب</p>
+          <p className="text-[9px] text-gray-400 mt-1">مكافآت ومخالفات</p>
+        </Link>
+        <Link to="/parent/bus" className="card hover:shadow-md transition-all group border-b-2 border-sky-400 hover:-translate-y-0.5">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 bg-sky-50 group-hover:bg-sky-100 transition-colors">
+            <Bus size={20} className="text-sky-600" />
+          </div>
+          <p className="text-[10px] text-gray-400 font-bold mb-0.5">الحافلة</p>
+          <p className="text-lg font-black text-sky-600">{child.bus_number ? `حافلة ${child.bus_number}` : 'غير مسجل'}</p>
+          <p className="text-[9px] text-gray-400 mt-1">معلومات النقل</p>
         </Link>
       </div>
 

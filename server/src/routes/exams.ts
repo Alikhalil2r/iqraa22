@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, TEACHING_ROLES } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
@@ -8,7 +8,7 @@ const router = Router()
 router.use(authenticateToken)
 const log = createLogger('EXAMS')
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requireRole(...TEACHING_ROLES, 'parent'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { academicYear, term, className } = req.query

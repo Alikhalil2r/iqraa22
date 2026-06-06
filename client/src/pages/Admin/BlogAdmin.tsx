@@ -143,7 +143,7 @@ export default function BlogAdmin() {
                 <td className="p-3.5">
                   <div className="flex items-center gap-1 justify-end">
                     {post.status === 'published' && (
-                      <a href={`/blog/${post.slug}`} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors">
+                      <a href={`/platform/blog/${post.slug}`} target="_blank" rel="noreferrer" className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors">
                         <ArrowUpRight size={14}/>
                       </a>
                     )}

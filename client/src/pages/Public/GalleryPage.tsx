@@ -1,22 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
+import { useLanguage } from '../../context/LanguageContext'
+import { useLocalize } from '../../hooks/useLocalize'
+import PublicPageBanner from '../../components/PublicPageBanner'
 import { Image, X, Grid, List, ChevronLeft, ChevronRight, ZoomIn, Tag } from 'lucide-react'
+import { DEMO_GALLERY, withDemoFallback } from '../../data/demoPublicFallback'
 
-const SAMPLE_GALLERY = [
-  { id: 1,  src: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',  caption: 'حفل افتتاح العام الدراسي',         category: 'فعاليات' },
-  { id: 2,  src: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&q=80',  caption: 'أنشطة التعلم التفاعلي',             category: 'أكاديمي' },
-  { id: 3,  src: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=800&q=80', caption: 'بطولة كرة القدم الداخلية',          category: 'رياضة'   },
-  { id: 4,  src: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&q=80', caption: 'مختبر العلوم والأبحاث',             category: 'أكاديمي' },
-  { id: 5,  src: 'https://images.unsplash.com/photo-1588072432836-e10032774350?w=800&q=80', caption: 'يوم المهنة والتوجيه',              category: 'فعاليات' },
-  { id: 6,  src: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80', caption: 'تدريبات فريق كرة القدم',           category: 'رياضة'   },
-  { id: 7,  src: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800&q=80', caption: 'المعرض العلمي السنوي',             category: 'علوم'    },
-  { id: 8,  src: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&q=80', caption: 'حفل تكريم المعلمين',              category: 'مناسبات' },
-  { id: 9,  src: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80', caption: 'رحلة إلى منتزه سمائل',            category: 'رحلات'   },
-  { id: 10, src: 'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?w=800&q=80', caption: 'معرض الفنون التشكيلية',            category: 'فنون'    },
-  { id: 11, src: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80', caption: 'زيارة الوالي للمدرسة',            category: 'مناسبات' },
-  { id: 12, src: 'https://images.unsplash.com/photo-1562774053-701939374585?w=800&q=80', caption: 'مسابقة الروبوت التعليمية',         category: 'علوم'    },
-]
+const SAMPLE_GALLERY = DEMO_GALLERY.map(g => ({ id: g.id, src: g.image_url, caption: g.title, category: g.category }))
 
 const CAT_COLORS: Record<string, string> = {
   'فعاليات': '#6366f1', 'أكاديمي': '#0ea5e9', 'رياضة': '#f97316',
@@ -24,16 +15,18 @@ const CAT_COLORS: Record<string, string> = {
 }
 
 export default function GalleryPage() {
+  const { t } = useLanguage()
+  const { pick, category, dirClass } = useLocalize()
   const { data: apiData } = useQuery({ queryKey: ['public-gallery'], queryFn: () => publicApi.gallery().then(r => r.data) })
   const [filter,   setFilter]   = useState('all')
   const [lightbox, setLightbox] = useState<number | null>(null)
   const [layout,   setLayout]   = useState<'masonry'|'grid'>('masonry')
 
   const allGallery = useMemo(
-    () => (apiData?.gallery?.length > 0
-      ? apiData.gallery.map((g: any) => ({ id: g.id, src: g.image_url || g.src || '', caption: g.caption || '', category: g.category || 'عام' }))
-      : SAMPLE_GALLERY),
-    [apiData]
+    () => withDemoFallback(apiData?.gallery, DEMO_GALLERY).map((g: any) => ({
+      id: g.id, src: g.image_url || '', caption: pick(g.title, g.title_en, g.caption || ''), category: category(g.category, g.category_en) || 'عام',
+    })),
+    [apiData, pick, category]
   )
 
   const categories = useMemo(() => ['all', ...Array.from(new Set(allGallery.map((g: any) => g.category as string).filter(Boolean)))], [allGallery])
@@ -58,17 +51,8 @@ export default function GalleryPage() {
   }, [lightbox, lbIdx, filtered])
 
   return (
-    <div>
-      {/* Banner */}
-      <div className="bg-gradient-to-br from-purple-800 to-purple-900 text-white py-20 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 left-1/2 w-96 h-96 rounded-full bg-white blur-3xl -translate-y-1/2 -translate-x-1/2" />
-        </div>
-        <div className="mb-4 flex justify-center text-amber-400/80 relative z-10"><Image size={40} /></div>
-        <h1 className="text-3xl md:text-5xl font-black relative z-10">معرض الصور</h1>
-        <p className="text-white/60 mt-3 text-sm relative z-10">لحظات مميزة من حياتنا المدرسية</p>
-        <div className="mt-4 text-white/40 text-xs relative z-10">{allGallery.length} صورة في المعرض</div>
-      </div>
+    <div className={dirClass}>
+      <PublicPageBanner title={t('site.page.gallery.title')} subtitle={t('site.page.gallery.subtitle')} icon={<Image size={40} />} gradient="from-purple-800 to-purple-900" />
 
       <div className="max-w-7xl mx-auto px-4 py-10">
         {/* Controls row */}

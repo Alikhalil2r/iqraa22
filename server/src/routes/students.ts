@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, STUDENTS_VIEW_ROLES } from '../middleware/auth'
+import { getTeacherScope } from '../utils/teacherScope'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
@@ -9,13 +10,13 @@ const log = createLogger('STUDENTS')
 
 const STU_COLS = `s.id, s.student_number, s.name, s.name_en, s.gender, s.date_of_birth,
   s.nationality, s.class_id, s.class_name, s.academic_year, s.status,
-  s.parent_name, s.parent_phone, s.parent_email, s.parent_relation,
+  s.parent_id, s.parent_name, s.parent_phone, s.parent_email, s.parent_relation,
   s.address, s.blood_type, s.medical_notes, s.bus_id, s.photo, s.notes,
   s.created_at, b.bus_number, b.route_name`
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
   try {
-    const { schoolId } = req.user!
+    const { schoolId, id: userId, role } = req.user!
     const { search, classId, status, busId, page = '1', limit = '200' } = req.query
     const offset = (parseInt(String(page)) - 1) * parseInt(String(limit))
 
@@ -24,6 +25,24 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
                WHERE s.school_id=$1`
     const params: unknown[] = [schoolId]
     let i = 2
+
+    if (role === 'teacher') {
+      const scope = await getTeacherScope(schoolId, userId)
+      const parts: string[] = []
+      if (scope.classIds.length) {
+        parts.push(`s.class_id = ANY($${i}::uuid[])`)
+        params.push(scope.classIds)
+        i++
+      }
+      if (scope.classNames.length) {
+        parts.push(`s.class_name = ANY($${i}::text[])`)
+        params.push(scope.classNames)
+        i++
+      }
+      if (parts.length) sql += ` AND (${parts.join(' OR ')})`
+      else sql += ' AND 1=0'
+    }
+
     if (search)  { sql += ` AND (s.name ILIKE $${i} OR s.student_number ILIKE $${i})`; params.push(`%${String(search).slice(0, 100)}%`); i++ }
     if (classId) { sql += ` AND s.class_id=$${i}`;                                      params.push(classId); i++ }
     if (status)  { sql += ` AND s.status=$${i}`;                                         params.push(String(status).slice(0, 20)); i++ }
@@ -39,7 +58,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/classes', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/classes', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const result = await query(
@@ -53,7 +72,7 @@ router.get('/classes', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/:id', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
   try {
     const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     if (!UUID_RE.test(req.params.id)) return res.status(400).json({ error: 'معرّف غير صالح' })
@@ -77,13 +96,13 @@ router.post('/', authenticateToken, writeLimiter, requireRole('admin'), async (r
     if (!d.name) return res.status(400).json({ error: 'اسم الطالب مطلوب' })
     const result = await query(`
       INSERT INTO students (school_id,student_number,name,name_en,gender,date_of_birth,nationality,
-        class_id,class_name,academic_year,status,parent_name,parent_phone,parent_email,parent_relation,
+        class_id,class_name,academic_year,status,parent_id,parent_name,parent_phone,parent_email,parent_relation,
         address,blood_type,medical_notes,bus_id,photo,notes)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
       RETURNING *`,
       [schoolId, d.studentNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
        d.nationality, d.classId || null, d.className, d.academicYear, d.status || 'active',
-       d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
+       d.parentId || null, d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
        d.bloodType, d.medicalNotes?.slice(0, 1000), d.busId || null,
        d.photo, d.notes?.slice(0, 1000)]
     )
@@ -102,13 +121,13 @@ router.put('/:id', authenticateToken, writeLimiter, requireRole('admin'), async 
     if (!d.name) return res.status(400).json({ error: 'اسم الطالب مطلوب' })
     const result = await query(`
       UPDATE students SET student_number=$1,name=$2,name_en=$3,gender=$4,date_of_birth=$5,
-        nationality=$6,class_id=$7,class_name=$8,academic_year=$9,status=$10,parent_name=$11,
-        parent_phone=$12,parent_email=$13,parent_relation=$14,address=$15,blood_type=$16,
-        medical_notes=$17,bus_id=$18,photo=$19,notes=$20
-      WHERE id=$21 AND school_id=$22 RETURNING *`,
+        nationality=$6,class_id=$7,class_name=$8,academic_year=$9,status=$10,parent_id=$11,
+        parent_name=$12,parent_phone=$13,parent_email=$14,parent_relation=$15,address=$16,blood_type=$17,
+        medical_notes=$18,bus_id=$19,photo=$20,notes=$21
+      WHERE id=$22 AND school_id=$23 RETURNING *`,
       [d.studentNumber, d.name, d.nameEn, d.gender, d.dateOfBirth || null,
        d.nationality, d.classId || null, d.className, d.academicYear, d.status || 'active',
-       d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
+       d.parentId || null, d.parentName, d.parentPhone, d.parentEmail, d.parentRelation, d.address,
        d.bloodType, d.medicalNotes?.slice(0, 1000), d.busId || null,
        d.photo, d.notes?.slice(0, 1000), req.params.id, schoolId]
     )
@@ -134,7 +153,7 @@ router.delete('/:id', authenticateToken, requireRole('admin'), async (req: AuthR
   }
 })
 
-router.get('/:id/attendance', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/:id/attendance', authenticateToken, requireRole(...STUDENTS_VIEW_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { startDate, endDate } = req.query

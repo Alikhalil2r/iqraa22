@@ -3,12 +3,13 @@ import { query } from '../db'
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
+import { sanitizeExternalUrl } from '../middleware/validate'
 
 const router = Router()
 router.use(authenticateToken)
 const log = createLogger('GALLERY')
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requireRole('admin'), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { category, published, page = '1', limit = '100' } = req.query
@@ -38,10 +39,12 @@ router.post('/', writeLimiter, requireRole('admin'), async (req: AuthRequest, re
     const { schoolId } = req.user!
     const { title, description, imageUrl, category, isPublished } = req.body
     if (!imageUrl) return res.status(400).json({ error: 'imageUrl مطلوب' })
+    const safeUrl = sanitizeExternalUrl(imageUrl)
+    if (!safeUrl) return res.status(400).json({ error: 'رابط الصورة غير صالح' })
     const result = await query(`
       INSERT INTO gallery (school_id, title, description, image_url, category, is_published)
       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-      [schoolId, title || null, description || null, imageUrl, category || null, isPublished !== false]
+      [schoolId, title || null, description || null, safeUrl, category || null, isPublished !== false]
     )
     log.info('Gallery item added', { itemId: result.rows[0].id })
     res.status(201).json({ item: result.rows[0] })
@@ -55,10 +58,15 @@ router.put('/:id', writeLimiter, requireRole('admin'), async (req: AuthRequest, 
   try {
     const { schoolId } = req.user!
     const { title, description, imageUrl, category, isPublished } = req.body
+    let safeUrl: string | null = null
+    if (imageUrl) {
+      safeUrl = sanitizeExternalUrl(imageUrl)
+      if (!safeUrl) return res.status(400).json({ error: 'رابط الصورة غير صالح' })
+    }
     const result = await query(`
-      UPDATE gallery SET title=$1, description=$2, image_url=$3, category=$4, is_published=$5
+      UPDATE gallery SET title=$1, description=$2, image_url=COALESCE($3, image_url), category=$4, is_published=$5
       WHERE id=$6 AND school_id=$7 RETURNING *`,
-      [title || null, description || null, imageUrl, category || null, isPublished !== false,
+      [title || null, description || null, safeUrl, category || null, isPublished !== false,
        req.params.id, schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })

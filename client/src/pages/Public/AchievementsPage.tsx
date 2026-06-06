@@ -2,15 +2,7 @@ import React, { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Trophy, Award, Star, Calendar, Tag, Filter, Medal, ChevronLeft } from 'lucide-react'
-
-const SAMPLE_ACHIEVEMENTS = [
-  { id: 1, title: 'المركز الأول في أولمبياد الرياضيات الوطني', category: 'أكاديمي', date: '2025-01-25', desc: 'حقق الطالب محمد العلوي المركز الأول على مستوى السلطنة في مسابقة الأولمبياد الوطنية للرياضيات للعام 2025', image: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600&q=80', rank: 1 },
-  { id: 2, title: 'بطل السلطنة في مسابقة الروبوت والذكاء الاصطناعي', category: 'مسابقات', date: '2025-02-10', desc: 'فاز فريق الروبوت المدرسي بالبطولة الوطنية ويمثل السلطنة في البطولة الخليجية 2025', image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&q=80', rank: 1 },
-  { id: 3, title: 'مشاركة في مبادرة البيئة الخضراء الوطنية', category: 'مبادرات', date: '2025-01-18', desc: 'شارك طلاب المدرسة في مبادرة زراعة 1000 شجرة ضمن حملة السلطنة الوطنية للحفاظ على البيئة', image: 'https://images.unsplash.com/photo-1471193945509-9ad0617afabf?w=600&q=80', rank: null },
-  { id: 4, title: 'المركز الثاني في بطولة كرة القدم الإقليمية', category: 'رياضي', date: '2024-12-20', desc: 'وصل الفريق المدرسي لكرة القدم إلى نهائي البطولة الإقليمية وأحرز المركز الثاني', image: 'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=600&q=80', rank: 2 },
-  { id: 5, title: 'جائزة أفضل مشروع في المعرض العلمي الوطني', category: 'علمي', date: '2025-02-28', desc: 'فازت الطالبة مريم الراشدي بجائزة أفضل مشروع علمي عن مشروعها الرائد في تحلية المياه بالطاقة الشمسية', image: 'https://images.unsplash.com/photo-1562774053-701939374585?w=600&q=80', rank: 1 },
-  { id: 6, title: 'تكريم خمسة طلاب من وزارة التربية والتعليم', category: 'أكاديمي', date: '2024-12-15', desc: 'حظي 5 طلاب من مدرستنا بتكريم وزارة التربية والتعليم للمتفوقين على المستوى الوطني', image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&q=80', rank: null },
-]
+import { DEMO_ACHIEVEMENTS, withDemoFallback } from '../../data/demoPublicFallback'
 
 const CAT_COLORS: Record<string, { bg: string; text: string; border: string; solid: string }> = {
   أكاديمي:   { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     solid: '#0ea5e9' },
@@ -38,21 +30,24 @@ export default function AchievementsPage() {
   const { data: apiData } = useQuery({ queryKey: ['public-achievements'], queryFn: () => publicApi.achievements().then(r => r.data) })
   const [filter, setFilter] = useState('all')
 
-  const all = useMemo(() => (
-    apiData?.achievements?.length > 0
-      ? apiData.achievements.map((a: any) => ({ id: a.id, title: a.title, category: a.category || 'أكاديمي', date: a.achievement_date || '', desc: a.description || '', image: a.image_url || '', rank: null }))
-      : SAMPLE_ACHIEVEMENTS
-  ), [apiData])
+  const all = useMemo(() => withDemoFallback(apiData?.achievements, DEMO_ACHIEVEMENTS).map((a: any) => ({
+    id: a.id, title: a.title, category: a.category || 'أكاديمي',
+    date: a.achievement_date || '', desc: a.description || '', image: a.image_url || '', rank: null,
+    studentName: a.student_name, grade: a.class_name,
+  })), [apiData])
 
   const categories = useMemo(() => ['all', ...new Set(all.map((a: any) => a.category).filter(Boolean))], [all])
   const filtered   = filter === 'all' ? all : all.filter((a: any) => a.category === filter)
 
-  const stats = [
-    { n: '50+', l: 'جائزة وطنية',     icon: <Trophy size={22} />, color: '#f59e0b' },
-    { n: '15+', l: 'مشاركة خليجية',   icon: <Medal size={22} />,  color: '#6366f1' },
-    { n: '10',  l: 'سنوات تميز',       icon: <Star size={22} />,   color: '#0ea5e9' },
-    { n: '200+',l: 'طالب متفوق',       icon: <Award size={22} />,  color: '#10b981' },
-  ]
+  const stats = useMemo(() => {
+    const cats = new Set(all.map((a: any) => a.category).filter(Boolean))
+    return [
+      { n: String(all.length), l: 'إنجاز مسجّل', icon: <Trophy size={22} />, color: '#f59e0b' },
+      { n: String(cats.size), l: 'مجال تميز', icon: <Medal size={22} />, color: '#6366f1' },
+      { n: all.length ? new Date(all[0]?.date || '').getFullYear().toString() || '—' : '—', l: 'أحدث إنجاز', icon: <Star size={22} />, color: '#0ea5e9' },
+      { n: String(all.filter((a: any) => a.rank === 1).length), l: 'مركز أول', icon: <Award size={22} />, color: '#10b981' },
+    ]
+  }, [all])
 
   return (
     <div>
@@ -153,7 +148,7 @@ export default function AchievementsPage() {
           <Trophy size={32} className="text-amber-500 mx-auto mb-4" />
           <h3 className="text-2xl font-black text-gray-900 mb-2">نحن فخورون بكل طالب متميز</h3>
           <p className="text-gray-500 text-sm max-w-xl mx-auto mb-6">كل إنجاز هو ثمرة جهد مشترك بين الطالب والمعلم وولي الأمر. نواصل معاً رحلة التميز.</p>
-          <a href="/contact" className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg hover:-translate-y-0.5">
+          <a href="/school/contact" className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg hover:-translate-y-0.5">
             تواصل معنا <ChevronLeft size={14} />
           </a>
         </div>

@@ -4,6 +4,7 @@ import { withTransaction } from '../db/transaction'
 import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth'
 import { createLogger } from '../utils/logger'
 import { platformPublicLimiter, ticketMsgLimiter, ticketLookupLimiter, ticketRateLimiter } from '../middleware/rateLimiter'
+import { sanitizeHtml, sanitizeExternalUrl } from '../middleware/validate'
 
 // ── Input sanitizer (strip HTML tags, trim, limit length) ─────────────────
 const sanitize = (v: unknown, maxLen = 2000): string =>
@@ -141,7 +142,7 @@ router.get('/track/:ticket', ticketLookupLimiter, async (req, res) => {
     res.json({ ...safeTicket, messages: msgs.rows, history: hist.rows })
   } catch (err) {
     log.error('Track ticket', { error: (err as Error).message })
-    res.status(500).json({ error: 'Server error' })
+    res.status(500).json({ error: 'تعذّر تحميل التذكرة. حاول مجدداً.' })
   }
 })
 
@@ -176,7 +177,7 @@ router.post('/track/:ticket/message', ticketMsgLimiter, async (req, res) => {
     res.json(msg.rows[0])
   } catch (err) {
     log.error('Ticket message failed', { error: (err as Error).message })
-    res.status(500).json({ error: 'Server error' })
+    res.status(500).json({ error: 'تعذّر إرسال الرسالة. حاول مجدداً.' })
   }
 })
 
@@ -226,7 +227,7 @@ router.post('/request', platformPublicLimiter, async (req, res) => {
     if (!/\S+@\S+\.\S+/.test(client_email)) return res.status(400).json({ error: 'البريد الإلكتروني غير صحيح' })
 
     const year = new Date().getFullYear()
-    const seq  = Date.now().toString().slice(-5)
+    const seq  = String(Math.floor(10000 + Math.random() * 90000))
     const ticket_number = `TKT-${year}-${seq}`
 
     const result = await withTransaction(async (client) => {
@@ -260,7 +261,7 @@ router.post('/request', platformPublicLimiter, async (req, res) => {
 
 // ─── ADMIN endpoints (require auth) ──────────────────────────────────────────
 
-router.use('/admin', authenticateToken, requireRole('super_admin', 'admin'))
+router.use('/admin', authenticateToken, requireRole('super_admin'))
 
 // GET /api/platform/admin/stats — dashboard stats
 router.get('/admin/stats', async (_req, res) => {
@@ -723,10 +724,12 @@ router.post('/admin/blog', authenticateToken, async (req: AuthRequest, res) => {
     const { title, slug, excerpt, content, image_url, category, tags, status } = req.body
     if (!title || !slug) return res.status(400).json({ error: 'العنوان والرابط مطلوبان' })
     const published_at = status === 'published' ? new Date() : null
+    const safeContent = content ? sanitizeHtml(content) : null
+    const safeExcerpt = excerpt ? sanitizeHtml(excerpt) : null
     const row = await query(
       `INSERT INTO blog_posts (title,slug,excerpt,content,image_url,category,tags,author_name,status,published_at)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
-      [title, slug, excerpt || null, content || null, image_url || null, category || null, JSON.stringify(tags || []), req.user?.name || 'Admin', status || 'draft', published_at]
+      [title, slug, safeExcerpt, safeContent, sanitizeExternalUrl(image_url) || null, category || null, JSON.stringify(tags || []), req.user?.name || 'Admin', status || 'draft', published_at]
     )
     res.json(row.rows[0])
   } catch (err: any) {
@@ -781,9 +784,11 @@ router.put('/admin/blog/:id', authenticateToken, async (_req, res) => {
   try {
     const { title, slug, excerpt, content, image_url, category, tags, status } = req.body
     const published_at = status === 'published' ? new Date() : null
+    const safeContent = content ? sanitizeHtml(content) : null
+    const safeExcerpt = excerpt ? sanitizeHtml(excerpt) : null
     const row = await query(
       `UPDATE blog_posts SET title=$1,slug=$2,excerpt=$3,content=$4,image_url=$5,category=$6,tags=$7,status=$8,published_at=COALESCE($9,published_at) WHERE id=$10 RETURNING *`,
-      [title, slug, excerpt||null, content||null, image_url||null, category||null, JSON.stringify(tags||[]), status||'draft', published_at, req.params.id]
+      [title, slug, safeExcerpt, safeContent, sanitizeExternalUrl(image_url) || null, category||null, JSON.stringify(tags||[]), status||'draft', published_at, req.params.id]
     )
     res.json(row.rows[0])
   } catch (err: any) {

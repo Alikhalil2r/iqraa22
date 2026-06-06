@@ -118,11 +118,14 @@ CREATE TABLE IF NOT EXISTS employees (
   end_date DATE,
   salary DECIMAL(10,2),
   salary_currency VARCHAR(10) DEFAULT 'OMR',
+  allowances DECIMAL(10,2) DEFAULT 0,
+  deductions DECIMAL(10,2) DEFAULT 0,
   phone VARCHAR(50),
   email VARCHAR(200),
   address TEXT,
   qualification VARCHAR(200),
   specialization VARCHAR(200),
+  experience INTEGER,
   status VARCHAR(20) DEFAULT 'active',
   photo TEXT,
   civil_id VARCHAR(50),
@@ -551,6 +554,14 @@ ALTER TABLE schools ADD COLUMN IF NOT EXISTS notes TEXT;
 ALTER TABLE schools ADD COLUMN IF NOT EXISTS max_students INTEGER DEFAULT 500;
 ALTER TABLE schools ADD COLUMN IF NOT EXISTS max_employees INTEGER DEFAULT 100;
 
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS allowances DECIMAL(10,2) DEFAULT 0;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS deductions DECIMAL(10,2) DEFAULT 0;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS experience INTEGER;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS salary_currency VARCHAR(10) DEFAULT 'OMR';
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS contract_type VARCHAR(50);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS civil_id VARCHAR(50);
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS passport_number VARCHAR(50);
+
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_host VARCHAR(200);
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_port INTEGER DEFAULT 587;
 ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS smtp_user VARCHAR(200);
@@ -801,6 +812,64 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Public site: job postings
+CREATE TABLE IF NOT EXISTS job_postings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(300) NOT NULL,
+  department VARCHAR(100),
+  job_type VARCHAR(50) DEFAULT 'دوام كامل',
+  deadline DATE,
+  requirements TEXT,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Public site: contact form submissions
+CREATE TABLE IF NOT EXISTS contact_submissions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  phone VARCHAR(50),
+  email VARCHAR(200) NOT NULL,
+  subject VARCHAR(200),
+  message TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'new' CHECK (status IN ('new','read','replied','archived')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Public site: job applications
+CREATE TABLE IF NOT EXISTS job_applications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  job_id UUID REFERENCES job_postings(id) ON DELETE SET NULL,
+  job_title VARCHAR(300) NOT NULL,
+  applicant_name VARCHAR(200) NOT NULL,
+  email VARCHAR(200) NOT NULL,
+  phone VARCHAR(50),
+  form_data JSONB NOT NULL DEFAULT '{}',
+  status VARCHAR(20) DEFAULT 'new' CHECK (status IN ('new','reviewing','shortlisted','rejected','hired','archived')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Public site: alumni story submissions
+CREATE TABLE IF NOT EXISTS alumni_registrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  graduation_year INTEGER NOT NULL,
+  job_title VARCHAR(300) NOT NULL,
+  city VARCHAR(200),
+  email VARCHAR(200) NOT NULL,
+  phone VARCHAR(50),
+  story TEXT NOT NULL,
+  achievement TEXT,
+  image_url TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Company settings (site config / CMS)
 CREATE TABLE IF NOT EXISTS company_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -816,4 +885,182 @@ CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_projects_client ON projects(client_id);
 CREATE INDEX IF NOT EXISTS idx_blog_slug ON blog_posts(slug);
 CREATE INDEX IF NOT EXISTS idx_blog_status ON blog_posts(status);
+CREATE INDEX IF NOT EXISTS idx_contact_submissions_school ON contact_submissions(school_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_job_applications_school ON job_applications(school_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alumni_registrations_school ON alumni_registrations(school_id, status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_job_postings_school ON job_postings(school_id, is_active);
+
+-- Public site alerts (emergency banner)
+CREATE TABLE IF NOT EXISTS public_alerts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  message TEXT NOT NULL,
+  alert_type VARCHAR(20) DEFAULT 'info' CHECK (alert_type IN ('success','warning','danger','info','urgent')),
+  is_active BOOLEAN DEFAULT true,
+  expires_at TIMESTAMPTZ,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Public site FAQs (contact page)
+CREATE TABLE IF NOT EXISTS public_faqs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_alerts_school ON public_alerts(school_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_public_faqs_school ON public_faqs(school_id, is_published);
+
+-- Phase 3: extended school settings fields
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS founded_year VARCHAR(10);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS license_number VARCHAR(100);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS region VARCHAR(100);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS country VARCHAR(100) DEFAULT 'سلطنة عُمان';
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS phone2 VARCHAR(50);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS email2 VARCHAR(200);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS fax VARCHAR(50);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS map_embed TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS values_text TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS objectives TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS principal_title VARCHAR(200);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS principal_email VARCHAR(200);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS principal_phone VARCHAR(50);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS instagram TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS twitter TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS facebook TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS youtube TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS snapchat TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS tiktok TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS whatsapp TEXT;
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS banner_color VARCHAR(20);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS students_count VARCHAR(20);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS teachers_count VARCHAR(20);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS classrooms_count VARCHAR(20);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS years_experience VARCHAR(20);
+ALTER TABLE school_settings ADD COLUMN IF NOT EXISTS office_hours VARCHAR(200) DEFAULT 'الأحد – الخميس | 7:00 ص – 2:30 م';
+
+-- Public videos library
+CREATE TABLE IF NOT EXISTS public_videos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(300) NOT NULL,
+  video_url TEXT NOT NULL,
+  category VARCHAR(100),
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Student & teacher articles
+CREATE TABLE IF NOT EXISTS public_articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  article_type VARCHAR(20) NOT NULL CHECK (article_type IN ('student','teacher')),
+  author_name VARCHAR(200) NOT NULL,
+  grade VARCHAR(100),
+  subject VARCHAR(100),
+  title VARCHAR(300) NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(100),
+  publish_date DATE DEFAULT CURRENT_DATE,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- School teams (articles page)
+CREATE TABLE IF NOT EXISTS school_teams (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  category VARCHAR(100),
+  members_count INTEGER DEFAULT 0,
+  description TEXT,
+  achievements TEXT,
+  image_url TEXT,
+  color_gradient VARCHAR(100) DEFAULT 'from-teal-500 to-teal-600',
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Hall of fame
+CREATE TABLE IF NOT EXISTS hall_of_fame (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  grade VARCHAR(100),
+  year VARCHAR(10),
+  achievement VARCHAR(300),
+  category VARCHAR(100),
+  rank INTEGER DEFAULT 1,
+  image_url TEXT,
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Learning support unit
+CREATE TABLE IF NOT EXISTS learning_support_settings (
+  school_id UUID PRIMARY KEY REFERENCES schools(id) ON DELETE CASCADE,
+  about_text TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ls_services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(200) NOT NULL,
+  icon VARCHAR(20) DEFAULT '📖',
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ls_specialists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  name VARCHAR(200) NOT NULL,
+  role VARCHAR(200),
+  image_url TEXT,
+  bio TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ls_articles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(300) NOT NULL,
+  content TEXT NOT NULL,
+  publish_date DATE DEFAULT CURRENT_DATE,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ls_gallery (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id UUID REFERENCES schools(id) ON DELETE CASCADE,
+  title VARCHAR(200),
+  image_url TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  is_published BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_videos_school ON public_videos(school_id, is_published);
+CREATE INDEX IF NOT EXISTS idx_public_articles_school ON public_articles(school_id, article_type, is_published);
+CREATE INDEX IF NOT EXISTS idx_school_teams_school ON school_teams(school_id, is_published);
+CREATE INDEX IF NOT EXISTS idx_hall_of_fame_school ON hall_of_fame(school_id, is_published);
 

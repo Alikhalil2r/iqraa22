@@ -273,7 +273,7 @@ export default function LeavesAdmin() {
             </select>
           </FormField>
           <FormField label="نوع الإجازة *">
-            <Select value={form.leaveTypeName} onChange={v=>setForm(p=>({...p,leaveTypeName:v}))} options={TYPE_OPTS}/>
+            <Select value={form.leaveTypeName} onChange={e=>setForm(p=>({...p,leaveTypeName:e.target.value}))} options={TYPE_OPTS}/>
           </FormField>
           <div className="grid grid-cols-2 gap-3">
             <FormField label="من تاريخ *">
@@ -284,9 +284,9 @@ export default function LeavesAdmin() {
             </FormField>
           </div>
           <FormField label="عدد الأيام">
-            <Input type="number" value={form.days} onChange={v=>setForm(p=>({...p,days:v}))} min="1"/>
+            <Input type="number" value={form.days} onChange={e=>setForm(p=>({...p,days:e.target.value}))} min="1"/>
           </FormField>
-          <FormField label="السبب"><Textarea value={form.reason} onChange={v=>setForm(p=>({...p,reason:v}))}/></FormField>
+          <FormField label="السبب"><Textarea value={form.reason} onChange={e=>setForm(p=>({...p,reason:e.target.value}))}/></FormField>
           <div className="flex justify-end gap-2 pt-2">
             <button onClick={closeModal} className="btn-secondary">إلغاء</button>
             <button onClick={submit} disabled={createMut.isPending} className="btn-primary">تقديم الطلب</button>
@@ -303,7 +303,7 @@ export default function LeavesAdmin() {
               <p className="text-sm text-red-600">{rejectModal.leave_type_name} — {rejectModal.days} يوم</p>
             </div>
             <FormField label="سبب الرفض *">
-              <Textarea value={rejectReason} onChange={setRejectReason} placeholder="أدخل سبب الرفض..."/>
+              <Textarea value={rejectReason} onChange={e=>setRejectReason(e.target.value)} placeholder="أدخل سبب الرفض..."/>
             </FormField>
             <div className="flex justify-end gap-2">
               <button onClick={()=>setRejectModal(null)} className="btn-secondary">إلغاء</button>
@@ -322,7 +322,7 @@ export default function LeavesAdmin() {
         message={`هل تريد إلغاء طلب إجازة ${cancelTarget?.employee_name}؟`}
         onConfirm={()=>cancelMut.mutate(cancelTarget.id)}
         onCancel={()=>setCancelTarget(null)}
-        isLoading={cancelMut.isPending}
+        loading={cancelMut.isPending}
       />
     </div>
   )

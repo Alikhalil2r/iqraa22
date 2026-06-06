@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import { query } from '../db'
 import { withTransaction } from '../db/transaction'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, STAFF_ROLES } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
@@ -11,7 +11,7 @@ const log = createLogger('ATTENDANCE')
 const ALLOWED_STATUSES     = ['present', 'absent', 'late', 'excused'] as const
 const ALLOWED_PERSON_TYPES = ['student', 'employee'] as const
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { date, personType, classId } = req.query
@@ -107,7 +107,7 @@ router.post('/bulk', authenticateToken, writeLimiter, requireRole('admin', 'teac
   }
 })
 
-router.get('/stats', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/stats', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { personType, startDate, endDate } = req.query

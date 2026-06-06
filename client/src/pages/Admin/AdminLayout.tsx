@@ -9,9 +9,8 @@ import {
   Bell, BarChart3, Shield, BookOpen, ChevronLeft, ChevronRight, Search,
   DollarSign, CalendarDays, Home, Globe, Moon, Sun, Image, FileText, CreditCard,
   School, BookMarked, ClipboardList, Printer, Brain, ShieldCheck, Lock,
-  Inbox, FolderOpen, Building2
+  Inbox, FolderOpen, Building2, Video
 } from 'lucide-react'
-import DevSignature from '../../components/DevSignature'
 import toast from 'react-hot-toast'
 import GlobalSearch from '../../components/GlobalSearch'
 import SessionWarning from '../../components/SessionWarning'
@@ -19,6 +18,8 @@ import ShortcutsModal from '../../components/ShortcutsModal'
 import NotificationPanel from '../../components/NotificationPanel'
 import { useDarkMode } from '../../hooks/useDarkMode'
 import { useLanguage } from '../../context/LanguageContext'
+import ScrollToTop from '../../components/ux/ScrollToTop'
+import PageTransition from '../../components/ux/PageTransition'
 
 type MenuItem = {
   to: string
@@ -42,7 +43,8 @@ const menuGroups: MenuGroup[] = [
   {
     labelKey: 'nav.group.main',
     items: [
-      { to: '/admin',          icon: LayoutDashboard, labelKey: 'nav.dashboard', end: true },
+      { to: '/admin',          icon: LayoutDashboard, labelKey: 'nav.dashboard', end: true, roles: ['super_admin','admin','librarian','hr_manager','guard'] },
+      { to: '/admin/accountant', icon: DollarSign,    labelKey: 'nav.accountant', roles: ['super_admin','admin','accountant'] },
       { to: '/admin/teacher',  icon: School,          labelKey: 'nav.teacher',   roles: ['super_admin','admin','teacher'] },
       { to: '/admin/reports',  icon: BarChart3,        labelKey: 'nav.reports',   roles: ['super_admin','admin','accountant','hr_manager'] },
       { to: '/admin/pdf-reports', icon: Printer,      labelKey: 'nav.pdfReports',roles: ['super_admin','admin','teacher','accountant','hr_manager'] },
@@ -51,7 +53,7 @@ const menuGroups: MenuGroup[] = [
   {
     labelKey: 'nav.group.school',
     items: [
-      { to: '/admin/students',   icon: GraduationCap,  labelKey: 'nav.students' },
+      { to: '/admin/students',   icon: GraduationCap,  labelKey: 'nav.students', roles: ['super_admin','admin','teacher','hr_manager'] },
       { to: '/admin/employees',  icon: Users,           labelKey: 'nav.employees', roles: ['super_admin','admin','hr_manager'] },
       { to: '/admin/attendance', icon: UserCheck,       labelKey: 'nav.attendance',roles: ['super_admin','admin','teacher','hr_manager','guard'] },
       { to: '/admin/grades',     icon: ClipboardCheck,  labelKey: 'nav.grades',    roles: ['super_admin','admin','teacher'] },
@@ -62,10 +64,11 @@ const menuGroups: MenuGroup[] = [
   {
     labelKey: 'nav.group.communication',
     items: [
-      { to: '/admin/messages',      icon: MessageSquare, labelKey: 'nav.messages' },
+      { to: '/admin/messages',      icon: MessageSquare, labelKey: 'nav.messages', roles: ['super_admin','admin','teacher','hr_manager','librarian','guard'] },
       { to: '/admin/announcements', icon: Bell,          labelKey: 'nav.announcements', roles: ['super_admin','admin'] },
       { to: '/admin/schedule',      icon: CalendarDays,  labelKey: 'nav.schedule',      roles: ['super_admin','admin','teacher'] },
       { to: '/admin/news',          icon: Newspaper,     labelKey: 'nav.news',          roles: ['super_admin','admin'] },
+      { to: '/admin/submissions', icon: Inbox,         labelKey: 'nav.submissions',   roles: ['super_admin','admin','hr_manager'] },
       { to: '/admin/events',        icon: Calendar,      labelKey: 'nav.events',        roles: ['super_admin','admin'] },
     ]
   },
@@ -82,20 +85,22 @@ const menuGroups: MenuGroup[] = [
     labelKey: 'nav.group.content',
     items: [
       { to: '/admin/gallery',  icon: Image,      labelKey: 'nav.gallery',  roles: ADMIN_ONLY },
+      { to: '/admin/site-content', icon: Globe,  labelKey: 'nav.siteContent', roles: ADMIN_ONLY },
+      { to: '/admin/extended-content', icon: Video, labelKey: 'nav.extendedContent', roles: ADMIN_ONLY },
       { to: '/admin/exams',    icon: FileText,   labelKey: 'nav.exams',    roles: ['super_admin','admin','teacher'] },
       { to: '/admin/id-cards', icon: CreditCard, labelKey: 'nav.idCards',  roles: ['super_admin','admin'] },
     ]
   },
   {
     labelKey: 'nav.group.platform',
-    roles: ADMIN_ONLY,
+    roles: SUPER_ONLY,
     items: [
-      { to: '/admin/requests',           icon: Inbox,      labelKey: 'nav.requests',          roles: ADMIN_ONLY },
-      { to: '/admin/clients',            icon: Building2,  labelKey: 'nav.clients',           roles: ADMIN_ONLY },
-      { to: '/admin/projects',           icon: FolderOpen, labelKey: 'nav.projects',           roles: ADMIN_ONLY },
-      { to: '/admin/platform-analytics', icon: BarChart3,  labelKey: 'nav.platformAnalytics', roles: ADMIN_ONLY },
-      { to: '/admin/platform-content',   icon: Globe,      labelKey: 'nav.platformContent',   roles: ADMIN_ONLY },
-      { to: '/admin/blog',               icon: BookOpen,   labelKey: 'nav.blogAdmin',          roles: ADMIN_ONLY },
+      { to: '/admin/requests',           icon: Inbox,      labelKey: 'nav.requests',          roles: SUPER_ONLY },
+      { to: '/admin/clients',            icon: Building2,  labelKey: 'nav.clients',           roles: SUPER_ONLY },
+      { to: '/admin/projects',           icon: FolderOpen, labelKey: 'nav.projects',           roles: SUPER_ONLY },
+      { to: '/admin/platform-analytics', icon: BarChart3,  labelKey: 'nav.platformAnalytics', roles: SUPER_ONLY },
+      { to: '/admin/platform-content',   icon: Globe,      labelKey: 'nav.platformContent',   roles: SUPER_ONLY },
+      { to: '/admin/blog',               icon: BookOpen,   labelKey: 'nav.blogAdmin',          roles: SUPER_ONLY },
     ]
   },
   {
@@ -147,15 +152,18 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   '/admin/homework':       'breadcrumb.homework',
   '/admin/conduct':        'breadcrumb.conduct',
   '/admin/leaves':         'breadcrumb.leaves',
-  '/admin/ai-insights':   'التحليل الذكي',
-  '/admin/audit-log':     'سجل النشاط',
-  '/admin/2fa':           'المصادقة الثنائية',
-  '/admin/requests':              'طلبات الخدمة',
-  '/admin/clients':               'إدارة العملاء',
-  '/admin/projects':              'إدارة المشاريع',
-  '/admin/platform-analytics':    'تحليلات المنصة',
-  '/admin/platform-content':      'إدارة المحتوى',
-  '/admin/blog':                  'إدارة المدونة',
+  '/admin/ai-insights':          'breadcrumb.aiInsights',
+  '/admin/audit-log':            'breadcrumb.auditLog',
+  '/admin/2fa':                  'breadcrumb.twoFactor',
+  '/admin/requests':             'breadcrumb.requests',
+  '/admin/clients':              'breadcrumb.clients',
+  '/admin/projects':             'breadcrumb.projects',
+  '/admin/platform-analytics':   'breadcrumb.platformAnalytics',
+  '/admin/platform-content':     'breadcrumb.platformContent',
+  '/admin/blog':                 'breadcrumb.blog',
+  '/admin/submissions':          'breadcrumb.submissions',
+  '/admin/site-content':         'breadcrumb.siteContent',
+  '/admin/extended-content':     'breadcrumb.extendedContent',
 }
 
 export default function AdminLayout() {
@@ -165,6 +173,8 @@ export default function AdminLayout() {
   const [notifOpen,     setNotifOpen]     = useState(false)
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const { user, logout }                  = useAuth()
+  const userRole = (user?.role ?? '') as AppRole
+  const isPlatformAdmin = userRole === 'super_admin'
   const navigate  = useNavigate()
   const location  = useLocation()
   const { isDark, toggle: toggleDark }    = useDarkMode()
@@ -181,15 +191,19 @@ export default function AdminLayout() {
     queryKey:       ['new-tickets-count'],
     queryFn:        () => adminApi.get('/api/platform/admin/new-count'),
     refetchInterval: 30000,
-    enabled: ['super_admin', 'admin'].includes(userRole || '')
+    enabled: isPlatformAdmin,
   })
   const newTicketsCount = (newTicketsData as any)?.count || 0
 
   const handleLogout = () => {
     logout()
     navigate('/login')
-    toast.success(lang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out successfully')
+    toast.success(t('admin.logoutSuccess'))
   }
+
+  useEffect(() => {
+    setMobileSidebar(false)
+  }, [location.pathname])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -213,10 +227,9 @@ export default function AdminLayout() {
 
   const currentBreadcrumb = t(BREADCRUMB_KEYS[location.pathname] || '')
 
-  const userRole = user?.role as AppRole
   const roleLabel = userRole && ROLE_LABELS[userRole]
     ? (lang === 'ar' ? ROLE_LABELS[userRole].ar : ROLE_LABELS[userRole].en)
-    : (lang === 'ar' ? 'مستخدم' : 'User')
+    : t('common.user')
 
   const ChevronIcon = isRTL ? ChevronLeft : ChevronRight
 
@@ -229,9 +242,10 @@ export default function AdminLayout() {
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full dash-sidebar">
+      <div className="dash-sidebar-brand-accent flex-shrink-0" />
       {/* Logo */}
-      <div className={`flex items-center border-b border-gray-100 flex-shrink-0 ${sidebarOpen ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
+      <div className={`dash-sidebar-brand flex items-center flex-shrink-0 ${sidebarOpen ? 'px-4 py-3.5 justify-between' : 'px-2 py-3.5 justify-center'}`}>
         {sidebarOpen && (
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-md flex-shrink-0" style={{ background: 'var(--color-primary)' }}>
@@ -239,9 +253,9 @@ export default function AdminLayout() {
             </div>
             <div className="min-w-0">
               <p className="font-black text-gray-800 text-sm leading-none truncate">
-                {lang === 'ar' ? 'لوحة التحكم' : 'Control Panel'}
+                {t('admin.panelTitle')}
               </p>
-              <p className="text-[10px] text-gray-400 mt-0.5">School Management</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">{t('admin.panelSub')}</p>
             </div>
           </div>
         )}
@@ -257,7 +271,7 @@ export default function AdminLayout() {
           <button onClick={() => setSearchOpen(true)}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-400 text-sm transition-colors border border-gray-200 group">
             <Search size={14} />
-            <span className="flex-1 text-right text-xs">{lang === 'ar' ? 'بحث سريع...' : 'Quick search...'}</span>
+            <span className="flex-1 text-end text-xs">{t('admin.quickSearch')}</span>
             <kbd className="text-[9px] font-mono bg-gray-200 text-gray-400 px-1.5 py-0.5 rounded border border-gray-300">⌘K</kbd>
           </button>
         </div>
@@ -277,7 +291,7 @@ export default function AdminLayout() {
             {sidebarOpen && (
               <div className="flex items-center gap-2 px-3 py-1.5 mt-1.5">
                 <div className="h-px flex-1 bg-gray-100" />
-                <span className="text-[9px] font-black text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                <span className="dash-nav-group-label whitespace-nowrap">
                   {t(group.labelKey)}
                 </span>
               </div>
@@ -298,13 +312,8 @@ export default function AdminLayout() {
                   end={(item as any).end}
                   onClick={() => setMobileSidebar(false)}
                   className={({ isActive }) =>
-                    `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-150 relative ${
-                      isActive
-                        ? 'text-white shadow-sm'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                    } ${!sidebarOpen ? 'justify-center px-2' : ''}`
+                    `dash-nav-link group ${isActive ? 'active' : ''} ${!sidebarOpen ? 'justify-center px-2' : ''}`
                   }
-                  style={({ isActive }) => isActive ? { background: 'var(--color-primary)' } : {}}
                   title={!sidebarOpen ? label : undefined}
                 >
                   <item.icon size={17} className="flex-shrink-0" />
@@ -335,9 +344,9 @@ export default function AdminLayout() {
       {/* Footer links */}
       {sidebarOpen && (
         <div className="px-3 pb-2">
-          <a href="/" target="_blank" className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all font-bold">
+          <a href="/school" target="_blank" className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all font-bold">
             <Globe size={14} />
-            <span>{lang === 'ar' ? 'عرض الموقع العام' : 'View Public Site'}</span>
+            <span>{t('admin.viewSite')}</span>
           </a>
         </div>
       )}
@@ -362,15 +371,15 @@ export default function AdminLayout() {
             </>
           )}
         </div>
-        {sidebarOpen && <DevSignature variant="sidebar" className="mt-1" />}
       </div>
     </div>
   )
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen dash-shell overflow-hidden">
+      <ScrollToTop targetId="admin-main" />
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col bg-white border-l border-gray-100 shadow-sm transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-64' : 'w-16'}`}>
+      <aside className={`hidden md:flex flex-col dash-sidebar border-l shadow-sm transition-all duration-300 flex-shrink-0 ${sidebarOpen ? 'w-64' : 'w-16'}`}>
         <SidebarContent />
       </aside>
 
@@ -378,7 +387,7 @@ export default function AdminLayout() {
       {mobileSidebar && (
         <>
           <div className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm" onClick={() => setMobileSidebar(false)} />
-          <aside className="fixed right-0 top-0 h-full w-72 bg-white z-50 shadow-2xl md:hidden animate-slide-in">
+          <aside className="fixed right-0 top-0 h-full w-72 dash-sidebar z-50 shadow-2xl md:hidden animate-slide-in">
             <SidebarContent />
           </aside>
         </>
@@ -389,28 +398,29 @@ export default function AdminLayout() {
         <SessionWarning />
 
         {/* Top Header */}
-        <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm z-10">
-          <button className="md:hidden p-2 rounded-xl hover:bg-gray-100 text-gray-600 transition-colors" onClick={() => setMobileSidebar(true)}>
+        <header className="dash-header px-4 py-3 flex items-center gap-3 flex-shrink-0 z-10">
+          <button className="md:hidden dash-toolbar-btn-icon" onClick={() => setMobileSidebar(true)}>
             <Menu size={20} />
           </button>
 
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1.5 text-sm flex-1 min-w-0">
-            <Home size={13} className="text-gray-400 flex-shrink-0" />
-            <span className="text-gray-400 hidden sm:block text-xs">/</span>
-            <span className="text-gray-400 hidden sm:block text-xs">{lang === 'ar' ? 'لوحة التحكم' : 'Dashboard'}</span>
-            {currentBreadcrumb && (
-              <>
-                <span className="text-gray-300 text-xs">/</span>
-                <span className="font-black text-gray-700 text-xs truncate">{currentBreadcrumb}</span>
-              </>
-            )}
+          <div className="flex items-center gap-2 text-sm flex-1 min-w-0">
+            <div className="dash-breadcrumb-pill min-w-0">
+              <Home size={12} className="text-gray-400 flex-shrink-0" />
+              <span className="text-gray-400 hidden sm:inline text-xs">{t('admin.breadcrumbRoot')}</span>
+              {currentBreadcrumb && (
+                <>
+                  <span className="text-gray-300 text-xs hidden sm:inline">/</span>
+                  <span className="font-black text-gray-700 text-xs truncate">{currentBreadcrumb}</span>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
             {/* Search */}
             <button onClick={() => setSearchOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs transition-colors font-bold">
+              className="hidden sm:flex dash-toolbar-btn">
               <Search size={14} />
               <span>{t('common.search')}</span>
               <kbd className="text-[9px] font-mono bg-white text-gray-400 px-1 py-0.5 rounded border border-gray-200 shadow-sm">⌘K</kbd>
@@ -418,8 +428,8 @@ export default function AdminLayout() {
 
             {/* Language toggle */}
             <button onClick={toggleLang}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-xs font-black transition-all"
-              title={lang === 'ar' ? 'Switch to English' : 'التبديل للعربية'}>
+              className="dash-toolbar-btn"
+              title={t('common.langSwitch')}>
               <span className={lang === 'ar' ? 'text-green-600' : 'text-gray-400'}>ع</span>
               <span className="text-gray-300 mx-0.5">|</span>
               <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
@@ -427,15 +437,15 @@ export default function AdminLayout() {
 
             {/* Dark mode */}
             <button onClick={toggleDark}
-              className="p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-all hover:scale-110"
-              title={isDark ? (lang === 'ar' ? 'الوضع الفاتح' : 'Light Mode') : (lang === 'ar' ? 'الوضع الداكن' : 'Dark Mode')}>
+              className="dash-toolbar-btn-icon hover:scale-105"
+              title={isDark ? t('common.lightMode') : t('common.darkMode')}>
               {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} />}
             </button>
 
             {/* Notifications bell */}
             <div className="relative">
               <button onClick={() => setNotifOpen(o => !o)}
-                className="relative p-2.5 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors"
+                className="relative dash-toolbar-btn-icon"
                 title={t('notif.title')}>
                 <Bell size={18} />
                 {unreadCount > 0 && (
@@ -448,9 +458,9 @@ export default function AdminLayout() {
             </div>
 
             {/* View site */}
-            <a href="/" target="_blank"
-              className="hidden lg:flex p-2.5 rounded-xl hover:bg-emerald-50 text-gray-400 hover:text-emerald-600 transition-colors"
-              title={lang === 'ar' ? 'عرض الموقع العام' : 'View Public Site'}>
+            <a href="/school" target="_blank"
+              className="hidden lg:flex dash-toolbar-btn-icon hover:!text-emerald-600 hover:!border-emerald-200"
+              title={t('admin.schoolSite')}>
               <Globe size={18} />
             </a>
 
@@ -468,8 +478,10 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
+        <main id="admin-main" className="flex-1 overflow-y-auto p-4 md:p-6 dash-main outline-none" tabIndex={-1}>
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
 

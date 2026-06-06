@@ -39,6 +39,53 @@ export function sanitizeString(str: unknown): string {
     .trim()
 }
 
+/** يُسمح فقط بـ iframe من خرائط Google */
+export function sanitizeMapEmbed(embed: unknown): string {
+  if (typeof embed !== 'string' || !embed.trim()) return ''
+  const trimmed = embed.trim().slice(0, 4000)
+  const iframeMatch = trimmed.match(/<iframe[^>]*src=["']([^"']+)["'][^>]*>/i)
+  if (!iframeMatch) return ''
+  try {
+    const url = new URL(iframeMatch[1])
+    const allowedHosts = ['www.google.com', 'google.com', 'maps.google.com']
+    if (!allowedHosts.some(h => url.hostname === h || url.hostname.endsWith('.google.com'))) return ''
+    if (!url.pathname.includes('/maps')) return ''
+  } catch {
+    return ''
+  }
+  return trimmed
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/javascript\s*:/gi, '')
+}
+
+const SAFE_URL_PROTOCOLS = new Set(['https:', 'http:', 'mailto:', 'tel:'])
+export function sanitizeExternalUrl(url: unknown): string {
+  if (typeof url !== 'string' || !url.trim()) return ''
+  const trimmed = url.trim().slice(0, 500)
+  try {
+    const parsed = new URL(trimmed.startsWith('//') ? `https:${trimmed}` : trimmed)
+    if (!SAFE_URL_PROTOCOLS.has(parsed.protocol)) return ''
+    return parsed.href
+  } catch {
+    if (/^[\d+\-\s()]+$/.test(trimmed)) return trimmed
+    return ''
+  }
+}
+
+/** إزالة وسوم خطرة من HTML المدخلات */
+export function sanitizeHtml(html: unknown): string {
+  if (typeof html !== 'string') return ''
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+    .replace(/<embed\b[^>]*>/gi, '')
+    .replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
+    .replace(/javascript\s*:/gi, '')
+    .slice(0, 50000)
+}
+
 export function sanitizeCSS(css: unknown): string {
   if (typeof css !== 'string') return ''
   // Strip JS inside CSS: expressions, url(javascript:...), @import with external

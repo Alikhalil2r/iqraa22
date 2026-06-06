@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Users, Eye, EyeOff, MessageSquare, BookOpen, BarChart3 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import DemoCredentialsBox from '../../components/DemoCredentialsBox'
 
 export default function ParentLoginPage() {
   const [username, setUsername] = useState('')
@@ -103,16 +104,15 @@ export default function ParentLoginPage() {
                   : (lang === 'ar' ? 'دخول بوابة الأولياء' : 'Login to Parent Portal')}
               </button>
             </form>
-            <div className="mt-4 text-center">
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <Link to="/school" className="text-sm text-gray-400 hover:text-gray-600">
+                ← {lang === 'ar' ? 'العودة لموقع المدرسة' : 'Back to school site'}
+              </Link>
               <Link to="/login" className="text-sm text-gray-400 hover:text-gray-600">
-                ← {t('auth.adminPortal')}
+                {t('auth.adminPortal')}
               </Link>
             </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-xl">
-              <p className="text-xs text-blue-600 font-bold text-center">
-                {lang === 'ar' ? 'بيانات تجريبية: parent1 / parent123' : 'Demo: parent1 / parent123'}
-              </p>
-            </div>
+            <DemoCredentialsBox lang={lang} variant="parent" className="mt-6" />
           </div>
         </div>
       </div>

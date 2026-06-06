@@ -131,7 +131,7 @@ export default function StudentIdCards() {
   })
 
   const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim() || '#1e40af'
-  const schoolName = 'مدرسة اقرأ الخاصة'
+  const schoolName = 'مدرسة النور العالمية'
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {

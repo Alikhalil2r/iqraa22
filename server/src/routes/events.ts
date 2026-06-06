@@ -1,12 +1,12 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, STAFF_ROLES } from '../middleware/auth'
 import { createLogger } from '../utils/logger'
 
 const router = Router()
 const log = createLogger('EVENTS')
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const result = await query(
       `SELECT id, title, description, event_type, start_date, end_date, location, color, is_public, created_at
@@ -20,7 +20,7 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.post('/', authenticateToken, async (req: AuthRequest, res) => {
+router.post('/', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId } = req.user!
     const d = req.body
@@ -39,7 +39,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.put('/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
     const d = req.body
     const result = await query(`
@@ -57,7 +57,7 @@ router.put('/:id', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.delete('/:id', authenticateToken, async (req: AuthRequest, res) => {
+router.delete('/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
   try {
     await query('DELETE FROM events WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
     res.json({ success: true })

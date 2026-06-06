@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import { LanguageProvider } from './context/LanguageContext'
+import './fonts'
 import './index.css'
 
 // ─── PWA Service Worker registration ──────────────────────────────────────────
@@ -37,15 +38,30 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <App />
             <Toaster
               position="top-center"
+              gutter={10}
+              containerStyle={{ top: 20 }}
               toastOptions={{
-                duration: 3500,
+                duration: 3800,
                 style: {
                   fontFamily: 'Cairo, Tajawal, sans-serif',
                   fontWeight: 700,
                   fontSize: '0.875rem',
-                  borderRadius: '0.875rem',
-                  padding: '0.75rem 1rem',
-                }
+                  borderRadius: '1rem',
+                  padding: '0.8rem 1.1rem',
+                  boxShadow: '0 8px 32px rgba(15,23,42,0.12)',
+                  maxWidth: 'min(92vw, 420px)',
+                },
+                success: {
+                  iconTheme: { primary: '#10b981', secondary: '#fff' },
+                  style: { background: '#f0fdf4', color: '#065f46', border: '1px solid #bbf7d0' },
+                },
+                error: {
+                  iconTheme: { primary: '#ef4444', secondary: '#fff' },
+                  style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' },
+                },
+                loading: {
+                  style: { background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0' },
+                },
               }}
             />
           </BrowserRouter>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { usersAdminApi } from '../../api/client'
+import { usersAdminApi, studentsApi } from '../../api/client'
 import DataTable from '../../components/DataTable'
 import Modal from '../../components/Modal'
 import { FormField, Input, Select } from '../../components/FormField'
@@ -26,18 +26,27 @@ const ROLE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   guard:       { label: 'حارس',                color: '#6b7280', bg: 'bg-gray-100 text-gray-700' },
   parent:      { label: 'ولي أمر',             color: '#10b981', bg: 'bg-emerald-50 text-emerald-700' },
 }
-const emptyUser = { name: '', username: '', password: '', role: 'teacher', email: '', phone: '', isActive: true }
+const emptyUser = { name: '', username: '', password: '', role: 'teacher', email: '', phone: '', isActive: true, studentIds: [] as string[] }
+const TEACHING_SUBJECTS = ['الرياضيات', 'العلوم', 'اللغة العربية', 'اللغة الإنجليزية', 'التربية الإسلامية', 'الحاسب الآلي']
 
 export default function UsersAdmin() {
   const [modal,   setModal]   = useState(false)
   const [editing, setEditing] = useState<any>(null)
   const [form,    setForm]    = useState(emptyUser)
   const [showPw,  setShowPw]  = useState(false)
+  const [teachModal, setTeachModal] = useState(false)
+  const [teachForm, setTeachForm] = useState({ homeroomClassId: '', subjects: [] as { name: string; classId?: string }[] })
+  const [teachProfile, setTeachProfile] = useState<any>(null)
   const qc = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['users-admin'],
     queryFn: () => usersAdminApi.list().then(r => r.data)
+  })
+  const { data: studentsData } = useQuery({
+    queryKey: ['students-for-parent-link'],
+    queryFn: () => studentsApi.list({ status: 'active' }).then(r => r.data),
+    enabled: modal && form.role === 'parent' && !editing,
   })
 
   const createMut = useMutation({
@@ -55,11 +64,31 @@ export default function UsersAdmin() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['users-admin'] }); toast.success('تم الحذف') },
     onError: (e: any) => toast.error(e.response?.data?.error || 'لا يمكن الحذف')
   })
+  const teachMut = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => usersAdminApi.saveTeachingProfile(id, data),
+    onSuccess: () => { toast.success('✅ تم حفظ تخصيصات المعلم'); setTeachModal(false) },
+    onError: (e: any) => toast.error(e.response?.data?.error || 'حدث خطأ'),
+  })
+
+  const openTeaching = async (row: any) => {
+    setEditing(row)
+    try {
+      const res = await usersAdminApi.getTeachingProfile(row.id)
+      setTeachProfile(res.data)
+      setTeachForm({
+        homeroomClassId: res.data.homeroomClass?.id || '',
+        subjects: (res.data.subjects || []).map((s: any) => ({ name: s.name, classId: s.class_id })),
+      })
+      setTeachModal(true)
+    } catch {
+      toast.error('تعذر تحميل تخصيصات المعلم')
+    }
+  }
 
   const openAdd  = () => { setEditing(null); setForm(emptyUser); setModal(true) }
   const openEdit = (row: any) => {
     setEditing(row)
-    setForm({ name: row.name, username: row.username, password: '', role: row.role, email: row.email || '', phone: row.phone || '', isActive: row.is_active })
+    setForm({ name: row.name, username: row.username, password: '', role: row.role, email: row.email || '', phone: row.phone || '', isActive: row.is_active, studentIds: [] })
     setModal(true)
   }
   const closeModal = () => { setModal(false); setEditing(null); setShowPw(false) }
@@ -191,6 +220,35 @@ export default function UsersAdmin() {
           <FormField label="رقم الهاتف">
             <Input type="tel" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="+968 XXXX XXXX" />
           </FormField>
+          {!editing && form.role === 'parent' && (
+            <FormField label="ربط الطلاب (اختياري)" hint="اختر الأبناء المرتبطين بهذا الحساب في بوابة الأولياء">
+              <div className="max-h-40 overflow-y-auto space-y-1.5 rounded-xl border border-gray-200 p-3 bg-gray-50">
+                {(studentsData?.students || []).length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-2">لا يوجد طلاب نشطون</p>
+                ) : (studentsData?.students || []).map((st: any) => {
+                  const on = form.studentIds.includes(st.id)
+                  return (
+                    <label key={st.id} className="flex items-center gap-2 cursor-pointer text-sm font-bold text-gray-700 hover:bg-white rounded-lg px-2 py-1">
+                      <input type="checkbox" checked={on}
+                        onChange={() => setForm({
+                          ...form,
+                          studentIds: on ? form.studentIds.filter(id => id !== st.id) : [...form.studentIds, st.id],
+                        })}
+                        className="rounded accent-emerald-600" />
+                      <span>{st.name}</span>
+                      <span className="text-[10px] text-gray-400">{st.class_name}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </FormField>
+          )}
+          {editing?.role === 'teacher' && (
+            <button type="button" onClick={() => { closeModal(); openTeaching(editing) }}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-blue-200 text-blue-700 font-bold text-sm hover:bg-blue-50 transition-colors">
+              📚 تخصيصات التدريس (فصل · مواد · جدول)
+            </button>
+          )}
           <label className="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
             <input type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="w-4.5 h-4.5 rounded accent-purple-600" />
             <span className="font-bold text-sm text-gray-700">الحساب مفعّل</span>
@@ -205,6 +263,47 @@ export default function UsersAdmin() {
               {editing ? 'حفظ التعديلات' : 'إنشاء الحساب'}
             </button>
             <button type="button" onClick={closeModal} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">إلغاء</button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={teachModal} onClose={() => setTeachModal(false)} title={`تخصيصات المعلم — ${editing?.name || ''}`} size="md">
+        <form onSubmit={e => {
+          e.preventDefault()
+          if (!editing?.id) return
+          teachMut.mutate({ id: editing.id, data: teachForm })
+        }} className="space-y-4">
+          <FormField label="الفصل الرئيسي (مربي فصل)">
+            <Select value={teachForm.homeroomClassId} onChange={e => setTeachForm({ ...teachForm, homeroomClassId: e.target.value })}
+              options={[{ value: '', label: '— بدون —' }, ...(teachProfile?.classes || []).map((c: any) => ({ value: c.id, label: c.name }))]} />
+          </FormField>
+          <FormField label="المواد التي يدرّسها">
+            <div className="flex flex-wrap gap-2">
+              {TEACHING_SUBJECTS.map(sub => {
+                const on = teachForm.subjects.some(s => s.name === sub)
+                return (
+                  <button key={sub} type="button"
+                    onClick={() => setTeachForm({
+                      ...teachForm,
+                      subjects: on
+                        ? teachForm.subjects.filter(s => s.name !== sub)
+                        : [...teachForm.subjects, { name: sub, classId: teachForm.homeroomClassId || undefined }],
+                    })}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${on ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                    {sub}
+                  </button>
+                )
+              })}
+            </div>
+          </FormField>
+          {teachProfile?.schedule?.length > 0 && (
+            <p className="text-xs text-gray-500 bg-gray-50 p-3 rounded-xl">
+              حصص مجدولة مرتبطة: {teachProfile.schedule.length} — يتم ربطها تلقائياً عند الحفظ
+            </p>
+          )}
+          <div className="flex gap-3 pt-2">
+            <button type="submit" className="btn-primary flex-1 py-3 font-black" disabled={teachMut.isPending}>حفظ التخصيصات</button>
+            <button type="button" onClick={() => setTeachModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-gray-600">إلغاء</button>
           </div>
         </form>
       </Modal>

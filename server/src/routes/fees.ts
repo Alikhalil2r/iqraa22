@@ -1,15 +1,16 @@
 import { Router } from 'express'
 import { query } from '../db'
 import { withTransaction } from '../db/transaction'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, FINANCE_ROLES } from '../middleware/auth'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
+import { notifyParentOfStudent } from '../utils/parentNotify'
 
 const router = Router()
 router.use(authenticateToken)
 const log = createLogger('FEES')
 
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', requireRole(...FINANCE_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { status, studentId, academicYear, term, page = '1', limit = '100' } = req.query
@@ -52,7 +53,7 @@ router.get('/', async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/stats', async (req: AuthRequest, res) => {
+router.get('/stats', requireRole(...FINANCE_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const stats = await query(`
@@ -95,8 +96,17 @@ router.post('/', writeLimiter, requireRole('admin', 'accountant'), async (req: A
       )
     })
 
+    const fee = result.rows[0]
     log.info('Fee created', { schoolId, studentId, amount })
-    res.status(201).json({ fee: result.rows[0] })
+    if (fee.status === 'unpaid' || fee.status === 'partial') {
+      await notifyParentOfStudent(
+        schoolId, studentId,
+        'رسوم دراسية جديدة',
+        `${feeType}: ${parseFloat(amount)} ر.ع${fee.due_date ? ` — الاستحقاق ${fee.due_date}` : ''}`,
+        'fee', '/parent/fees'
+      )
+    }
+    res.status(201).json({ fee })
   } catch (err: any) {
     log.error('POST / failed', { error: err.message })
     if (err.status === 404) return res.status(404).json({ error: 'الطالب غير موجود' })
@@ -120,7 +130,23 @@ router.put('/:id', writeLimiter, requireRole('admin', 'accountant'), async (req:
        req.params.id, schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'Not found' })
-    res.json({ fee: result.rows[0] })
+    const fee = result.rows[0]
+    if (fee.status === 'paid') {
+      await notifyParentOfStudent(
+        schoolId, fee.student_id,
+        'تم تأكيد الدفع',
+        `${fee.fee_type}: تم سداد ${parseFloat(fee.paid_amount)} ر.ع`,
+        'fee', '/parent/fees'
+      )
+    } else if (fee.status === 'unpaid' || fee.status === 'partial') {
+      await notifyParentOfStudent(
+        schoolId, fee.student_id,
+        'تحديث الرسوم',
+        `${fee.fee_type}: المتبقي ${(parseFloat(fee.amount) - parseFloat(fee.paid_amount || 0)).toFixed(2)} ر.ع`,
+        'fee', '/parent/fees'
+      )
+    }
+    res.json({ fee })
   } catch (err) {
     log.error('PUT /:id failed', { id: req.params.id, error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })

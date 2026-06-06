@@ -1,14 +1,16 @@
 import React from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
+import { useParentChild } from '../../context/ParentChildContext'
 import { Clock, BookOpen } from 'lucide-react'
 
 const DAYS = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس']
 
 export default function ParentSchedule() {
+  const { childParams, selectedChildId } = useParentChild()
   const { data, isLoading } = useQuery({
-    queryKey: ['parent-schedule'],
-    queryFn: () => parentApi.schedule().then(r => r.data)
+    queryKey: ['parent-schedule', selectedChildId],
+    queryFn: () => parentApi.schedule(childParams).then(r => r.data)
   })
 
   const schedule = data?.schedule || []

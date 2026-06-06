@@ -20,6 +20,9 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
                FROM news n LEFT JOIN users u ON u.id=n.author_id WHERE n.school_id=$1`
     const params: unknown[] = [schoolId]
     let i = 2
+    if (req.user!.role !== 'admin' && req.user!.role !== 'super_admin') {
+      sql += ` AND n.is_published=true`
+    }
     if (search) { sql += ` AND n.title ILIKE $${i}`; params.push(`%${String(search).slice(0, 100)}%`); i++ }
     if (category && ALLOWED_CATEGORIES.includes(String(category) as any)) {
       sql += ` AND n.category=$${i}`; params.push(category); i++

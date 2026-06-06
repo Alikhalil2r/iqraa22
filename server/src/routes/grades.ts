@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { query } from '../db'
-import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
+import { authenticateToken, AuthRequest, requireRole, TEACHING_ROLES } from '../middleware/auth'
+import { getTeacherScope, teacherCanManageGradeScope, isTeacherRole } from '../utils/teacherScope'
 import { writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
@@ -19,7 +20,7 @@ function letterGrade(pct: number): string {
   return 'F'
 }
 
-router.get('/', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/', authenticateToken, requireRole(...TEACHING_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const { studentId, classId, term, academicYear, subjectName, page = '1', limit = '200' } = req.query
@@ -33,6 +34,25 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
                WHERE g.school_id=$1`
     const params: unknown[] = [schoolId]
     let i = 2
+
+    if (req.user!.role === 'teacher') {
+      const scope = await getTeacherScope(schoolId, req.user!.id)
+      const filters: string[] = [`g.recorded_by = $${i}`]
+      params.push(req.user!.id)
+      i++
+      if (scope.classNames.length) {
+        filters.push(`g.class_name = ANY($${i}::text[])`)
+        params.push(scope.classNames)
+        i++
+      }
+      if (scope.subjectNames.length) {
+        filters.push(`g.subject_name = ANY($${i}::text[])`)
+        params.push(scope.subjectNames)
+        i++
+      }
+      sql += ` AND (${filters.join(' OR ')})`
+    }
+
     if (studentId)    { sql += ` AND g.student_id=$${i}`;                  params.push(studentId);    i++ }
     if (term)         { sql += ` AND g.term=$${i}`;                         params.push(term);         i++ }
     if (academicYear) { sql += ` AND g.academic_year=$${i}`;               params.push(academicYear); i++ }
@@ -54,8 +74,22 @@ router.post('/', authenticateToken, writeLimiter, requireRole('admin', 'teacher'
     if (!d.studentId || !d.subjectName) {
       return res.status(400).json({ error: 'بيانات الدرجة ناقصة' })
     }
-    const studentCheck = await query('SELECT id FROM students WHERE id=$1 AND school_id=$2', [d.studentId, schoolId])
+    const studentCheck = await query(
+      'SELECT id, class_name FROM students WHERE id=$1 AND school_id=$2',
+      [d.studentId, schoolId]
+    )
     if (!studentCheck.rows[0]) return res.status(404).json({ error: 'الطالب غير موجود' })
+
+    if (isTeacherRole(req.user!.role)) {
+      const scope = await getTeacherScope(schoolId, userId)
+      const student = studentCheck.rows[0]
+      if (!teacherCanManageGradeScope(scope, {
+        className: d.className || student.class_name,
+        subjectName: d.subjectName,
+      }, userId)) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لإضافة درجة لهذا الطالب/المادة' })
+      }
+    }
 
     const score    = parseFloat(d.score)    || 0
     const maxScore = parseFloat(d.maxScore) || 100
@@ -78,6 +112,25 @@ router.post('/', authenticateToken, writeLimiter, requireRole('admin', 'teacher'
 
 router.put('/:id', authenticateToken, writeLimiter, requireRole('admin', 'teacher'), async (req: AuthRequest, res) => {
   try {
+    const { schoolId, id: userId, role } = req.user!
+    const existing = await query(
+      'SELECT id, class_name, subject_name, recorded_by FROM grades WHERE id=$1 AND school_id=$2',
+      [req.params.id, schoolId]
+    )
+    if (!existing.rows[0]) return res.status(404).json({ error: 'Not found' })
+
+    if (isTeacherRole(role)) {
+      const scope = await getTeacherScope(schoolId, userId)
+      const g = existing.rows[0]
+      if (!teacherCanManageGradeScope(scope, {
+        className: req.body.className || g.class_name,
+        subjectName: req.body.subjectName || g.subject_name,
+        recordedBy: g.recorded_by,
+      }, userId)) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لتعديل هذه الدرجة' })
+      }
+    }
+
     const d = req.body
     const score    = parseFloat(d.score)    || 0
     const maxScore = parseFloat(d.maxScore) || 100
@@ -101,7 +154,24 @@ router.put('/:id', authenticateToken, writeLimiter, requireRole('admin', 'teache
 
 router.delete('/:id', authenticateToken, requireRole('admin', 'teacher'), async (req: AuthRequest, res) => {
   try {
-    await query('DELETE FROM grades WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
+    const { schoolId, id: userId, role } = req.user!
+    if (isTeacherRole(role)) {
+      const existing = await query(
+        'SELECT id, class_name, subject_name, recorded_by FROM grades WHERE id=$1 AND school_id=$2',
+        [req.params.id, schoolId]
+      )
+      if (!existing.rows[0]) return res.status(404).json({ error: 'Not found' })
+      const scope = await getTeacherScope(schoolId, userId)
+      const g = existing.rows[0]
+      if (!teacherCanManageGradeScope(scope, {
+        className: g.class_name,
+        subjectName: g.subject_name,
+        recordedBy: g.recorded_by,
+      }, userId)) {
+        return res.status(403).json({ error: 'ليس لديك صلاحية لحذف هذه الدرجة' })
+      }
+    }
+    await query('DELETE FROM grades WHERE id=$1 AND school_id=$2', [req.params.id, schoolId])
     res.json({ success: true })
   } catch (err) {
     log.error('DELETE /:id failed', { id: req.params.id, error: (err as Error).message })
@@ -109,7 +179,7 @@ router.delete('/:id', authenticateToken, requireRole('admin', 'teacher'), async 
   }
 })
 
-router.get('/subjects', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/subjects', authenticateToken, requireRole(...TEACHING_ROLES), async (req: AuthRequest, res) => {
   try {
     const result = await query(
       'SELECT DISTINCT subject_name FROM grades WHERE school_id=$1 ORDER BY subject_name',
@@ -122,7 +192,7 @@ router.get('/subjects', authenticateToken, async (req: AuthRequest, res) => {
   }
 })
 
-router.get('/report/:studentId', authenticateToken, async (req: AuthRequest, res) => {
+router.get('/report/:studentId', authenticateToken, requireRole(...TEACHING_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
     const [student, grades] = await Promise.all([

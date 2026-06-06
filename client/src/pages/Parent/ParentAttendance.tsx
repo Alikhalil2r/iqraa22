@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { parentApi } from '../../api/client'
+import { useParentChild } from '../../context/ParentChildContext'
 import { CalendarCheck, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react'
 
 const STATUS = {
@@ -15,9 +16,10 @@ export default function ParentAttendance() {
   const [month, setMonth] = useState(String(now.getMonth() + 1))
   const [year, setYear] = useState(String(now.getFullYear()))
 
+  const { childParams, selectedChildId } = useParentChild()
   const { data, isLoading } = useQuery({
-    queryKey: ['parent-att', month, year],
-    queryFn: () => parentApi.attendance({ month, year }).then(r => r.data)
+    queryKey: ['parent-att', selectedChildId, month, year],
+    queryFn: () => parentApi.attendance({ ...childParams, month, year }).then(r => r.data)
   })
 
   const records = data?.attendance || []

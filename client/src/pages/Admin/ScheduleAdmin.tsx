@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { scheduleApi } from '../../api/client'
+import { scheduleApi, usersAdminApi } from '../../api/client'
 import Modal from '../../components/Modal'
 import { FormField, Input, Select } from '../../components/FormField'
 import { Calendar, Clock, User, MapPin, Plus, Pencil, Trash2 } from 'lucide-react'
@@ -12,7 +12,7 @@ const DAY_COLORS = ['bg-blue-50 border-blue-200','bg-purple-50 border-purple-200
 const DAY_HEADER_COLORS = ['bg-blue-600','bg-purple-600','bg-green-600','bg-orange-500','bg-pink-600']
 const SUBJECTS = ['الرياضيات','العلوم','اللغة العربية','اللغة الإنجليزية','التربية الإسلامية','التاريخ','الجغرافيا','التربية الفنية','التربية البدنية','الحاسب الآلي','الفيزياء','الكيمياء','الأحياء'].map(v=>({value:v,label:v}))
 
-const emptyEntry = { subjectName:'', teacherName:'', dayOfWeek:'0', startTime:'07:00', endTime:'07:45', room:'' }
+const emptyEntry = { subjectName:'', teacherName:'', teacherId:'', dayOfWeek:'0', startTime:'07:00', endTime:'07:45', room:'' }
 
 export default function ScheduleAdmin() {
   const [modal, setModal] = useState(false)
@@ -26,6 +26,11 @@ export default function ScheduleAdmin() {
     queryKey: ['schedule'],
     queryFn: () => scheduleApi.list().then(r => r.data)
   })
+  const { data: teachersData } = useQuery({
+    queryKey: ['schedule-teachers'],
+    queryFn: () => usersAdminApi.list({ role: 'teacher' }).then(r => r.data)
+  })
+  const teachers = (teachersData?.users || []).map((u: any) => ({ value: u.id, label: u.name }))
 
   const createMut = useMutation({
     mutationFn: (d: any) => scheduleApi.create(d),
@@ -51,6 +56,7 @@ export default function ScheduleAdmin() {
     setEditing(entry)
     setForm({
       subjectName: entry.subject_name||'', teacherName: entry.teacher_name||'',
+      teacherId: entry.teacher_id||'',
       dayOfWeek: String(entry.day_of_week||0), startTime: entry.start_time||'07:00',
       endTime: entry.end_time||'07:45', room: entry.room||''
     })
@@ -194,8 +200,11 @@ export default function ScheduleAdmin() {
               <Select value={form.subjectName} onChange={e=>setForm({...form,subjectName:e.target.value})}
                 options={[{value:'',label:'اختر المادة'},...SUBJECTS]}/>
             </FormField>
-            <FormField label="اسم المعلم">
-              <Input value={form.teacherName} onChange={e=>setForm({...form,teacherName:e.target.value})} placeholder="اسم المعلم"/>
+            <FormField label="المعلم">
+              <Select value={form.teacherId} onChange={e=>{
+                const t = teachersData?.users?.find((u: any) => u.id === e.target.value)
+                setForm({...form, teacherId: e.target.value, teacherName: t?.name || ''})
+              }} options={[{value:'',label:'اختر المعلم'}, ...teachers]} />
             </FormField>
             <FormField label="القاعة / الغرفة">
               <Input value={form.room} onChange={e=>setForm({...form,room:e.target.value})} placeholder="أ-101"/>

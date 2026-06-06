@@ -6,34 +6,17 @@ import PlatformWidget from '../../components/PlatformWidget'
 import BlogWidget from '../../components/BlogWidget'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import {
   Users, GraduationCap, Bus, MessageSquare, UserCheck, TrendingUp,
   AlertCircle, Calendar, BarChart3, DollarSign, ArrowLeft, Clock,
   Newspaper, BookOpen, Star, RefreshCw, CheckCircle, Zap,
-  CalendarDays, AlertTriangle, CreditCard, School, FileText, Target
+  CalendarDays, AlertTriangle, CreditCard, School, FileText, Target, LayoutDashboard
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
 import { DashboardSkeleton } from '../../components/Skeleton'
-
-
-function StatCard({ icon: Icon, label, value, sub, color, href, badge }: any) {
-  const content = (
-    <div className="stat-card hover:shadow-lg transition-all cursor-pointer group border-r-4" style={{ borderRightColor: color }}>
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0" style={{ background: color + '18' }}>
-        <Icon size={22} style={{ color }} />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-bold text-gray-400 mb-0.5">{label}</p>
-        <p className="text-2xl font-black text-gray-800">{value}</p>
-        {sub && <p className="text-[10px] text-gray-400 mt-0.5">{sub}</p>}
-      </div>
-      {badge && <span className="text-[10px] font-black px-2 py-1 rounded-xl" style={{background:color+'15',color}}>{badge}</span>}
-      {href && !badge && <ArrowLeft size={16} className="text-gray-300 group-hover:text-gray-500 transition-colors" />}
-    </div>
-  )
-  return href ? <Link to={href}>{content}</Link> : content
-}
+import DashboardStatCard from '../../components/dashboard/DashboardStatCard'
+import PageHeader from '../../components/dashboard/PageHeader'
 
 function AlertBanner({ icon: Icon, message, color, href }: any) {
   const content = (
@@ -207,28 +190,33 @@ export default function Dashboard() {
     return type === 'news' ? 'News' : type === 'event' ? 'Event' : 'Message'
   }
 
+  if (user?.role === 'accountant') return <Navigate to="/admin/accountant" replace />
+  if (user?.role === 'teacher') return <Navigate to="/admin/teacher" replace />
+
   if (isLoading) return <DashboardSkeleton />
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-black text-gray-800">{greeting}، {user?.name?.split(' ')[0]} 👋</h1>
-          <p className="text-sm text-gray-400 mt-1">{today}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => refetch()} disabled={isFetching}
-            className="p-2.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-all"
-            title={t('dash.refresh')}>
-            <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
-          </button>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl border border-green-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-xs font-bold text-green-700">{t('dash.systemOnline')}</span>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        variant="banner"
+        badge={t('dash.systemOnline')}
+        title={`${greeting}، ${user?.name?.split(' ')[0]} 👋`}
+        subtitle={today}
+        icon={LayoutDashboard}
+        actions={
+          <>
+            <button onClick={() => refetch()} disabled={isFetching}
+              className="dash-toolbar-btn !bg-white/15 !border-white/25 !text-white hover:!bg-white/25"
+              title={t('dash.refresh')}>
+              <RefreshCw size={16} className={isFetching ? 'animate-spin' : ''} />
+            </button>
+            <div className="flex items-center gap-2 px-3 py-2 bg-white/15 rounded-xl border border-white/25 backdrop-blur-sm">
+              <div className="w-2 h-2 bg-emerald-300 rounded-full animate-pulse" />
+              <span className="text-xs font-bold text-white/90">{t('dash.systemOnline')}</span>
+            </div>
+          </>
+        }
+      />
 
       {/* Alerts */}
       {alerts.length > 0 && (
@@ -239,10 +227,10 @@ export default function Dashboard() {
 
       {/* Main Stats Row 1 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard icon={GraduationCap} label={t('dash.totalStudents')}  value={data?.students?.total  || 0} sub={t('dash.totalStudentsSub')} color="#6366f1" href="/admin/students" />
-        <StatCard icon={Users}         label={t('dash.employees')}       value={data?.employees?.total || 0} sub={t('dash.employeesSub')}      color="#8b5cf6" href="/admin/employees" />
-        <StatCard icon={Bus}           label={t('dash.buses')}           value={data?.buses?.total     || 0} sub={t('dash.busesSub')}          color="#3b82f6" href="/admin/buses" />
-        <StatCard icon={DollarSign}    label={t('dash.salary')}          value={(data?.salary?.total   || 0).toLocaleString()} sub={t('dash.salarySub')} color="#f59e0b" />
+        <DashboardStatCard icon={GraduationCap} label={t('dash.totalStudents')} value={data?.students?.total || 0} sub={t('dash.totalStudentsSub')} color="#6366f1" href="/admin/students" delay={0} />
+        <DashboardStatCard icon={Users} label={t('dash.employees')} value={data?.employees?.total || 0} sub={t('dash.employeesSub')} color="#8b5cf6" href="/admin/employees" delay={0.05} />
+        <DashboardStatCard icon={Bus} label={t('dash.buses')} value={data?.buses?.total || 0} sub={t('dash.busesSub')} color="#3b82f6" href="/admin/buses" delay={0.1} />
+        <DashboardStatCard icon={DollarSign} label={t('dash.salary')} value={(data?.salary?.total || 0).toLocaleString()} sub={t('dash.salarySub')} color="#f59e0b" delay={0.15} />
       </div>
 
       {/* Main Stats Row 2 */}
@@ -439,11 +427,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Platform Business + Blog Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <PlatformWidget />
-        <BlogWidget />
-      </div>
+      {/* Platform widgets — super admin only (اكسبو التقنية) */}
+      {user?.role === 'super_admin' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <PlatformWidget />
+          <BlogWidget />
+        </div>
+      )}
 
       {/* Performance Widget */}
       <PerformanceWidget />

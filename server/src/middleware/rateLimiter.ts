@@ -12,6 +12,23 @@ export const globalLimiter = rateLimit({
   skip: (req) => req.path === '/api/health',
 })
 
+// ── Password change limiter ───────────────────────────────────────────────────
+export const passwordChangeLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 5 : 50,
+  message: { error: 'عدد محاولات تغيير كلمة المرور تجاوز الحد. حاول بعد 15 دقيقة.' },
+})
+
+// ── TOTP verification limiter ─────────────────────────────────────────────────
+export const totpLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 10 : 100,
+  skipSuccessfulRequests: true,
+  message: { error: 'عدد محاولات رمز المصادقة الثنائية تجاوز الحد. حاول بعد 15 دقيقة.' },
+})
+
 // ── Auth limiter — login attempts (skip on success to count only failures) ────
 export const authLimiter = rateLimit({
   ...opts,
@@ -59,6 +76,14 @@ export const ticketLookupLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: isProd ? 60 : 500,
   message: { error: 'عدد طلبات البحث عن التذاكر تجاوز الحد. حاول بعد 10 دقائق.' },
+})
+
+// ── Public form limiter — contact / jobs / alumni submissions ─────────────────
+export const publicFormLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 10 : 100,
+  message: { error: 'عدد الإرسالات تجاوز الحد المسموح. حاول مجدداً بعد 15 دقيقة.' },
 })
 
 // ── Ticket rating limiter — 1 rating per ticket but limit spam ────────────────

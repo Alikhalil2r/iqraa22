@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { platformApi, apiErrorMessage } from '../../api/platformApi'
 import {
   Search, ArrowRight, CheckCircle2, Clock, Circle, Loader2,
   AlertCircle, Send, Star, MessageSquare, History, Phone, Mail,
   Globe, Smartphone, Palette, TrendingUp, Brain, Cloud, Rocket,
-  ChevronRight, RefreshCw
+  ChevronRight, RefreshCw, GraduationCap
 } from 'lucide-react'
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 // ─── Status config ────────────────────────────────────────────────────────────
 const STATUS: Record<string, { label: string; color: string; icon: any; desc: string }> = {
@@ -20,8 +20,8 @@ const STATUS: Record<string, { label: string; color: string; icon: any; desc: st
   rejected:    { label: 'مرفوض',                      color: '#ef4444', icon: AlertCircle,  desc: 'لم يتم قبول الطلب' },
 }
 const STEPS = ['new', 'approved', 'in_progress', 'completed']
-const SVC_ICONS: Record<string, any> = { web: Globe, mobile: Smartphone, design: Palette, marketing: TrendingUp, ai: Brain, cloud: Cloud }
-const SVC_LABEL: Record<string, string> = { web: 'تطوير موقع', mobile: 'تطبيق جوال', design: 'تصميم UI/UX', marketing: 'تسويق رقمي', ai: 'ذكاء اصطناعي', cloud: 'حوسبة سحابية' }
+const SVC_ICONS: Record<string, any> = { school: GraduationCap, web: Globe, mobile: Smartphone, design: Palette, marketing: TrendingUp, ai: Brain, cloud: Cloud }
+const SVC_LABEL: Record<string, string> = { school: 'نظام إدارة مدارس', web: 'تطوير موقع', mobile: 'تطبيق جوال', design: 'تصميم UI/UX', marketing: 'تسويق رقمي', ai: 'ذكاء اصطناعي', cloud: 'حوسبة سحابية' }
 
 function formatDate(d: string) { return new Date(d).toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }
 
@@ -35,8 +35,9 @@ function LookupForm() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!ticket.trim()) { setErr('أدخل رقم التذكرة'); return }
+    if (!email.trim() || !/\S+@\S+\.\S+/.test(email)) { setErr('البريد الإلكتروني مطلوب للتحقق من هويتك'); return }
     setErr('')
-    const path = `/track/${ticket.trim().toUpperCase()}${email ? `?email=${encodeURIComponent(email)}` : ''}`
+    const path = `/platform/track/${ticket.trim().toUpperCase()}?email=${encodeURIComponent(email.trim())}`
     navigate(path)
   }
 
@@ -45,7 +46,7 @@ function LookupForm() {
       {/* Nav */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-gray-950/90 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 font-black text-xl">
+          <Link to="/platform" className="flex items-center gap-2.5 font-black text-xl">
             <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-xs">&lt;/&gt;</span>
             اكسبو التقنية
           </Link>
@@ -76,11 +77,12 @@ function LookupForm() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 mb-2">بريدك الإلكتروني (اختياري — للتحقق)</label>
+              <label className="block text-xs font-bold text-gray-400 mb-2">بريدك الإلكتروني * (للتحقق)</label>
               <input
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 type="email"
+                required
                 placeholder="your@email.com"
                 dir="ltr"
                 className="w-full px-4 py-3.5 rounded-2xl bg-white/10 border border-white/15 text-white placeholder-gray-500 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
@@ -113,12 +115,14 @@ function StarRating({ ticket, email, onDone }: { ticket: string; email: string; 
 
   const submit = async () => {
     if (!rating) return
-    await fetch(`${API}/api/platform/track/${ticket}/rate`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, rating, feedback })
-    })
-    setDone(true)
-    setTimeout(onDone, 2000)
+    try {
+      await platformApi.rateTicket(ticket, { email, rating, feedback })
+      toast.success('شكراً على تقييمك!')
+      setDone(true)
+      setTimeout(onDone, 2000)
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'تعذّر إرسال التقييم'))
+    }
   }
 
   if (done) return (
@@ -169,11 +173,11 @@ function TicketDetail() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['ticket-track', ticket, email],
     queryFn: async () => {
-      const url = `${API}/api/platform/track/${ticket}${email ? `?email=${encodeURIComponent(email)}` : ''}`
-      const r = await fetch(url)
-      if (!r.ok) { const e = await r.json(); throw new Error(e.error || 'Not found') }
-      return r.json()
+      if (!email) throw new Error('البريد الإلكتروني مطلوب للتحقق')
+      const { data: d } = await platformApi.trackTicket(ticket!, email)
+      return d
     },
+    enabled: !!ticket && !!email,
     refetchInterval: 30000
   })
 
@@ -182,13 +186,27 @@ function TicketDetail() {
     if (!msgText.trim() || sending) return
     setSending(true)
     try {
-      const r = await fetch(`${API}/api/platform/track/${ticket}/message`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name: data?.client_name, content: msgText })
-      })
-      if (r.ok) { setMsgText(''); refetch() }
+      await platformApi.sendTicketMessage(ticket!, { email, name: data?.client_name, content: msgText })
+      setMsgText('')
+      refetch()
+      toast.success('تم إرسال رسالتك')
+    } catch (e) {
+      toast.error(apiErrorMessage(e, 'تعذّر إرسال الرسالة'))
     } finally { setSending(false) }
   }
+
+  if (!email) return (
+    <div dir="rtl" className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+      <div className="text-center max-w-sm px-6">
+        <AlertCircle size={56} className="mx-auto mb-4 text-amber-400"/>
+        <h2 className="text-xl font-black mb-2">البريد الإلكتروني مطلوب</h2>
+        <p className="text-gray-400 mb-6 text-sm">أدخل بريدك مع رقم التذكرة للتحقق من هويتك ومتابعة الطلب</p>
+        <button onClick={() => navigate('/platform/track')} className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 font-bold transition-colors">
+          العودة للبحث
+        </button>
+      </div>
+    </div>
+  )
 
   if (isLoading) return (
     <div dir="rtl" className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
@@ -226,7 +244,7 @@ function TicketDetail() {
             <button onClick={() => navigate('/track')} className="p-2 rounded-xl hover:bg-white/10 transition-colors text-gray-400 hover:text-white">
               <ArrowRight size={18}/>
             </button>
-            <Link to="/" className="flex items-center gap-2 font-black text-lg">
+            <Link to="/platform" className="flex items-center gap-2 font-black text-lg">
               <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-[10px]">&lt;/&gt;</span>
               اكسبو التقنية
             </Link>
