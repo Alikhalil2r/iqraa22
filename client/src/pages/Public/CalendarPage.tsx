@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Calendar, Clock, MapPin, ChevronLeft, ChevronRight, Flag, Tag } from 'lucide-react'
 import { DEMO_EVENTS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-cyan-800 to-cyan-900' }: any) {
   return (
@@ -47,7 +48,8 @@ const TYPE_BG: Record<string, string> = {
 }
 
 export default function CalendarPage() {
-  const { data: eventsData } = useQuery({ queryKey: ['public-events'], queryFn: () => publicApi.events().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: eventsData } = useQuery({ queryKey: ['public-events', slug], queryFn: () => publicApi.events(schoolQuery).then(r => r.data) })
   const [filter, setFilter] = useState('all')
   const [viewMonth, setViewMonth] = useState(new Date().getMonth())
   const [viewYear, setViewYear] = useState(new Date().getFullYear())

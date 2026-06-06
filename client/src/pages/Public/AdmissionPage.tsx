@@ -5,6 +5,7 @@ import { publicApi } from '../../api/client'
 import { GraduationCap, FileText, Phone, Mail, MapPin, ChevronLeft, Send, User, BookOpen } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ServiceQualityStrip from '../../components/ServiceQualityStrip'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const STEPS = [
   { n: '1', title: 'تعبئة نموذج التسجيل', desc: 'قدّم طلب التسجيل عبر النموذج أدناه أو زيارة الإدارة' },
@@ -16,7 +17,11 @@ const STEPS = [
 const GRADES = ['الروضة', 'الصف الأول', 'الصف الثاني', 'الصف الثالث', 'الصف الرابع', 'الصف الخامس', 'الصف السادس', 'الصف السابع', 'الصف الثامن', 'الصف التاسع', 'الصف العاشر', 'الصف الحادي عشر', 'الصف الثاني عشر']
 
 export default function AdmissionPage() {
-  const { data } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
+  const { slug } = usePublicSchool()
+  const { data } = useQuery({
+    queryKey: ['public-school', slug],
+    queryFn: () => publicApi.schoolBySlug(slug).then(r => r.data).catch(() => publicApi.school().then(r => r.data)),
+  })
   const school = data?.school
   const [form, setForm] = useState({ parentName: '', studentName: '', grade: '', phone: '', email: '', notes: '' })
   const [loading, setLoading] = useState(false)
@@ -37,6 +42,7 @@ export default function AdmissionPage() {
         phone: form.phone,
         email: form.email,
         notes: form.notes || undefined,
+        schoolSlug: slug,
       })
       const ref = res.data.ref || ''
       setRefCode(ref)

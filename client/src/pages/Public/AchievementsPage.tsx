@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Trophy, Award, Star, Calendar, Tag, Filter, Medal, ChevronLeft } from 'lucide-react'
 import { DEMO_ACHIEVEMENTS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const CAT_COLORS: Record<string, { bg: string; text: string; border: string; solid: string }> = {
   أكاديمي:   { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     solid: '#0ea5e9' },
@@ -27,7 +28,8 @@ function RankBadge({ rank }: { rank: number | null }) {
 }
 
 export default function AchievementsPage() {
-  const { data: apiData } = useQuery({ queryKey: ['public-achievements'], queryFn: () => publicApi.achievements().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: apiData } = useQuery({ queryKey: ['public-achievements', slug], queryFn: () => publicApi.achievements(schoolQuery).then(r => r.data) })
   const [filter, setFilter] = useState('all')
 
   const all = useMemo(() => withDemoFallback(apiData?.achievements, DEMO_ACHIEVEMENTS).map((a: any) => ({

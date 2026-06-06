@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { GraduationCap, Briefcase, MapPin, Star, Send, User, Phone, Mail, ChevronDown, CheckCircle } from 'lucide-react'
 import { DEMO_ALUMNI, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 import toast from 'react-hot-toast'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-indigo-800 to-indigo-900' }: any) {
@@ -16,7 +17,8 @@ function PageBanner({ title, subtitle, icon, gradient = 'from-indigo-800 to-indi
 }
 
 export default function AlumniPage() {
-  const { data: alumniData } = useQuery({ queryKey: ['public-alumni'], queryFn: () => publicApi.alumni().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: alumniData } = useQuery({ queryKey: ['public-alumni', slug], queryFn: () => publicApi.alumni(schoolQuery).then(r => r.data) })
 
   const alumniList = useMemo(() => {
     const fromApi = withDemoFallback(alumniData?.alumni, DEMO_ALUMNI).map((a: any) => ({
@@ -46,7 +48,7 @@ export default function AlumniPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      await publicApi.registerAlumni(form)
+      await publicApi.registerAlumni({ ...form, schoolSlug: slug })
       toast.success('شكراً! سيتم مراجعة بياناتك وإضافتها قريباً.')
       setForm({ name: '', year: '', job: '', city: '', email: '', phone: '', story: '', achievement: '' })
       setShowForm(false)

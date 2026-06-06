@@ -6,6 +6,7 @@ import { useLocalize } from '../../hooks/useLocalize'
 import { useLanguage } from '../../context/LanguageContext'
 import { Newspaper, Calendar, Search, Tag, X, Star, TrendingUp, Clock, ChevronLeft } from 'lucide-react'
 import { DEMO_NEWS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const SAMPLE_NEWS = DEMO_NEWS
 
@@ -64,7 +65,8 @@ function NewsCard({ n, featured, dateLocale }: { n: any; featured?: boolean; dat
 export default function NewsPage() {
   const { t } = useLanguage()
   const { localizeNews, dateLocale, category, lang } = useLocalize()
-  const { data: apiData } = useQuery({ queryKey: ['public-news'], queryFn: () => publicApi.news().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: apiData } = useQuery({ queryKey: ['public-news', slug], queryFn: () => publicApi.news(schoolQuery).then(r => r.data) })
   const [search,  setSearch]  = useState('')
   const [cat,     setCat]     = useState('all')
   const [showAll, setShowAll] = useState(false)

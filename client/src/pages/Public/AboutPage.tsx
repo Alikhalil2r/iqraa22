@@ -6,6 +6,7 @@ import { useLanguage } from '../../context/LanguageContext'
 import PublicPageBanner from '../../components/PublicPageBanner'
 import { School, Eye, Heart, Calendar, Layers, MapPin, Award, Users, Camera, X, BookOpen, Lightbulb, Shield, Globe, Star } from 'lucide-react'
 import { DEMO_STAFF, DEMO_GALLERY, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const DEFAULT_STAFF = DEMO_STAFF.map(s => ({
   id: s.id, name: s.name, role: s.position, category: s.department, image: s.photo, quote: s.bio || '',
@@ -52,9 +53,13 @@ function StaffSection({ staff }: { staff: typeof DEFAULT_STAFF }) {
 export default function AboutPage() {
   const { t } = useLanguage()
   const { pick, dirClass, category } = useLocalize()
-  const { data: schoolData } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
-  const { data: staffApiData } = useQuery({ queryKey: ['public-staff'], queryFn: () => publicApi.staff().then(r => r.data) })
-  const { data: galleryData } = useQuery({ queryKey: ['public-gallery'], queryFn: () => publicApi.gallery().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: schoolData } = useQuery({
+    queryKey: ['public-school', slug],
+    queryFn: () => publicApi.schoolBySlug(slug).then(r => r.data).catch(() => publicApi.school().then(r => r.data)),
+  })
+  const { data: staffApiData } = useQuery({ queryKey: ['public-staff', slug], queryFn: () => publicApi.staff(schoolQuery).then(r => r.data) })
+  const { data: galleryData } = useQuery({ queryKey: ['public-gallery', slug], queryFn: () => publicApi.gallery(schoolQuery).then(r => r.data) })
   const school = schoolData?.school
   const staff = (staffApiData?.staff?.length ? staffApiData.staff : DEMO_STAFF).map((s: any) => ({ id: s.id, name: s.name, role: s.position || '', category: 'أكاديمي', image: s.photo || '', quote: s.bio || '' }))
   const photos = useMemo(() => withDemoFallback(galleryData?.gallery, DEMO_GALLERY).map((g: any) => ({

@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Shield } from 'lucide-react'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 export default function PrivacyPage() {
-  const { data } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
+  const { slug } = usePublicSchool()
+  const { data } = useQuery({
+    queryKey: ['public-school', slug],
+    queryFn: () => publicApi.schoolBySlug(slug).then(r => r.data).catch(() => publicApi.school().then(r => r.data)),
+  })
   const name = data?.school?.name || 'مدرسة النور العالمية'
 
   return (

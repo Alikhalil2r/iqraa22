@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Video, Play, X } from 'lucide-react'
 import { DEMO_VIDEOS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-red-800 to-red-900' }: any) {
   return (
@@ -20,7 +21,8 @@ function getYouTubeId(url: string) {
 }
 
 export default function VideosPage() {
-  const { data, isLoading } = useQuery({ queryKey: ['public-videos'], queryFn: () => publicApi.videos().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data, isLoading } = useQuery({ queryKey: ['public-videos', slug], queryFn: () => publicApi.videos(schoolQuery).then(r => r.data) })
   const videos = withDemoFallback(data?.videos, DEMO_VIDEOS).map((v: any) => ({
     id: v.id,
     title: v.title,

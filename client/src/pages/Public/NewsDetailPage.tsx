@@ -5,6 +5,7 @@ import { publicApi } from '../../api/client'
 import { useLocalize } from '../../hooks/useLocalize'
 import { useLanguage } from '../../context/LanguageContext'
 import { Calendar, ChevronRight, ChevronLeft, Newspaper, Eye, Tag } from 'lucide-react'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const CAT_COLORS: Record<string, string> = {
   أكاديمي: '#6366f1', إنجازات: '#10b981', أنشطة: '#8b5cf6', فعاليات: '#f97316',
@@ -17,11 +18,12 @@ export default function NewsDetailPage() {
   const { id } = useParams<{ id: string }>()
   const { t, isRTL } = useLanguage()
   const { localizeNews, dateLocale, lang } = useLocalize()
+  const { slug, query: schoolQuery } = usePublicSchool()
   const BackIcon = isRTL ? ChevronRight : ChevronLeft
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['public-news', id],
-    queryFn: () => publicApi.newsItem(id!).then(r => r.data),
+    queryKey: ['public-news', id, slug],
+    queryFn: () => publicApi.newsItem(id!, schoolQuery).then(r => r.data),
     enabled: !!id,
   })
 

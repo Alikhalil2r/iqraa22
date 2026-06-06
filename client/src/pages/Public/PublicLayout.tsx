@@ -20,6 +20,7 @@ import DevSignature from '../../components/DevSignature'
 import DemoBanner from '../../components/DemoBanner'
 import { buildSocialLinks } from '../../utils/socialLinks'
 import { DEMO_NEWS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const SOCIAL_SVGS: Record<string, React.ReactNode> = {
   facebook: <svg viewBox="0 0 24 24" fill="currentColor" className="w-[18px] h-[18px]"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>,
@@ -473,11 +474,15 @@ export default function PublicLayout() {
   const { pick, lang } = useLocalize()
   const { groups, standalone, footerSections, schoolBase } = usePublicNav()
   const { schoolName, location: schoolLocation, theme } = useSchoolDisplay()
+  const { slug, query: schoolQuery } = usePublicSchool()
   const PortalChevron = isRTL ? ChevronLeft : ChevronRight
 
-  const { data: schoolData } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
-  const { data: newsData } = useQuery({ queryKey: ['public-news'], queryFn: () => publicApi.news().then(r => r.data) })
-  const { data: alertsData } = useQuery({ queryKey: ['public-alerts'], queryFn: () => publicApi.alerts().then(r => r.data) })
+  const { data: schoolData } = useQuery({
+    queryKey: ['public-school', slug],
+    queryFn: () => publicApi.schoolBySlug(slug).then(r => r.data).catch(() => publicApi.school().then(r => r.data)),
+  })
+  const { data: newsData } = useQuery({ queryKey: ['public-news', slug], queryFn: () => publicApi.news(schoolQuery).then(r => r.data) })
+  const { data: alertsData } = useQuery({ queryKey: ['public-alerts', slug], queryFn: () => publicApi.alerts(schoolQuery).then(r => r.data) })
 
   const school = schoolData?.school
   const news = withDemoFallback(newsData?.news, DEMO_NEWS).map((n: { title: string; title_en?: string }) => ({

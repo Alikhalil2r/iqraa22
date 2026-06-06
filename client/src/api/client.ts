@@ -161,25 +161,25 @@ export const publicApi = {
   newsItem: (id: string, params?: { school?: string }) => api.get(`/public/news/${id}`, { params }),
   events: (params?: { school?: string }) => api.get('/public/events', { params }),
   gallery: (params?: { school?: string }) => api.get('/public/gallery', { params }),
-  staff: () => api.get('/public/staff'),
-  achievements: () => api.get('/public/achievements'),
-  alerts: () => api.get('/public/alerts'),
-  faqs: () => api.get('/public/faqs'),
-  jobs: () => api.get('/public/jobs'),
-  alumni: () => api.get('/public/alumni'),
-  submitContact: (data: { name: string; phone?: string; email: string; subject?: string; message: string }) =>
+  staff: (params?: { school?: string }) => api.get('/public/staff', { params }),
+  achievements: (params?: { school?: string }) => api.get('/public/achievements', { params }),
+  alerts: (params?: { school?: string }) => api.get('/public/alerts', { params }),
+  faqs: (params?: { school?: string }) => api.get('/public/faqs', { params }),
+  jobs: (params?: { school?: string }) => api.get('/public/jobs', { params }),
+  alumni: (params?: { school?: string }) => api.get('/public/alumni', { params }),
+  submitContact: (data: { name: string; phone?: string; email: string; subject?: string; message: string; schoolSlug?: string }) =>
     api.post('/public/contact', data),
-  submitAdmission: (data: { parentName: string; studentName: string; grade: string; phone: string; email: string; notes?: string }) =>
+  submitAdmission: (data: { parentName: string; studentName: string; grade: string; phone: string; email: string; notes?: string; schoolSlug?: string }) =>
     api.post('/public/admission', data),
-  applyJob: (data: { job_id?: string; job_title: string; name: string; email: string; phone?: string; form_data?: Record<string, string> }) =>
+  applyJob: (data: { job_id?: string; job_title: string; name: string; email: string; phone?: string; form_data?: Record<string, string>; schoolSlug?: string }) =>
     api.post('/public/jobs/apply', data),
-  registerAlumni: (data: { name: string; year: string | number; job: string; city?: string; email: string; phone?: string; story: string; achievement?: string }) =>
+  registerAlumni: (data: { name: string; year: string | number; job: string; city?: string; email: string; phone?: string; story: string; achievement?: string; schoolSlug?: string }) =>
     api.post('/public/alumni/register', data),
-  videos: () => api.get('/public/videos'),
-  articles: (params?: { type?: 'student' | 'teacher' }) => api.get('/public/articles', { params }),
-  teams: () => api.get('/public/teams'),
-  hallOfFame: () => api.get('/public/hall-of-fame'),
-  learningSupport: () => api.get('/public/learning-support'),
+  videos: (params?: { school?: string }) => api.get('/public/videos', { params }),
+  articles: (params?: { type?: 'student' | 'teacher'; school?: string }) => api.get('/public/articles', { params }),
+  teams: (params?: { school?: string }) => api.get('/public/teams', { params }),
+  hallOfFame: (params?: { school?: string }) => api.get('/public/hall-of-fame', { params }),
+  learningSupport: (params?: { school?: string }) => api.get('/public/learning-support', { params }),
 }
 
 // Site content admin (achievements, staff, alerts, faqs)

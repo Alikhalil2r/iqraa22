@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import RoleGuard from './components/RoleGuard'
+import { PublicSchoolProvider } from './context/PublicSchoolContext'
 import { ThemeProvider } from './context/ThemeContext'
 import RouteProgress from './components/ux/RouteProgress'
 import ScrollToTop from './components/ux/ScrollToTop'
@@ -126,7 +127,7 @@ function AppRoutes() {
           <Route path="/platform/track" element={<TicketTrackPage />} />
           <Route path="/platform/blog" element={<BlogPage />} />
           <Route path="/platform/blog/:slug" element={<BlogPostPage />} />
-          <Route path="/school" element={<PublicLayout />}>
+          <Route path="/school" element={<PublicSchoolProvider><PublicLayout /></PublicSchoolProvider>}>
             <Route index element={<SchoolHomePage />} />
             <Route path="about" element={<AboutPage />} />
             <Route path="news" element={<NewsPage />} />

@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { PenTool, BookOpen, Users, Tag, Calendar, ChevronLeft } from 'lucide-react'
 import { DEMO_STUDENT_ARTICLES, DEMO_TEACHER_ARTICLES, DEMO_TEAMS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-teal-800 to-teal-900' }: any) {
   return (
@@ -17,18 +18,19 @@ function PageBanner({ title, subtitle, icon, gradient = 'from-teal-800 to-teal-9
 export default function ArticlesPage() {
   const [tab, setTab] = useState<'students' | 'teachers' | 'teams'>('students')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const { slug, query: schoolQuery } = usePublicSchool()
 
   const { data: studentData, isLoading: loadingStudents } = useQuery({
-    queryKey: ['public-articles', 'student'],
-    queryFn: () => publicApi.articles({ type: 'student' }).then(r => r.data),
+    queryKey: ['public-articles', 'student', slug],
+    queryFn: () => publicApi.articles({ type: 'student', ...schoolQuery }).then(r => r.data),
   })
   const { data: teacherData, isLoading: loadingTeachers } = useQuery({
-    queryKey: ['public-articles', 'teacher'],
-    queryFn: () => publicApi.articles({ type: 'teacher' }).then(r => r.data),
+    queryKey: ['public-articles', 'teacher', slug],
+    queryFn: () => publicApi.articles({ type: 'teacher', ...schoolQuery }).then(r => r.data),
   })
   const { data: teamsData, isLoading: loadingTeams } = useQuery({
-    queryKey: ['public-teams'],
-    queryFn: () => publicApi.teams().then(r => r.data),
+    queryKey: ['public-teams', slug],
+    queryFn: () => publicApi.teams(schoolQuery).then(r => r.data),
   })
 
   const studentArticles = withDemoFallback(studentData?.articles, DEMO_STUDENT_ARTICLES)

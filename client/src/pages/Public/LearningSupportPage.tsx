@@ -3,6 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Heart, Users, BookOpen, Image, Calendar } from 'lucide-react'
 import { DEMO_LEARNING_SUPPORT } from '../../data/demoPublicFallback'
+import { isDemoMode } from '../../config/appMode'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-teal-800 to-teal-900' }: any) {
   return (
@@ -23,13 +25,15 @@ const TABS = [
 
 export default function LearningSupportPage() {
   const [tab, setTab] = useState('about')
-  const { data, isLoading } = useQuery({ queryKey: ['public-ls'], queryFn: () => publicApi.learningSupport().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data, isLoading } = useQuery({ queryKey: ['public-ls', slug], queryFn: () => publicApi.learningSupport(schoolQuery).then(r => r.data) })
+  const demo = isDemoMode()
 
-  const about = data?.about || DEMO_LEARNING_SUPPORT.about
-  const services = data?.services?.length ? data.services : DEMO_LEARNING_SUPPORT.services
-  const specialists = data?.specialists?.length ? data.specialists : DEMO_LEARNING_SUPPORT.specialists
-  const articles = data?.articles?.length ? data.articles : DEMO_LEARNING_SUPPORT.articles
-  const gallery = data?.gallery?.length ? data.gallery : DEMO_LEARNING_SUPPORT.gallery
+  const about = data?.about || (demo ? DEMO_LEARNING_SUPPORT.about : '')
+  const services = data?.services?.length ? data.services : (demo ? DEMO_LEARNING_SUPPORT.services : [])
+  const specialists = data?.specialists?.length ? data.specialists : (demo ? DEMO_LEARNING_SUPPORT.specialists : [])
+  const articles = data?.articles?.length ? data.articles : (demo ? DEMO_LEARNING_SUPPORT.articles : [])
+  const gallery = data?.gallery?.length ? data.gallery : (demo ? DEMO_LEARNING_SUPPORT.gallery : [])
 
   return (
     <div>

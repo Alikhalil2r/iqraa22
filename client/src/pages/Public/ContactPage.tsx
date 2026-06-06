@@ -10,6 +10,7 @@ import PublicPageBanner from '../../components/PublicPageBanner'
 import { Mail, Phone, MapPin, Send, Clock, ChevronDown, CheckCircle, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ServiceQualityStrip from '../../components/ServiceQualityStrip'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const SOCIAL_COLORS: Record<string, string> = {
   whatsapp: '#25D366', facebook: '#1877F2', instagram: '#E4405F', youtube: '#FF0000', twitter: '#000000',
@@ -31,9 +32,13 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function ContactPage() {
   const { t, lang } = useLanguage()
   const { pick, dirClass } = useLocalize()
+  const { slug, query: schoolQuery } = usePublicSchool()
   const subjects = publicContent(lang, CONTACT_SUBJECTS)
-  const { data: schoolData } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
-  const { data: faqsData } = useQuery({ queryKey: ['public-faqs'], queryFn: () => publicApi.faqs().then(r => r.data) })
+  const { data: schoolData } = useQuery({
+    queryKey: ['public-school', slug],
+    queryFn: () => publicApi.schoolBySlug(slug).then(r => r.data).catch(() => publicApi.school().then(r => r.data)),
+  })
+  const { data: faqsData } = useQuery({ queryKey: ['public-faqs', slug], queryFn: () => publicApi.faqs(schoolQuery).then(r => r.data) })
   const [form, setForm] = useState({ name: '', phone: '', email: '', subject: subjects[0] || '', message: '' })
   const [loading, setLoading] = useState(false)
   const [sentRef, setSentRef] = useState<string | null>(null)
@@ -53,7 +58,7 @@ export default function ContactPage() {
     setLoading(true)
     setSentRef(null)
     try {
-      const res = await publicApi.submitContact(form)
+      const res = await publicApi.submitContact({ ...form, schoolSlug: slug })
       setSentRef(res.data?.ref || null)
       toast.success(t('site.contact.sentTitle'))
       setForm(f => ({ ...f, message: '', subject: subjects[0] || '' }))

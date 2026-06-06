@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Award, Star, Trophy, Medal, Sparkles } from 'lucide-react'
 import { DEMO_HALL_OF_FAME, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-yellow-700 to-amber-800' }: any) {
   return (
@@ -46,7 +47,8 @@ function SparkleEffect() {
 }
 
 export default function HallOfFamePage() {
-  const { data, isLoading } = useQuery({ queryKey: ['public-hall'], queryFn: () => publicApi.hallOfFame().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data, isLoading } = useQuery({ queryKey: ['public-hall', slug], queryFn: () => publicApi.hallOfFame(schoolQuery).then(r => r.data) })
   const hallOfFame = useMemo(() => withDemoFallback(data?.entries, DEMO_HALL_OF_FAME).map((h: any) => ({
     id: h.id,
     name: h.name,

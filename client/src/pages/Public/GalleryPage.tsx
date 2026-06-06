@@ -6,6 +6,7 @@ import { useLocalize } from '../../hooks/useLocalize'
 import PublicPageBanner from '../../components/PublicPageBanner'
 import { Image, X, Grid, List, ChevronLeft, ChevronRight, ZoomIn, Tag } from 'lucide-react'
 import { DEMO_GALLERY, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 
 const SAMPLE_GALLERY = DEMO_GALLERY.map(g => ({ id: g.id, src: g.image_url, caption: g.title, category: g.category }))
 
@@ -17,7 +18,8 @@ const CAT_COLORS: Record<string, string> = {
 export default function GalleryPage() {
   const { t } = useLanguage()
   const { pick, category, dirClass } = useLocalize()
-  const { data: apiData } = useQuery({ queryKey: ['public-gallery'], queryFn: () => publicApi.gallery().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: apiData } = useQuery({ queryKey: ['public-gallery', slug], queryFn: () => publicApi.gallery(schoolQuery).then(r => r.data) })
   const [filter,   setFilter]   = useState('all')
   const [lightbox, setLightbox] = useState<number | null>(null)
   const [layout,   setLayout]   = useState<'masonry'|'grid'>('masonry')

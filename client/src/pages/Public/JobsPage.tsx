@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { publicApi } from '../../api/client'
 import { Briefcase, FileUp, User, Phone, GraduationCap, Send, ChevronRight, CheckCircle2, Shield, Handshake, BadgeCheck, Calendar } from 'lucide-react'
 import { DEMO_JOBS, withDemoFallback } from '../../data/demoPublicFallback'
+import { usePublicSchool } from '../../context/PublicSchoolContext'
 import toast from 'react-hot-toast'
 
 function PageBanner({ title, subtitle, icon, gradient = 'from-sky-800 to-sky-900' }: any) {
@@ -58,7 +59,8 @@ const inp = "w-full p-3 rounded-xl border text-sm border-gray-200 focus:border-s
 const sel = "w-full p-3 rounded-xl border text-sm border-gray-200 focus:border-sky-400 outline-none bg-white"
 
 export default function JobsPage() {
-  const { data: jobsData } = useQuery({ queryKey: ['public-jobs'], queryFn: () => publicApi.jobs().then(r => r.data) })
+  const { slug, query: schoolQuery } = usePublicSchool()
+  const { data: jobsData } = useQuery({ queryKey: ['public-jobs', slug], queryFn: () => publicApi.jobs(schoolQuery).then(r => r.data) })
   const jobs = useMemo<JobItem[]>(() => withDemoFallback(jobsData?.jobs, DEMO_JOBS), [jobsData])
 
   const [selected, setSelected] = useState<JobItem | null>(null)
@@ -112,6 +114,7 @@ export default function JobsPage() {
         email: form.email,
         phone: form.phone,
         form_data: form,
+        schoolSlug: slug,
       })
       setSubmitted(true)
       toast.success('تم إرسال طلبك بنجاح!')
