@@ -109,3 +109,11 @@ export const ticketRateLimiter = rateLimit({
   max: isProd ? 20 : 200,
   message: { error: 'عدد التقييمات تجاوز الحد. حاول لاحقاً.' },
 })
+
+// ── User registration limiter — admin-created accounts ────────────────────────
+export const registerLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 10 : 100,
+  message: { error: 'عدد طلبات إنشاء الحسابات تجاوز الحد. حاول بعد 15 دقيقة.' },
+})

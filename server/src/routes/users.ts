@@ -3,7 +3,7 @@ import { body } from 'express-validator'
 import { query } from '../db'
 import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth'
 import { validate, validatePasswordStrength } from '../middleware/validate'
-import { writeLimiter } from '../middleware/rateLimiter'
+import { registerLimiter, writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('USERS')
@@ -157,7 +157,7 @@ router.put('/:id/teaching-profile',
 // ── POST /api/users ───────────────────────────────────────────────────────────
 router.post('/',
   requireRole('super_admin', 'admin'),
-  writeLimiter,
+  registerLimiter,
   validate([
     body('name').trim().isLength({ min: 2, max: 100 }).withMessage('الاسم مطلوب (2-100 حرف)'),
     body('username').trim().isLength({ min: 3, max: 50 }).withMessage('اسم المستخدم يجب أن يكون 3-50 حرفاً'),
@@ -268,6 +268,7 @@ router.put('/:id',
 // ── DELETE /api/users/:id ─────────────────────────────────────────────────────
 router.delete('/:id',
   requireRole('super_admin', 'admin'),
+  writeLimiter,
   async (req: AuthRequest, res) => {
     try {
       const { schoolId, id: currentUserId } = req.user!

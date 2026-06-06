@@ -3,7 +3,7 @@ import crypto from 'crypto'
 import { query } from '../db'
 import { withTransaction } from '../db/transaction'
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
-import { webhookLimiter } from '../middleware/rateLimiter'
+import { webhookLimiter, writeLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
 const router = Router()
@@ -99,7 +99,7 @@ router.post('/webhook', webhookLimiter, async (req, res) => {
 router.use(authenticateToken)
 
 // POST /api/payments/session — create payment session (Thawani/PayTabs mock)
-router.post('/session', requireRole('parent'), async (req: AuthRequest, res) => {
+router.post('/session', writeLimiter, requireRole('parent'), async (req: AuthRequest, res) => {
   try {
     const { feeId, provider = 'thawani' } = req.body
     const fee = await getFeeForParent(feeId, req.user!.id, req.user!.schoolId)

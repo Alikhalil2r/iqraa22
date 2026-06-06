@@ -4,6 +4,7 @@ import { body } from 'express-validator'
 import { query } from '../db'
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
 import { validate, validatePasswordStrength, sanitizeCSS, sanitizeMapEmbed } from '../middleware/validate'
+import { registerLimiter, writeLimiter } from '../middleware/rateLimiter'
 import { MANAGED_USER_ROLES, SETTINGS_ROLES } from '../middleware/auth'
 
 const router = Router()
@@ -150,6 +151,7 @@ router.get('/users', authenticateToken, requireRole('admin'), async (req: AuthRe
 router.post('/users',
   authenticateToken,
   requireRole('admin'),
+  registerLimiter,
   validate([
     body('name').trim().isLength({ min: 2, max: 100 }).withMessage('الاسم مطلوب'),
     body('username').trim().isLength({ min: 3, max: 50 }).matches(/^[a-zA-Z0-9_]+$/).withMessage('اسم المستخدم يجب أن يحتوي على حروف وأرقام فقط'),
@@ -176,7 +178,7 @@ router.post('/users',
   }
 )
 
-router.put('/users/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+router.put('/users/:id', authenticateToken, requireRole('admin'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { name, email, phone, role, isActive, password } = req.body
     if (req.params.id === req.user!.id && isActive === false) {
@@ -197,7 +199,7 @@ router.put('/users/:id', authenticateToken, requireRole('admin'), async (req: Au
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
-router.delete('/users/:id', authenticateToken, requireRole('admin'), async (req: AuthRequest, res) => {
+router.delete('/users/:id', authenticateToken, requireRole('admin'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     if (req.params.id === req.user!.id) return res.status(400).json({ error: 'لا يمكنك حذف حسابك الخاص' })
     await query('DELETE FROM users WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])

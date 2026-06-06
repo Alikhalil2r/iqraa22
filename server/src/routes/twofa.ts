@@ -13,7 +13,7 @@ const log = createLogger('2FA')
 router.use(authenticateToken)
 
 // POST /api/2fa/setup — generate TOTP secret + QR
-router.post('/setup', async (req: AuthRequest, res) => {
+router.post('/setup', totpLimiter, async (req: AuthRequest, res) => {
   try {
     const { id: userId, schoolId, username, name } = req.user!
 

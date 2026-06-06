@@ -2,10 +2,17 @@ import { Router } from 'express'
 import { query } from '../db'
 import { authenticateToken, AuthRequest, requireRole } from '../middleware/auth'
 import { testEmailConfig } from '../services/email'
+import { validateUUIDParam } from '../middleware/validate'
+import { writeLimiter } from '../middleware/rateLimiter'
 import crypto from 'crypto'
 
 const router = Router()
 router.use(authenticateToken, requireRole('super_admin'))
+
+async function schoolExists(schoolId: string): Promise<boolean> {
+  const result = await query('SELECT id FROM schools WHERE id=$1', [schoolId])
+  return result.rows.length > 0
+}
 
 router.get('/stats', async (_req: AuthRequest, res) => {
   try {
@@ -46,7 +53,7 @@ router.get('/schools', async (_req: AuthRequest, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.get('/schools/:id', async (req: AuthRequest, res) => {
+router.get('/schools/:id', validateUUIDParam('id'), async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const schoolResult = await query(`
@@ -66,7 +73,7 @@ router.get('/schools/:id', async (req: AuthRequest, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.post('/schools', async (req: AuthRequest, res) => {
+router.post('/schools', writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { name, nameEn, tagline, address, phone, email, website, logoUrl, plan, notes } = req.body
     if (!name) return res.status(400).json({ error: 'name required' })
@@ -102,66 +109,80 @@ router.post('/schools', async (req: AuthRequest, res) => {
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.put('/schools/:id/status', async (req: AuthRequest, res) => {
+router.put('/schools/:id/status', validateUUIDParam('id'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const { status } = req.body
     if (!['active','suspended','trial'].includes(status)) return res.status(400).json({ error: 'Invalid status' })
-    await query('UPDATE schools SET status=$1 WHERE id=$2', [status, id])
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
+    const result = await query('UPDATE schools SET status=$1 WHERE id=$2 RETURNING id', [status, id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'School not found' })
     res.json({ ok: true, status })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.put('/schools/:id/plan', async (req: AuthRequest, res) => {
+router.put('/schools/:id/plan', validateUUIDParam('id'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const { plan, planExpiresAt } = req.body
     if (!['basic','pro','enterprise'].includes(plan)) return res.status(400).json({ error: 'Invalid plan' })
-    await query('UPDATE schools SET plan=$1, plan_expires_at=$2 WHERE id=$3', [plan, planExpiresAt||null, id])
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
+    const result = await query('UPDATE schools SET plan=$1, plan_expires_at=$2 WHERE id=$3 RETURNING id', [plan, planExpiresAt||null, id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'School not found' })
     res.json({ ok: true, plan })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.put('/schools/:id', async (req: AuthRequest, res) => {
+router.put('/schools/:id', validateUUIDParam('id'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
     const { name, nameEn, tagline, address, phone, email, website, logoUrl, notes } = req.body
-    await query(`
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
+    const result = await query(`
       UPDATE schools SET name=$1,name_en=$2,tagline=$3,address=$4,phone=$5,email=$6,website=$7,logo_url=$8,notes=$9
-      WHERE id=$10
+      WHERE id=$10 RETURNING id
     `, [name,nameEn||null,tagline||null,address||null,phone||null,email||null,website||null,logoUrl||null,notes||null,id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'School not found' })
     res.json({ ok: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.delete('/schools/:id', async (req: AuthRequest, res) => {
+router.delete('/schools/:id', validateUUIDParam('id'), writeLimiter, async (req: AuthRequest, res) => {
   try {
-    await query('DELETE FROM schools WHERE id=$1', [req.params.id])
+    const { id } = req.params
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
+    const result = await query('DELETE FROM schools WHERE id=$1 RETURNING id', [id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'School not found' })
     res.json({ ok: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })
 
-router.get('/schools/:id/email-test', async (req: AuthRequest, res) => {
+router.get('/schools/:id/email-test', validateUUIDParam('id'), async (req: AuthRequest, res) => {
   try {
-    const result = await testEmailConfig(req.params.id)
+    const { id } = req.params
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
+    const result = await testEmailConfig(id)
     res.json(result)
   } catch (err) { res.status(500).json({ ok: false, error: 'Server error' }) }
 })
 
-router.put('/schools/:id/email-settings', async (req: AuthRequest, res) => {
+router.put('/schools/:id/email-settings', validateUUIDParam('id'), writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params
+    if (!(await schoolExists(id))) return res.status(404).json({ error: 'School not found' })
     const { smtpHost, smtpPort, smtpUser, smtpPass, emailFromName, emailEnabled,
             notifyAbsence, notifyGrades, notifyFees } = req.body
-    await query(`
+    const result = await query(`
       UPDATE school_settings SET
         smtp_host=$1, smtp_port=$2, smtp_user=$3, smtp_pass=$4,
         email_from_name=$5, email_enabled=$6,
         notify_absence=$7, notify_grades=$8, notify_fees=$9
       WHERE school_id=$10
+      RETURNING school_id
     `, [smtpHost||null, smtpPort||587, smtpUser||null, smtpPass||null,
         emailFromName||'نظام المدرسة', !!emailEnabled,
         notifyAbsence!==false, notifyGrades!==false, notifyFees!==false, id])
+    if (!result.rows[0]) return res.status(404).json({ error: 'School settings not found' })
     res.json({ ok: true })
   } catch (err) { console.error(err); res.status(500).json({ error: 'Server error' }) }
 })

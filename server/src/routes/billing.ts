@@ -4,6 +4,7 @@ import { authenticateToken, requireRole, AuthRequest } from '../middleware/auth'
 import { withTransaction } from '../db/transaction'
 import { createLogger } from '../utils/logger'
 import { logAudit } from './audit'
+import { writeLimiter } from '../middleware/rateLimiter'
 
 const router = Router()
 const log = createLogger('Billing')
@@ -34,7 +35,7 @@ router.get('/', async (req: AuthRequest, res) => {
 })
 
 // POST /api/billing/invoice — create invoice (super_admin or admin)
-router.post('/invoice', requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
+router.post('/invoice', writeLimiter, requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, name: userName, role } = req.user!
     const { plan, amount, currency = 'OMR', due_date, notes } = req.body
@@ -70,7 +71,7 @@ router.post('/invoice', requireRole('super_admin', 'admin'), async (req: AuthReq
 })
 
 // PATCH /api/billing/invoice/:id/pay — mark invoice as paid
-router.patch('/invoice/:id/pay', requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
+router.patch('/invoice/:id/pay', writeLimiter, requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, name: userName, role } = req.user!
     const inv = await query(
@@ -117,7 +118,7 @@ router.get('/usage', async (req: AuthRequest, res) => {
 })
 
 // PATCH /api/billing/plan — تغيير خطة الاشتراك وإنشاء فاتورة
-router.patch('/plan', async (req: AuthRequest, res) => {
+router.patch('/plan', writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, name: userName, role } = req.user!
     const { plan, billingCycle = 'monthly' } = req.body
@@ -168,7 +169,7 @@ router.patch('/plan', async (req: AuthRequest, res) => {
 })
 
 // POST /api/billing/cancel — إلغاء الاشتراك (العودة للمجاني)
-router.post('/cancel', async (req: AuthRequest, res) => {
+router.post('/cancel', writeLimiter, async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, name: userName, role } = req.user!
     const cfg = PLAN_CONFIG.free

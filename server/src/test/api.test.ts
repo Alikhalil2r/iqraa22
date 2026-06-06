@@ -9,6 +9,7 @@ import feesRouter from '../routes/fees'
 import parentRouter from '../routes/parent'
 import paymentsRouter from '../routes/payments'
 import attendanceRouter from '../routes/attendance'
+import superadminRouter from '../routes/superadmin'
 
 function buildApp() {
   const app = express()
@@ -19,6 +20,7 @@ function buildApp() {
   app.use('/api/parent', parentRouter)
   app.use('/api/payments', paymentsRouter)
   app.use('/api/attendance', attendanceRouter)
+  app.use('/api/super-admin', superadminRouter)
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
   return app
 }
@@ -121,5 +123,13 @@ describe('Iqraa API', () => {
   it('POST /api/auth/refresh — requires refresh token', async () => {
     const res = await request(app).post('/api/auth/refresh').send({})
     expect(res.status).toBe(401)
+  })
+
+  it('GET /api/super-admin/schools/not-a-uuid — rejects invalid school id', async () => {
+    if (!adminToken) return
+    const res = await request(app)
+      .get('/api/super-admin/schools/not-a-uuid')
+      .set('Authorization', `Bearer ${adminToken}`)
+    expect([400, 403]).toContain(res.status)
   })
 })

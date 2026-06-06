@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { query } from '../db'
 import { authenticateToken, requireRole, AuthRequest, STAFF_ROLES } from '../middleware/auth'
+import { writeLimiter } from '../middleware/rateLimiter'
 
 const router = Router()
 router.use(authenticateToken)
@@ -20,7 +21,7 @@ router.get('/', requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
-router.post('/', requireRole('super_admin', 'admin', 'teacher'), async (req: AuthRequest, res) => {
+router.post('/', writeLimiter, requireRole('super_admin', 'admin', 'teacher'), async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, role } = req.user!
     const { classId, subjectName, teacherName, teacherId, dayOfWeek, startTime, endTime, room } = req.body
@@ -35,7 +36,7 @@ router.post('/', requireRole('super_admin', 'admin', 'teacher'), async (req: Aut
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
-router.put('/:id', requireRole('super_admin', 'admin', 'teacher'), async (req: AuthRequest, res) => {
+router.put('/:id', writeLimiter, requireRole('super_admin', 'admin', 'teacher'), async (req: AuthRequest, res) => {
   try {
     const { schoolId, id: userId, role } = req.user!
     const { classId, subjectName, teacherName, teacherId, dayOfWeek, startTime, endTime, room } = req.body
@@ -52,7 +53,7 @@ router.put('/:id', requireRole('super_admin', 'admin', 'teacher'), async (req: A
   } catch { res.status(500).json({ error: 'Server error' }) }
 })
 
-router.delete('/:id', requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
+router.delete('/:id', writeLimiter, requireRole('super_admin', 'admin'), async (req: AuthRequest, res) => {
   try {
     await query('DELETE FROM schedule WHERE id=$1 AND school_id=$2', [req.params.id, req.user!.schoolId])
     res.json({ ok: true })
