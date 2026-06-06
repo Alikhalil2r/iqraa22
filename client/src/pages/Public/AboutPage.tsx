@@ -61,7 +61,7 @@ export default function AboutPage() {
   const { data: staffApiData } = useQuery({ queryKey: ['public-staff', slug], queryFn: () => publicApi.staff(schoolQuery).then(r => r.data) })
   const { data: galleryData } = useQuery({ queryKey: ['public-gallery', slug], queryFn: () => publicApi.gallery(schoolQuery).then(r => r.data) })
   const school = schoolData?.school
-  const staff = (staffApiData?.staff?.length ? staffApiData.staff : DEMO_STAFF).map((s: any) => ({ id: s.id, name: s.name, role: s.position || '', category: 'أكاديمي', image: s.photo || '', quote: s.bio || '' }))
+  const staff = withDemoFallback(staffApiData?.staff, DEMO_STAFF).map((s: any) => ({ id: s.id, name: s.name, role: s.position || '', category: 'أكاديمي', image: s.photo || '', quote: s.bio || '' }))
   const photos = useMemo(() => withDemoFallback(galleryData?.gallery, DEMO_GALLERY).map((g: any) => ({
     id: g.id, src: g.image_url, caption: pick(g.title, g.title_en), category: category(g.category, g.category_en) || 'عام',
   })), [galleryData, pick, category])

@@ -9,7 +9,7 @@ export async function ensureSuperAdminFromEnv(): Promise<void> {
   const existing = await query(`SELECT id FROM users WHERE role='super_admin' LIMIT 1`)
   if (existing.rows.length > 0) return
 
-  const schoolRow = await query(`SELECT id FROM schools ORDER BY created_at ASC LIMIT 1`)
+  const schoolRow = await query(`SELECT id FROM schools LIMIT 1`)
   const schoolId = schoolRow.rows[0]?.id
   if (!schoolId) {
     console.log('ℹ️  SUPER_ADMIN_PASSWORD set but no school exists yet — super_admin will be created after seed')

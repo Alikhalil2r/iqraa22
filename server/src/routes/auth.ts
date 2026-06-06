@@ -223,6 +223,8 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       return res.status(403).json({ error: 'School suspended' })
     }
 
+    await revokeRefreshToken(token)
+
     const accessToken = generateToken({
       id: user.id,
       schoolId: user.school_id,
@@ -230,7 +232,17 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       username: user.username,
       name: user.name,
     })
-    res.json({ token: accessToken })
+
+    const useCookie = process.env.AUTH_REFRESH_COOKIE === 'true'
+    const newRefreshToken = await issueRefreshToken(user.id)
+    if (useCookie) {
+      res.cookie(refreshCookieName(), newRefreshToken, refreshCookieOptions())
+    }
+
+    res.json({
+      token: accessToken,
+      refreshToken: useCookie ? undefined : newRefreshToken,
+    })
   } catch (err) {
     log.error('Refresh failed', { error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })

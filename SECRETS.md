@@ -36,7 +36,7 @@
 | `CORS_ORIGINS` | Prod | *(empty)* | Comma-separated allowed browser origins |
 | `PAYMENT_MOCK_MODE` | No | `true` | `false` for live payment gateways |
 | `PAYMENT_WEBHOOK_SECRET` | Prod | *(empty)* | Verifies provider webhook signatures |
-| `SUPER_ADMIN_PASSWORD` | No | *(empty)* | Creates `superadmin` user on first run if no `super_admin` exists |
+| `SUPER_ADMIN_PASSWORD` | No | *(empty)* | Bootstrap platform `super_admin` on first run (see below) |
 | `SEED_ON_START` | No | *(unset)* | Auto-seed on startup in non-production (with `DEMO_MODE` or alone) |
 | `SENTRY_DSN` | No | *(empty)* | Sentry error tracking DSN |
 | `LOG_LEVEL` | No | `debug` / `info` | `info` recommended in production |
@@ -47,6 +47,26 @@
 | `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL` | No | *(empty)* | S3-compatible object storage |
 
 See **`server/.env.production.example`** for a production-ready template with all variables grouped and commented.
+
+### `SUPER_ADMIN_PASSWORD` — first-run bootstrap
+
+When this variable is set and **no** `super_admin` user exists yet, the server creates one automatically on startup (after DB init) and again after seed if a school was missing at boot:
+
+| Field | Value |
+|-------|-------|
+| Username | `superadmin` |
+| Role | `super_admin` |
+| Email | `superadmin@platform.local` |
+| School | First school in the database |
+
+**Production checklist**
+
+1. Set a strong `SUPER_ADMIN_PASSWORD` before the first deploy.
+2. Start the server once — check logs for `super_admin created`.
+3. Log in as `superadmin`, change the password immediately, and enable 2FA.
+4. Remove or rotate `SUPER_ADMIN_PASSWORD` from the deployment environment after bootstrap (it is only needed when no `super_admin` exists).
+
+In `DEMO_MODE=true`, the demo seed already includes admin users; `SUPER_ADMIN_PASSWORD` is optional and only applies when no `super_admin` row exists.
 
 ### Per-school secrets (database, not `.env`)
 

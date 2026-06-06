@@ -8,6 +8,7 @@ import studentsRouter from '../routes/students'
 import feesRouter from '../routes/fees'
 import parentRouter from '../routes/parent'
 import paymentsRouter from '../routes/payments'
+import attendanceRouter from '../routes/attendance'
 
 function buildApp() {
   const app = express()
@@ -17,6 +18,7 @@ function buildApp() {
   app.use('/api/fees', feesRouter)
   app.use('/api/parent', parentRouter)
   app.use('/api/payments', paymentsRouter)
+  app.use('/api/attendance', attendanceRouter)
   app.get('/api/health', (_req, res) => res.json({ status: 'ok' }))
   return app
 }
@@ -100,5 +102,24 @@ describe('Iqraa API', () => {
       .set('Authorization', `Bearer ${parentToken}`)
     expect(res.status).toBe(200)
     expect(res.body).toHaveProperty('fees')
+  })
+
+  it('POST /api/attendance — rejects foreign personId (IDOR)', async () => {
+    if (!adminToken) return
+    const res = await request(app)
+      .post('/api/attendance')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        personType: 'student',
+        personId: '00000000-0000-0000-0000-000000000099',
+        date: '2026-06-01',
+        status: 'present',
+      })
+    expect(res.status).toBe(403)
+  })
+
+  it('POST /api/auth/refresh — requires refresh token', async () => {
+    const res = await request(app).post('/api/auth/refresh').send({})
+    expect(res.status).toBe(401)
   })
 })
