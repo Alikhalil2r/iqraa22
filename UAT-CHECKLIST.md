@@ -48,12 +48,19 @@ Use this checklist before pilot go-live. Mark each item Pass/Fail with tester na
 - [ ] Multi-tenant slug `GET /api/public/school/:slug`
 - [ ] Contact form submission
 
+## PWA & Mobile
+
+- [ ] Install prompt appears (Chrome / Edge) with green إقرأ icon
+- [ ] `manifest.webmanifest` loads (`/pwa-192.png`, `/pwa-512.png`)
+- [ ] Offline shell loads after first visit (service worker precache)
+
 ## Ops
 
 - [ ] `GET /api/health` returns ok
 - [ ] Backup panel (admin)
 - [ ] Docker `docker compose up` builds and serves
 - [ ] CI pipeline green on `main`
+- [ ] Production env from `server/.env.production.example` reviewed (no demo mode)
 
 ## Sign-off
 

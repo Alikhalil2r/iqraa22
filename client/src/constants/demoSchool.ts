@@ -1,3 +1,4 @@
+export const DEMO_SCHOOL_SLUG = 'al-noor'
 export const DEMO_SCHOOL_NAME = 'مدرسة النور العالمية'
 export const DEMO_SCHOOL_NAME_EN = 'Al-Noor International School'
 export const DEMO_SCHOOL_TAGLINE = 'نور العلم يضيء المستقبل'

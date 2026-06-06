@@ -31,7 +31,7 @@ export default api
 
 // Auth
 export const authApi = {
-  login: (data: { username: string; password: string; role: string }) =>
+  login: (data: { username: string; password: string; role: string; schoolSlug?: string }) =>
     api.post('/auth/login', data),
   me: () => api.get('/auth/me'),
   changePassword: (data: { oldPassword: string; newPassword: string }) =>
@@ -156,10 +156,11 @@ export const backupsApi = {
 // Public
 export const publicApi = {
   school: () => api.get('/public/school'),
-  news: (params?: any) => api.get('/public/news', { params }),
-  newsItem: (id: string) => api.get(`/public/news/${id}`),
-  events: (params?: any) => api.get('/public/events', { params }),
-  gallery: () => api.get('/public/gallery'),
+  schoolBySlug: (slug: string) => api.get(`/public/school/${encodeURIComponent(slug)}`),
+  news: (params?: { school?: string }) => api.get('/public/news', { params }),
+  newsItem: (id: string, params?: { school?: string }) => api.get(`/public/news/${id}`, { params }),
+  events: (params?: { school?: string }) => api.get('/public/events', { params }),
+  gallery: (params?: { school?: string }) => api.get('/public/gallery', { params }),
   staff: () => api.get('/public/staff'),
   achievements: () => api.get('/public/achievements'),
   alerts: () => api.get('/public/alerts'),

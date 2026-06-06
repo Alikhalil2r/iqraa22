@@ -1,0 +1,8 @@
+# Demo stack — NODE_ENV must not be "production" with DEMO_MODE=true (server exits on that combo).
+# Usage: docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build
+services:
+  app:
+    environment:
+      NODE_ENV: development
+      DEMO_MODE: "true"
+      PAYMENT_MOCK_MODE: "true"

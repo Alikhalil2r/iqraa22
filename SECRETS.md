@@ -9,6 +9,7 @@
    copy server\.env.example server\.env
    copy client\.env.example client\.env
    ```
+   For production deployment, use `server/.env.production.example` as the template (set `DEMO_MODE=false`, TLS `DATABASE_URL`, etc.).
 2. Generate a strong `JWT_SECRET` (32+ random characters).
 3. Set `DATABASE_URL` to your local or hosted PostgreSQL connection string.
 4. For production: set `DEMO_MODE=false` and disable demo seeding.
@@ -29,6 +30,23 @@
 | `BACKUP_RETENTION_DAYS` | No | `30` | Days to keep backups |
 | `BACKUP_MAX_FILES` | No | `60` | Max backup files |
 | `BACKUP_CHECK_MS` | No | `900000` | Scheduler interval (ms) |
+| `AUTH_REFRESH_COOKIE` | No | `false` | `true` = refresh token in httpOnly cookie |
+| `ADMIN_2FA_REQUIRED` | No | `true` | Enforce 2FA for admin roles (off when `DEMO_MODE=true`) |
+| `PUBLIC_URL` | Prod | `http://localhost:5000` | Public app URL for payment redirects |
+| `CORS_ORIGINS` | Prod | *(empty)* | Comma-separated allowed browser origins |
+| `PAYMENT_MOCK_MODE` | No | `true` | `false` for live payment gateways |
+| `PAYMENT_WEBHOOK_SECRET` | Prod | *(empty)* | Verifies provider webhook signatures |
+| `SUPER_ADMIN_PASSWORD` | No | *(empty)* | Creates `superadmin` user on first run if no `super_admin` exists |
+| `SEED_ON_START` | No | *(unset)* | Auto-seed on startup in non-production (with `DEMO_MODE` or alone) |
+| `SENTRY_DSN` | No | *(empty)* | Sentry error tracking DSN |
+| `LOG_LEVEL` | No | `debug` / `info` | `info` recommended in production |
+| `SMTP_*` | No | *(empty)* | Global SMTP fallback (school-level SMTP in DB preferred) |
+| `SMS_PROVIDER` | No | `stub` | `twilio` for live SMS |
+| `TWILIO_*` | No | *(empty)* | Twilio credentials when `SMS_PROVIDER=twilio` |
+| `UPLOAD_DIR` | No | `./uploads` | Local upload directory |
+| `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL` | No | *(empty)* | S3-compatible object storage |
+
+See **`server/.env.production.example`** for a production-ready template with all variables grouped and commented.
 
 ### Per-school secrets (database, not `.env`)
 

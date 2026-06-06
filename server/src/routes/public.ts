@@ -12,6 +12,7 @@ const sanitizeEmail = (v: unknown): string =>
   String(v ?? '').toLowerCase().trim().replace(/[^a-z0-9@._+-]/g, '').slice(0, 254)
 
 async function getDefaultSchoolId(): Promise<string | null> {
+  // TODO(P1): multi-tenant — require school slug; never rely on LIMIT 1 in production
   const r = await query('SELECT id FROM schools LIMIT 1')
   return r.rows[0]?.id || null
 }
@@ -21,45 +22,105 @@ async function getSchoolBySlug(slug: string): Promise<string | null> {
   return r.rows[0]?.id || null
 }
 
+async function resolveSchoolId(slug?: string | null): Promise<string | null> {
+  if (slug) return getSchoolBySlug(String(slug).trim().toLowerCase())
+  return getDefaultSchoolId()
+}
+
+async function buildSchoolPublicPayload(schoolId: string) {
+  const schoolResult = await query(
+    `SELECT id, name, name_en, tagline, tagline_en, logo_url, address, phone, email, website, slug
+     FROM schools WHERE id=$1`,
+    [schoolId]
+  )
+  const school = schoolResult.rows[0]
+  if (!school) return null
+
+  const settingsResult = await query(
+    `SELECT about_text, about_text_en, vision, vision_en, mission, mission_en,
+            principal_name, principal_message, principal_message_en, principal_image,
+            hero_image, primary_color, primary_dark, primary_light, accent_color, accent_dark,
+            logo_url, show_parent_portal, show_jobs, custom_css,
+            founded_year, map_embed, office_hours, office_hours_en, values_text, objectives,
+            students_count, teachers_count, classrooms_count, years_experience,
+            instagram, twitter, facebook, youtube, snapchat, tiktok, whatsapp
+     FROM school_settings WHERE school_id=$1`,
+    [schoolId]
+  )
+  const s = settingsResult.rows[0] || {}
+
+  return {
+    school: {
+      id: school.id,
+      slug: school.slug,
+      name: school.name,
+      nameEn: school.name_en,
+      tagline: school.tagline,
+      taglineEn: school.tagline_en,
+      address: school.address,
+      phone: school.phone,
+      email: school.email,
+      website: school.website,
+      establishedYear: s.founded_year || '2015',
+      logoUrl: school.logo_url,
+      aboutText: s.about_text,
+      aboutTextEn: s.about_text_en,
+      vision: s.vision,
+      visionEn: s.vision_en,
+      mission: s.mission,
+      missionEn: s.mission_en,
+      principalName: s.principal_name,
+      principalMessage: s.principal_message,
+      principalMessageEn: s.principal_message_en,
+      principalImage: s.principal_image,
+      heroImage: s.hero_image,
+      mapEmbed: s.map_embed,
+      officeHours: s.office_hours || 'الأحد – الخميس | 7:00 ص – 2:30 م',
+      officeHoursEn: s.office_hours_en || 'Sun – Thu | 7:00 AM – 2:30 PM',
+      values: s.values_text,
+      objectives: s.objectives,
+      stats: {
+        students: s.students_count || '500+',
+        teachers: s.teachers_count || '40+',
+        classrooms: s.classrooms_count || '25+',
+        years: s.years_experience || '10+',
+      },
+      social: {
+        instagram: s.instagram || 'https://instagram.com/alnoor.demo',
+        twitter: s.twitter || 'https://twitter.com/alnoor.demo',
+        facebook: s.facebook || 'https://facebook.com/alnoor.demo',
+        youtube: s.youtube || 'https://youtube.com/@alnoor.demo',
+        snapchat: s.snapchat, tiktok: s.tiktok,
+        whatsapp: s.whatsapp || '96899000111',
+      },
+    },
+    theme: {
+      primaryColor:  s.primary_color  || '#065f46',
+      primaryDark:   s.primary_dark   || '#064e3b',
+      primaryLight:  s.primary_light  || '#10b981',
+      accentColor:   s.accent_color   || '#f59e0b',
+      accentDark:    s.accent_dark    || '#d97706',
+      logoUrl:       s.logo_url       || school.logo_url,
+      schoolName:    school.name,
+      schoolNameEn:  school.name_en,
+      tagline:       school.tagline,
+      taglineEn:     school.tagline_en,
+      showParentPortal: s.show_parent_portal,
+      showJobs:      s.show_jobs,
+      customCss:     s.custom_css,
+    },
+  }
+}
+
 // ── GET /api/public/school/:slug — multi-tenant public API (#17) ───────────
 router.get('/school/:slug', async (req, res) => {
   try {
     const schoolId = await getSchoolBySlug(req.params.slug)
     if (!schoolId) return res.status(404).json({ error: 'School not found' })
 
-    const schoolResult = await query(
-      `SELECT id, name, name_en, tagline, tagline_en, logo_url, address, phone, email, website, slug
-       FROM schools WHERE id=$1`,
-      [schoolId]
-    )
-    const school = schoolResult.rows[0]
-    const settingsResult = await query(
-      `SELECT primary_color, primary_dark, primary_light, accent_color, accent_dark,
-              logo_url, show_parent_portal, show_jobs, founded_year, office_hours
-       FROM school_settings WHERE school_id=$1`,
-      [schoolId]
-    )
-    const s = settingsResult.rows[0] || {}
-    res.json({
-      school: {
-        id: school.id,
-        slug: school.slug,
-        name: school.name,
-        nameEn: school.name_en,
-        tagline: school.tagline,
-        address: school.address,
-        phone: school.phone,
-        email: school.email,
-      },
-      theme: {
-        primaryColor: s.primary_color || '#065f46',
-        primaryDark: s.primary_dark || '#064e3b',
-        primaryLight: s.primary_light || '#10b981',
-        accentColor: s.accent_color || '#fbbf24',
-        showParentPortal: s.show_parent_portal ?? true,
-        showJobs: s.show_jobs ?? true,
-      },
-    })
+    const payload = await buildSchoolPublicPayload(schoolId)
+    if (!payload) return res.status(404).json({ error: 'School not found' })
+    res.json(payload)
   } catch (err) {
     log.error('GET /school/:slug failed', { slug: req.params.slug, error: (err as Error).message })
     res.status(500).json({ error: 'Server error' })
@@ -186,16 +247,16 @@ router.get('/school', async (_req, res) => {
 })
 
 // ── GET /api/public/news ────────────────────────────────────────────────────
-router.get('/news', async (_req, res) => {
+router.get('/news', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.json({ news: [] })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.json({ news: [] })
     const result = await query(
       `SELECT id, title, title_en, summary, summary_en, image_url, category, category_en,
               publish_date, views, is_featured
        FROM news WHERE school_id=$1 AND is_published=true
        ORDER BY publish_date DESC LIMIT 20`,
-      [school.id]
+      [schoolId]
     )
     res.json({ news: result.rows })
   } catch {
@@ -206,14 +267,14 @@ router.get('/news', async (_req, res) => {
 // ── GET /api/public/news/:id ────────────────────────────────────────────────
 router.get('/news/:id', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.status(404).json({ error: 'الخبر غير موجود' })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.status(404).json({ error: 'الخبر غير موجود' })
     const result = await query(
       `UPDATE news SET views = COALESCE(views, 0) + 1
        WHERE id = $1 AND school_id = $2 AND is_published = true
        RETURNING id, title, title_en, summary, summary_en, content, content_en,
                  image_url, category, category_en, publish_date, views, is_featured`,
-      [req.params.id, school.id]
+      [req.params.id, schoolId]
     )
     if (!result.rows[0]) return res.status(404).json({ error: 'الخبر غير موجود' })
     res.json({ news: result.rows[0] })
@@ -223,14 +284,14 @@ router.get('/news/:id', async (req, res) => {
 })
 
 // ── GET /api/public/staff ───────────────────────────────────────────────────
-router.get('/staff', async (_req, res) => {
+router.get('/staff', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.json({ staff: [] })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.json({ staff: [] })
     const result = await query(
       `SELECT id, name, position, department, photo, bio, is_featured, sort_order
        FROM staff_public WHERE school_id=$1 ORDER BY sort_order, name`,
-      [school.id]
+      [schoolId]
     )
     res.json({ staff: result.rows })
   } catch {
@@ -239,15 +300,15 @@ router.get('/staff', async (_req, res) => {
 })
 
 // ── GET /api/public/achievements ────────────────────────────────────────────
-router.get('/achievements', async (_req, res) => {
+router.get('/achievements', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.json({ achievements: [] })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.json({ achievements: [] })
     const result = await query(
       `SELECT id, title, title_en, description, description_en, image_url, category, category_en, achievement_date, student_name, class_name
        FROM achievements WHERE school_id=$1 AND is_published=true
        ORDER BY achievement_date DESC LIMIT 20`,
-      [school.id]
+      [schoolId]
     )
     res.json({ achievements: result.rows })
   } catch {
@@ -256,15 +317,15 @@ router.get('/achievements', async (_req, res) => {
 })
 
 // ── GET /api/public/gallery ─────────────────────────────────────────────────
-router.get('/gallery', async (_req, res) => {
+router.get('/gallery', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.json({ gallery: [] })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.json({ gallery: [] })
     const result = await query(
       `SELECT id, title, title_en, description, description_en, image_url, category, category_en, created_at
        FROM gallery WHERE school_id=$1 AND is_published=true
        ORDER BY created_at DESC`,
-      [school.id]
+      [schoolId]
     )
     res.json({ gallery: result.rows })
   } catch {
@@ -273,15 +334,15 @@ router.get('/gallery', async (_req, res) => {
 })
 
 // ── GET /api/public/events ──────────────────────────────────────────────────
-router.get('/events', async (_req, res) => {
+router.get('/events', async (req, res) => {
   try {
-    const school = (await query('SELECT id FROM schools LIMIT 1')).rows[0]
-    if (!school) return res.json({ events: [] })
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
+    if (!schoolId) return res.json({ events: [] })
     const result = await query(
       `SELECT id, title, title_en, event_type, start_date, end_date, location, description, description_en, color
        FROM events WHERE school_id=$1 AND is_public=true AND end_date >= NOW()
        ORDER BY start_date LIMIT 10`,
-      [school.id]
+      [schoolId]
     )
     res.json({ events: result.rows })
   } catch {
@@ -290,9 +351,10 @@ router.get('/events', async (_req, res) => {
 })
 
 // ── GET /api/public/alerts ───────────────────────────────────────────────────
-router.get('/alerts', async (_req, res) => {
+router.get('/alerts', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client; avoid getDefaultSchoolId fallback
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ alerts: [] })
     const result = await query(
       `SELECT id, message, message_en, alert_type, sort_order, created_at
@@ -310,9 +372,10 @@ router.get('/alerts', async (_req, res) => {
 })
 
 // ── GET /api/public/faqs ─────────────────────────────────────────────────────
-router.get('/faqs', async (_req, res) => {
+router.get('/faqs', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ faqs: [] })
     const result = await query(
       `SELECT id, question, question_en, answer, answer_en, sort_order FROM public_faqs
@@ -327,9 +390,10 @@ router.get('/faqs', async (_req, res) => {
 })
 
 // ── GET /api/public/jobs ─────────────────────────────────────────────────────
-router.get('/jobs', async (_req, res) => {
+router.get('/jobs', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ jobs: [] })
     const result = await query(
       `SELECT id, title, department, job_type, deadline, requirements, description, is_active, created_at
@@ -347,9 +411,10 @@ router.get('/jobs', async (_req, res) => {
 })
 
 // ── GET /api/public/alumni ───────────────────────────────────────────────────
-router.get('/alumni', async (_req, res) => {
+router.get('/alumni', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ alumni: [] })
     const result = await query(
       `SELECT id, name, graduation_year, job_title, city, story, achievement, image_url, created_at
@@ -368,7 +433,8 @@ router.get('/alumni', async (_req, res) => {
 // ── POST /api/public/contact ─────────────────────────────────────────────────
 router.post('/contact', publicFormLimiter, async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): accept schoolSlug in body for multi-tenant forms
+    const schoolId = await resolveSchoolId(req.body.schoolSlug as string | undefined)
     if (!schoolId) return res.status(503).json({ error: 'المدرسة غير متاحة حالياً' })
 
     const name    = sanitize(req.body.name, 200)
@@ -401,7 +467,8 @@ router.post('/contact', publicFormLimiter, async (req, res) => {
 // ── POST /api/public/admission ───────────────────────────────────────────────
 router.post('/admission', publicFormLimiter, async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): accept schoolSlug in body for multi-tenant forms
+    const schoolId = await resolveSchoolId(req.body.schoolSlug as string | undefined)
     if (!schoolId) return res.status(503).json({ error: 'المدرسة غير متاحة حالياً' })
 
     const parentName  = sanitize(req.body.parentName || req.body.parent_name, 200)
@@ -445,7 +512,8 @@ router.post('/admission', publicFormLimiter, async (req, res) => {
 // ── POST /api/public/jobs/apply ──────────────────────────────────────────────
 router.post('/jobs/apply', publicFormLimiter, async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): accept schoolSlug in body for multi-tenant forms
+    const schoolId = await resolveSchoolId(req.body.schoolSlug as string | undefined)
     if (!schoolId) return res.status(503).json({ error: 'المدرسة غير متاحة حالياً' })
 
     const jobId    = req.body.job_id || null
@@ -486,7 +554,8 @@ router.post('/jobs/apply', publicFormLimiter, async (req, res) => {
 // ── POST /api/public/alumni/register ─────────────────────────────────────────
 router.post('/alumni/register', publicFormLimiter, async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): accept schoolSlug in body for multi-tenant forms
+    const schoolId = await resolveSchoolId(req.body.schoolSlug as string | undefined)
     if (!schoolId) return res.status(503).json({ error: 'المدرسة غير متاحة حالياً' })
 
     const name  = sanitize(req.body.name, 200)
@@ -515,9 +584,10 @@ router.post('/alumni/register', publicFormLimiter, async (req, res) => {
 })
 
 // ── GET /api/public/videos ───────────────────────────────────────────────────
-router.get('/videos', async (_req, res) => {
+router.get('/videos', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ videos: [] })
     const result = await query(
       `SELECT id, title, video_url, category, description, sort_order FROM public_videos
@@ -534,7 +604,8 @@ router.get('/videos', async (_req, res) => {
 // ── GET /api/public/articles ─────────────────────────────────────────────────
 router.get('/articles', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ articles: [] })
     const { type } = req.query
     let sql = `SELECT id, article_type, author_name, grade, subject, title, content, category, publish_date
@@ -551,9 +622,10 @@ router.get('/articles', async (req, res) => {
 })
 
 // ── GET /api/public/teams ────────────────────────────────────────────────────
-router.get('/teams', async (_req, res) => {
+router.get('/teams', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ teams: [] })
     const result = await query(
       `SELECT id, name, category, members_count, description, achievements, image_url, color_gradient
@@ -568,9 +640,10 @@ router.get('/teams', async (_req, res) => {
 })
 
 // ── GET /api/public/hall-of-fame ─────────────────────────────────────────────
-router.get('/hall-of-fame', async (_req, res) => {
+router.get('/hall-of-fame', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ entries: [] })
     const result = await query(
       `SELECT id, name, grade, year, achievement, category, rank, image_url, description
@@ -585,9 +658,10 @@ router.get('/hall-of-fame', async (_req, res) => {
 })
 
 // ── GET /api/public/learning-support ─────────────────────────────────────────
-router.get('/learning-support', async (_req, res) => {
+router.get('/learning-support', async (req, res) => {
   try {
-    const schoolId = await getDefaultSchoolId()
+    // TODO(P1): pass ?school=slug from client
+    const schoolId = await resolveSchoolId(req.query.school as string | undefined)
     if (!schoolId) return res.json({ about: '', services: [], specialists: [], articles: [], gallery: [] })
     const [settings, services, specialists, articles, gallery] = await Promise.all([
       query('SELECT about_text FROM learning_support_settings WHERE school_id=$1', [schoolId]),

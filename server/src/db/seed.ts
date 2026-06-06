@@ -216,6 +216,9 @@ export async function seedDatabase() {
     await syncDemoBranding(schoolId, adminId)
     await wireDemoRoleLinks(schoolId)
 
+    const { ensureSuperAdminFromEnv } = await import('./superAdmin')
+    await ensureSuperAdminFromEnv()
+
     console.log('✅ Demo database seeded — مدرسة النور العالمية')
     console.log(`📝 Admin: admin / ${DEMO_PASSWORD}`)
     console.log(`📝 Parent: parent1 / ${DEMO_PASSWORD}`)

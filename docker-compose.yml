@@ -25,9 +25,10 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/iqraa_school
       JWT_SECRET: ${JWT_SECRET:-change-me-docker-dev-secret-32chars-min}
       NODE_ENV: production
-      DEMO_MODE: "true"
+      DEMO_MODE: "false"
       PORT: 3001
       BACKUP_AUTO: "false"
+      PAYMENT_WEBHOOK_SECRET: ${PAYMENT_WEBHOOK_SECRET:-}
     depends_on:
       db:
         condition: service_healthy

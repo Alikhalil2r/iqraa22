@@ -86,6 +86,22 @@ export const publicFormLimiter = rateLimit({
   message: { error: 'عدد الإرسالات تجاوز الحد المسموح. حاول مجدداً بعد 15 دقيقة.' },
 })
 
+// ── Refresh token limiter — token rotation abuse ──────────────────────────────
+export const refreshLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 30 : 200,
+  message: { error: 'عدد محاولات تجديد الجلسة تجاوز الحد. حاول بعد 15 دقيقة.' },
+})
+
+// ── Payment webhook limiter — provider callbacks only ─────────────────────────
+export const webhookLimiter = rateLimit({
+  ...opts,
+  windowMs: 15 * 60 * 1000,
+  max: isProd ? 60 : 300,
+  message: { error: 'عدد طلبات webhook تجاوز الحد المسموح.' },
+})
+
 // ── Ticket rating limiter — 1 rating per ticket but limit spam ────────────────
 export const ticketRateLimiter = rateLimit({
   ...opts,

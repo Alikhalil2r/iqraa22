@@ -1,7 +1,10 @@
-/** محتوى تجريبي يظهر عند غياب بيانات API — لعرض إمكانيات الموقع */
+/** محتوى تجريبي يظهر عند غياب بيانات API — فقط عند VITE_DEMO_MODE=true */
+
+import { isDemoMode } from '../config/appMode'
 
 export function withDemoFallback<T>(apiItems: T[] | undefined | null, fallback: T[]): T[] {
-  return apiItems?.length ? apiItems : fallback
+  if (apiItems?.length) return apiItems
+  return isDemoMode() ? fallback : []
 }
 
 export const DEMO_NEWS = [

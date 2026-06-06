@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+!server/.env.production.example
 *.env
 server/.env
 client/.env

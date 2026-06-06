@@ -1,6 +1,7 @@
 /* @refresh reset */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { publicApi } from '../api/client'
+import { DEMO_SCHOOL_SLUG } from '../constants/demoSchool'
 
 interface Theme {
   primaryColor: string
@@ -48,11 +49,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }
 
   useEffect(() => {
-    publicApi.school()
+    publicApi.schoolBySlug(DEMO_SCHOOL_SLUG)
       .then(res => {
         if (res.data?.theme) applyTheme(res.data.theme)
       })
-      .catch(() => applyTheme(defaultTheme))
+      .catch(() => {
+        publicApi.school()
+          .then(res => { if (res.data?.theme) applyTheme(res.data.theme) })
+          .catch(() => applyTheme(defaultTheme))
+      })
   }, [])
 
   return (

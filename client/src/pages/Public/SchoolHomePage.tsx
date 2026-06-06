@@ -11,6 +11,7 @@ import {
   Newspaper, Star, Clock, ArrowUpLeft, Users, MessageCircle
 } from 'lucide-react'
 import { DEMO_NEWS, DEMO_GALLERY, withDemoFallback } from '../../data/demoPublicFallback'
+import { DEMO_SCHOOL_SLUG } from '../../constants/demoSchool'
 
 const BASE = '/school'
 
@@ -683,9 +684,9 @@ export default function SchoolHomePage() {
   const { schoolName, location } = useSchoolDisplay()
   const { slideThemes, defaultSlides, valueCards, welcomePills, statConfig, joinPerks, t } = useHomeContent()
 
-  const { data: schoolData } = useQuery({ queryKey: ['public-school'], queryFn: () => publicApi.school().then(r => r.data) })
-  const { data: newsData } = useQuery({ queryKey: ['public-news'], queryFn: () => publicApi.news().then(r => r.data) })
-  const { data: galleryData } = useQuery({ queryKey: ['public-gallery'], queryFn: () => publicApi.gallery().then(r => r.data) })
+  const { data: schoolData } = useQuery({ queryKey: ['public-school', DEMO_SCHOOL_SLUG], queryFn: () => publicApi.schoolBySlug(DEMO_SCHOOL_SLUG).then(r => r.data) })
+  const { data: newsData } = useQuery({ queryKey: ['public-news', DEMO_SCHOOL_SLUG], queryFn: () => publicApi.news({ school: DEMO_SCHOOL_SLUG }).then(r => r.data) })
+  const { data: galleryData } = useQuery({ queryKey: ['public-gallery', DEMO_SCHOOL_SLUG], queryFn: () => publicApi.gallery({ school: DEMO_SCHOOL_SLUG }).then(r => r.data) })
 
   const school = schoolData?.school
   const news = useMemo(

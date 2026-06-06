@@ -10,16 +10,20 @@
 
 ## Required production credentials
 
+Copy `server/.env.production.example` → `server/.env` on the host and fill in real values (never commit).
+
 | Service | Env vars | Notes |
 |---------|----------|-------|
-| PostgreSQL | `DATABASE_URL` | Managed PG 14+ recommended |
-| JWT | `JWT_SECRET` | Required |
-| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Email templates mock without SMTP |
-| Payments | `PAYMENT_MOCK_MODE=false`, Thawani/PayTabs API keys | Mock mode default in dev |
+| PostgreSQL | `DATABASE_URL` | Managed PG 14+ with `?sslmode=require` |
+| JWT | `JWT_SECRET` | Required — min 32 chars |
+| Public URL | `PUBLIC_URL`, `CORS_ORIGINS` | Payment redirects + browser CORS |
+| Auth | `AUTH_REFRESH_COOKIE=true`, `ADMIN_2FA_REQUIRED=true` | Harden admin sessions |
+| SMTP | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | Or per-school SMTP in admin UI |
+| Payments | `PAYMENT_MOCK_MODE=false`, `PAYMENT_WEBHOOK_SECRET` | Thawani/PayTabs keys when live |
 | SMS | `SMS_PROVIDER=twilio`, `TWILIO_*` | Stub logs without credentials |
-| Sentry | `SENTRY_DSN` | Optional error tracking |
+| Sentry | `SENTRY_DSN`, `LOG_LEVEL=info` | Optional error tracking |
 | S3 uploads | `S3_BUCKET`, `S3_ENDPOINT`, `S3_PUBLIC_URL` | Local `uploads/` fallback |
-| Webhook | `PAYMENT_WEBHOOK_SECRET` | Verify provider callbacks |
+| Backups | `BACKUP_AUTO`, `BACKUP_DIR`, `BACKUP_RETENTION_DAYS` | See `server/.env.production.example` |
 
 ## Deploy with Docker
 

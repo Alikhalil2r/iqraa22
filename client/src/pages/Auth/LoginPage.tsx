@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import React, { useState, useMemo } from 'react'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
 import { Shield, Eye, EyeOff, GraduationCap, Users, BarChart3, BookOpen, Lock, User } from 'lucide-react'
@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 import DemoCredentialsBox from '../../components/DemoCredentialsBox'
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams()
+  const schoolSlug = useMemo(() => searchParams.get('school')?.trim() || '', [searchParams])
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -27,7 +29,7 @@ export default function LoginPage() {
     if (!password) return toast.error(lang === 'ar' ? 'أدخل كلمة المرور' : 'Enter your password')
     setLoading(true)
     try {
-      await login(username.trim(), password, 'admin')
+      await login(username.trim(), password, 'admin', schoolSlug || undefined)
       navigate('/admin')
       toast.success(lang === 'ar' ? 'مرحباً بك في لوحة التحكم' : 'Welcome to the dashboard')
     } catch (err: any) {
@@ -97,6 +99,12 @@ export default function LoginPage() {
                 <span className={lang === 'en' ? 'text-green-600' : 'text-gray-400'}>EN</span>
               </button>
             </div>
+
+            {schoolSlug && (
+              <p className="text-xs text-gray-500 mb-4 -mt-4">
+                {lang === 'ar' ? `المدرسة: ${schoolSlug}` : `School: ${schoolSlug}`}
+              </p>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Username */}

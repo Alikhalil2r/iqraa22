@@ -75,6 +75,8 @@ The Vite dev server proxies `/api` requests to port 3001.
 
 On first start with `DEMO_MODE=true`, the server creates the schema, seeds demo data, and resets demo passwords.
 
+**Auto-seed policy:** The server only runs `seedDatabase()` on startup when `DEMO_MODE=true` or `SEED_ON_START=true`, and **never** in `NODE_ENV=production` (where `DEMO_MODE=true` is blocked). For a one-off seed in development without demo mode, set `SEED_ON_START=true`. In production, run `npm run db:seed` manually only during initial provisioning if needed.
+
 ### 5. Open the app
 
 - Public site: http://localhost:5000
@@ -177,7 +179,8 @@ Change `PORT` in `server/.env` or the Vite port in `client/vite.config.ts`.
 
 ## Docker / Replit
 
-- **Docker:** planned in Phase 1 Week 5 (see GitHub issue #7).
+- **Docker (production):** `docker compose up --build` — uses `NODE_ENV=production` and `DEMO_MODE=false`.
+- **Docker (demo):** `docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build`
 - **Replit:** see `replit.md` for Replit-specific notes and workflows.
 
 ## Implementation plan

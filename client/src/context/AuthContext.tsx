@@ -30,7 +30,7 @@ interface AuthContextType {
   user: User | null
   token: string | null
   isLoading: boolean
-  login: (username: string, password: string, role: string) => Promise<void>
+  login: (username: string, password: string, role: string, schoolSlug?: string) => Promise<void>
   logout: () => void
   isAdmin: boolean
   isParent: boolean
@@ -70,8 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsLoading(false))
   }, [token])
 
-  const login = useCallback(async (username: string, password: string, role: string) => {
-    const res = await authApi.login({ username, password, role })
+  const login = useCallback(async (username: string, password: string, role: string, schoolSlug?: string) => {
+    const res = await authApi.login({ username, password, role, ...(schoolSlug ? { schoolSlug } : {}) })
     const { token: newToken, user: newUser } = res.data
     localStorage.setItem('token', newToken)
     setToken(newToken)

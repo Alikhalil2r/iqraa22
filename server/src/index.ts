@@ -226,11 +226,22 @@ process.on('uncaughtException', (err) => {
   console.error('[UNCAUGHT EXCEPTION]', err.message)
 })
 
+function shouldAutoSeed(): boolean {
+  if (process.env.NODE_ENV === 'production') return false
+  return process.env.DEMO_MODE === 'true' || process.env.SEED_ON_START === 'true'
+}
+
 async function start() {
   try {
     await initDB()
-    const { seedDatabase } = await import('./db/seed')
-    await seedDatabase()
+    if (shouldAutoSeed()) {
+      const { seedDatabase } = await import('./db/seed')
+      await seedDatabase()
+    } else {
+      console.log('⏭️  Auto-seed skipped (set DEMO_MODE=true or SEED_ON_START=true in non-production)')
+    }
+    const { ensureSuperAdminFromEnv } = await import('./db/superAdmin')
+    await ensureSuperAdminFromEnv()
     startBackupScheduler()
     app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`🚀 Server running on port ${PORT}`)

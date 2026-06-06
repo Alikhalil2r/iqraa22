@@ -38,6 +38,26 @@ function publicUrl(filename: string): string {
   return `/api/uploads/files/${filename}`
 }
 
+const HOMEWORK_STAFF_ROLES = new Set(['super_admin', 'admin', 'teacher'])
+
+async function canAccessHomeworkFile(user: AuthRequest['user'], filename: string): Promise<boolean> {
+  if (!user) return false
+  const r = await query(
+    `SELECT hs.student_id, s.parent_id, h.school_id
+     FROM homework_submissions hs
+     JOIN students s ON s.id = hs.student_id
+     JOIN homework h ON h.id = hs.homework_id
+     WHERE hs.attachment_url LIKE $1
+     LIMIT 1`,
+    [`%/${filename}`]
+  )
+  const row = r.rows[0]
+  if (!row) return true
+  if (user.role === 'parent') return row.parent_id === user.id
+  if (HOMEWORK_STAFF_ROLES.has(user.role)) return row.school_id === user.schoolId
+  return false
+}
+
 router.post('/homework', authenticateToken, requireRole('parent'), upload.single('file'), async (req: AuthRequest, res) => {
   try {
     const { homeworkId, studentId } = req.body
@@ -66,11 +86,20 @@ router.post('/homework', authenticateToken, requireRole('parent'), upload.single
   }
 })
 
-router.get('/files/:filename', (req, res) => {
-  const safe = path.basename(req.params.filename)
-  const full = path.join(UPLOAD_DIR, safe)
-  if (!fs.existsSync(full)) return res.status(404).json({ error: 'Not found' })
-  res.sendFile(full)
+router.get('/files/:filename', authenticateToken, async (req: AuthRequest, res) => {
+  try {
+    const safe = path.basename(req.params.filename)
+    const full = path.join(UPLOAD_DIR, safe)
+    if (!fs.existsSync(full)) return res.status(404).json({ error: 'Not found' })
+
+    const allowed = await canAccessHomeworkFile(req.user, safe)
+    if (!allowed) return res.status(403).json({ error: 'غير مصرح' })
+
+    res.sendFile(full)
+  } catch (err) {
+    log.error('File download failed', { error: (err as Error).message })
+    res.status(500).json({ error: 'Server error' })
+  }
 })
 
 export default router

@@ -11,6 +11,16 @@ const log = createLogger('ATTENDANCE')
 const ALLOWED_STATUSES     = ['present', 'absent', 'late', 'excused'] as const
 const ALLOWED_PERSON_TYPES = ['student', 'employee'] as const
 
+async function personBelongsToSchool(
+  schoolId: string,
+  personType: typeof ALLOWED_PERSON_TYPES[number],
+  personId: string
+): Promise<boolean> {
+  const table = personType === 'student' ? 'students' : 'employees'
+  const r = await query(`SELECT id FROM ${table} WHERE id=$1 AND school_id=$2`, [personId, schoolId])
+  return !!r.rows[0]
+}
+
 router.get('/', authenticateToken, requireRole(...STAFF_ROLES), async (req: AuthRequest, res) => {
   try {
     const { schoolId } = req.user!
@@ -48,6 +58,9 @@ router.post('/', authenticateToken, writeLimiter, requireRole('admin', 'teacher'
     if (!ALLOWED_STATUSES.includes(status))          return res.status(400).json({ error: 'حالة الحضور غير صالحة' })
     if (!personType || !ALLOWED_PERSON_TYPES.includes(personType)) return res.status(400).json({ error: 'نوع الشخص غير صالح' })
     if (!personId || !date)                          return res.status(400).json({ error: 'بيانات ناقصة' })
+
+    const belongs = await personBelongsToSchool(schoolId, personType, personId)
+    if (!belongs) return res.status(403).json({ error: 'الشخص لا ينتمي لهذه المدرسة' })
 
     const result = await query(`
       INSERT INTO attendance (school_id,person_type,person_id,date,status,check_in_time,check_out_time,notes,recorded_by)
@@ -87,6 +100,8 @@ router.post('/bulk', authenticateToken, writeLimiter, requireRole('admin', 'teac
     const results = await withTransaction(async (client) => {
       const inserted = []
       for (const r of validRecords) {
+        const belongs = await personBelongsToSchool(schoolId, r.personType, r.personId)
+        if (!belongs) continue
         const result = await client.query(`
           INSERT INTO attendance (school_id,person_type,person_id,date,status,recorded_by)
           VALUES ($1,$2,$3,$4,$5,$6)

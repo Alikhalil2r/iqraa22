@@ -6,7 +6,7 @@ import { query } from '../db'
 import { generateToken, authenticateToken, AuthRequest } from '../middleware/auth'
 import { issueRefreshToken, verifyRefreshToken, revokeRefreshToken, refreshCookieName, refreshCookieOptions } from '../utils/refreshToken'
 import { validate, validatePasswordStrength } from '../middleware/validate'
-import { authLimiter, passwordChangeLimiter } from '../middleware/rateLimiter'
+import { authLimiter, passwordChangeLimiter, refreshLimiter } from '../middleware/rateLimiter'
 import { createLogger } from '../utils/logger'
 
 const log = createLogger('AUTH')
@@ -22,17 +22,32 @@ router.post('/login',
   ]),
   async (req, res) => {
     try {
-      const { username, password, role, totpCode } = req.body
+      const { username, password, role, totpCode, schoolSlug } = req.body
+      const normalizedUser = username.trim().toLowerCase()
 
-      const result = await query(
-        `SELECT u.id, u.school_id, u.username, u.name, u.role, u.password_hash,
-                u.is_active, u.totp_enabled, u.totp_secret, u.avatar,
-                s.name AS school_name, s.status AS school_status
-         FROM users u
-         JOIN schools s ON s.id = u.school_id
-         WHERE u.username = $1 AND u.is_active = true`,
-        [username.trim().toLowerCase()]
-      )
+      let sql = `
+        SELECT u.id, u.school_id, u.username, u.name, u.role, u.password_hash,
+               u.is_active, u.totp_enabled, u.totp_secret, u.avatar,
+               s.name AS school_name, s.slug AS school_slug, s.status AS school_status
+        FROM users u
+        JOIN schools s ON s.id = u.school_id
+        WHERE u.username = $1 AND u.is_active = true`
+      const params: string[] = [normalizedUser]
+
+      if (schoolSlug) {
+        params.push(String(schoolSlug).trim().toLowerCase())
+        sql += ` AND s.slug = $${params.length}`
+      }
+
+      const result = await query(sql, params)
+
+      if (!schoolSlug && result.rows.length > 1) {
+        return res.status(409).json({
+          error: 'اسم المستخدم موجود في أكثر من مدرسة — حدّد المدرسة (schoolSlug)',
+          requiresSchoolSlug: true,
+        })
+      }
+
       const user = result.rows[0]
 
       // Always run bcrypt compare to prevent timing attacks
@@ -189,7 +204,7 @@ router.put('/password',
 )
 
 // ─── Refresh access token (httpOnly cookie or body) ───────────────────────────
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
     const token = req.cookies?.[refreshCookieName()] || req.body?.refreshToken
     if (!token) return res.status(401).json({ error: 'Refresh token required' })

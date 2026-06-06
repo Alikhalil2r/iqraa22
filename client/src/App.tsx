@@ -103,6 +103,8 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+const RG = RoleGuard
+
 function ParentGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
   if (isLoading) return <PageLoader />
@@ -146,46 +148,46 @@ function AppRoutes() {
           <Route path="/parent/login" element={<ParentLoginPage />} />
           <Route path="/parent-login" element={<Navigate to="/parent/login" replace />} />
           <Route path="/admin" element={<AdminGuard><AdminLayout /></AdminGuard>}>
-            <Route index element={<Dashboard />} />
-            <Route path="accountant" element={<AccountantDashboard />} />
-            <Route path="teacher" element={<TeacherDashboard />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="pdf-reports" element={<PDFReports />} />
-            <Route path="students" element={<Students />} />
-            <Route path="employees" element={<Employees />} />
-            <Route path="attendance" element={<Attendance />} />
-            <Route path="grades" element={<Grades />} />
-            <Route path="fees" element={<RoleGuard permission="fees"><FeesAdmin /></RoleGuard>} />
-            <Route path="buses" element={<Buses />} />
-            <Route path="messages" element={<Messages />} />
-            <Route path="announcements" element={<Announcements />} />
-            <Route path="schedule" element={<ScheduleAdmin />} />
-            <Route path="news" element={<NewsAdmin />} />
-            <Route path="submissions" element={<SubmissionsAdmin />} />
-            <Route path="events" element={<Events />} />
-            <Route path="library" element={<LibraryAdmin />} />
-            <Route path="homework" element={<HomeworkAdmin />} />
-            <Route path="conduct" element={<ConductAdmin />} />
-            <Route path="leaves" element={<LeavesAdmin />} />
-            <Route path="gallery" element={<GalleryAdmin />} />
-            <Route path="site-content" element={<SiteContentAdmin />} />
-            <Route path="extended-content" element={<ExtendedContentAdmin />} />
-            <Route path="exams" element={<ExamsAdmin />} />
-            <Route path="id-cards" element={<StudentIdCards />} />
-            <Route path="requests" element={<RequestsAdmin />} />
-            <Route path="clients" element={<ClientsAdmin />} />
-            <Route path="projects" element={<ProjectsAdmin />} />
-            <Route path="platform-analytics" element={<PlatformAnalytics />} />
-            <Route path="platform-content" element={<PlatformContent />} />
-            <Route path="blog" element={<BlogAdmin />} />
-            <Route path="ai-insights" element={<AIInsights />} />
-            <Route path="theme" element={<ThemeSettings />} />
-            <Route path="settings" element={<SchoolSettings />} />
-            <Route path="users" element={<RoleGuard roles={['super_admin','admin']}><UsersAdmin /></RoleGuard>} />
-            <Route path="billing" element={<BillingAdmin />} />
-            <Route path="audit-log" element={<AuditLog />} />
-            <Route path="2fa" element={<TwoFactorSetup />} />
-            <Route path="super" element={<SuperAdmin />} />
+            <Route index element={<RG roles={['super_admin','admin','librarian','hr_manager','guard']}><Dashboard /></RG>} />
+            <Route path="accountant" element={<RG roles={['super_admin','admin','accountant']}><AccountantDashboard /></RG>} />
+            <Route path="teacher" element={<RG roles={['super_admin','admin','teacher']}><TeacherDashboard /></RG>} />
+            <Route path="reports" element={<RG roles={['super_admin','admin','accountant','hr_manager']}><Reports /></RG>} />
+            <Route path="pdf-reports" element={<RG roles={['super_admin','admin','teacher','accountant','hr_manager']}><PDFReports /></RG>} />
+            <Route path="students" element={<RG roles={['super_admin','admin','teacher','hr_manager']}><Students /></RG>} />
+            <Route path="employees" element={<RG roles={['super_admin','admin','hr_manager']}><Employees /></RG>} />
+            <Route path="attendance" element={<RG roles={['super_admin','admin','teacher','hr_manager','guard']}><Attendance /></RG>} />
+            <Route path="grades" element={<RG roles={['super_admin','admin','teacher']}><Grades /></RG>} />
+            <Route path="fees" element={<RG roles={['super_admin','admin','accountant']} permission="fees"><FeesAdmin /></RG>} />
+            <Route path="buses" element={<RG roles={['super_admin','admin','guard']}><Buses /></RG>} />
+            <Route path="messages" element={<RG roles={['super_admin','admin','teacher','hr_manager','librarian','guard']}><Messages /></RG>} />
+            <Route path="announcements" element={<RG roles={['super_admin','admin']}><Announcements /></RG>} />
+            <Route path="schedule" element={<RG roles={['super_admin','admin','teacher']}><ScheduleAdmin /></RG>} />
+            <Route path="news" element={<RG roles={['super_admin','admin']}><NewsAdmin /></RG>} />
+            <Route path="submissions" element={<RG roles={['super_admin','admin','hr_manager']}><SubmissionsAdmin /></RG>} />
+            <Route path="events" element={<RG roles={['super_admin','admin']}><Events /></RG>} />
+            <Route path="library" element={<RG roles={['super_admin','admin','librarian']}><LibraryAdmin /></RG>} />
+            <Route path="homework" element={<RG roles={['super_admin','admin','teacher']}><HomeworkAdmin /></RG>} />
+            <Route path="conduct" element={<RG roles={['super_admin','admin','teacher']}><ConductAdmin /></RG>} />
+            <Route path="leaves" element={<RG roles={['super_admin','admin','hr_manager']}><LeavesAdmin /></RG>} />
+            <Route path="gallery" element={<RG roles={['super_admin','admin']}><GalleryAdmin /></RG>} />
+            <Route path="site-content" element={<RG roles={['super_admin','admin']}><SiteContentAdmin /></RG>} />
+            <Route path="extended-content" element={<RG roles={['super_admin','admin']}><ExtendedContentAdmin /></RG>} />
+            <Route path="exams" element={<RG roles={['super_admin','admin','teacher']}><ExamsAdmin /></RG>} />
+            <Route path="id-cards" element={<RG roles={['super_admin','admin']}><StudentIdCards /></RG>} />
+            <Route path="requests" element={<RG roles={['super_admin']}><RequestsAdmin /></RG>} />
+            <Route path="clients" element={<RG roles={['super_admin']}><ClientsAdmin /></RG>} />
+            <Route path="projects" element={<RG roles={['super_admin']}><ProjectsAdmin /></RG>} />
+            <Route path="platform-analytics" element={<RG roles={['super_admin']}><PlatformAnalytics /></RG>} />
+            <Route path="platform-content" element={<RG roles={['super_admin']}><PlatformContent /></RG>} />
+            <Route path="blog" element={<RG roles={['super_admin']}><BlogAdmin /></RG>} />
+            <Route path="ai-insights" element={<RG roles={['super_admin','admin','teacher','accountant','hr_manager']}><AIInsights /></RG>} />
+            <Route path="theme" element={<RG roles={['super_admin','admin']}><ThemeSettings /></RG>} />
+            <Route path="settings" element={<RG roles={['super_admin','admin']}><SchoolSettings /></RG>} />
+            <Route path="users" element={<RG roles={['super_admin','admin']}><UsersAdmin /></RG>} />
+            <Route path="billing" element={<RG roles={['super_admin','admin']}><BillingAdmin /></RG>} />
+            <Route path="audit-log" element={<RG roles={['super_admin','admin']}><AuditLog /></RG>} />
+            <Route path="2fa" element={<RG roles={['super_admin','admin','teacher','accountant','librarian','hr_manager','guard']}><TwoFactorSetup /></RG>} />
+            <Route path="super" element={<RG roles={['super_admin']}><SuperAdmin /></RG>} />
           </Route>
           <Route path="/parent" element={<ParentGuard><ParentLayout /></ParentGuard>}>
             <Route index element={<ParentDashboard />} />
