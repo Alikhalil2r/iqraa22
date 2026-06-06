@@ -21,7 +21,8 @@ FROM node:20-alpine AS production
 WORKDIR /app
 ENV NODE_ENV=production
 
-RUN addgroup -S iqraa && adduser -S iqraa -G iqraa
+RUN apk add --no-cache wget \
+  && addgroup -S iqraa && adduser -S iqraa -G iqraa
 
 COPY --from=server-deps /app/server /app/server
 COPY --from=client-build /app/client/dist /app/client/dist

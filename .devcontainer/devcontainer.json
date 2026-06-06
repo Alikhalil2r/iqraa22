@@ -1,0 +1,30 @@
+{
+  "name": "Iqraa School SaaS",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/postgres:1": {
+      "version": "16",
+      "password": "postgres",
+      "database": "iqraa_school"
+    }
+  },
+  "forwardPorts": [5000, 3001],
+  "portsAttributes": {
+    "5000": {
+      "label": "App (Vite)",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    },
+    "3001": {
+      "label": "API (Express)",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "npm run install:all && cp -n server/.env.example server/.env && cp -n client/.env.example client/.env",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint"]
+    }
+  },
+  "remoteUser": "node"
+}

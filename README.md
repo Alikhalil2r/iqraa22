@@ -183,6 +183,60 @@ Change `PORT` in `server/.env` or the Vite port in `client/vite.config.ts`.
 - **Docker (demo):** `docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build`
 - **Replit:** see `replit.md` for Replit-specific notes and workflows.
 
+## Deployment options
+
+This app needs **Node.js + PostgreSQL + Express API** — static hosting alone is not enough.
+
+| Option | When to use | Steps |
+|--------|-------------|-------|
+| **A — Local** | Preview on your PC | `npm run dev` → open http://localhost:5000 |
+| **B — Tunnel** | Share a temporary public URL | Run locally, then `cloudflared tunnel --url http://localhost:5000` or ngrok |
+| **C — Cloud** | Permanent demo/production | Deploy with Docker (`Dockerfile` + `docker-compose.yml` ready). Set `DATABASE_URL`, `JWT_SECRET`, `PUBLIC_URL`, `CORS_ORIGINS`. See [GO-LIVE.md](./GO-LIVE.md) |
+| **D — GitHub Pages** | Not suitable | Frontend-only; no API, database, or login |
+
+### Cloud deploy (Render / Railway / Fly.io)
+
+1. Create a **PostgreSQL** database and note `DATABASE_URL`.
+2. Deploy the **app** service from this repo (Docker build or `npm run build` + `npm start` in `server/`).
+3. Set required env vars: `DATABASE_URL`, `JWT_SECRET` (32+ chars), `NODE_ENV=production`, `DEMO_MODE=false`, `PUBLIC_URL`, `CORS_ORIGINS`.
+4. For a quick demo stack with seed data: `docker compose -f docker-compose.yml -f docker-compose.demo.yml up --build` (do not use demo mode in real production).
+
+Health check after deploy: `GET /api/health` → `{"status":"ok"}`.
+
+## Web preview from GitHub (معاينة على الويب)
+
+GitHub Pages **لا يكفي** — التطبيق يحتاج Express + PostgreSQL. استخدم أحد الخيارين:
+
+### Option A — Render (رابط عام دائم)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Alikhalil2r/iqraa22)
+
+1. اضغط الزر أعلاه أو افتح: https://render.com/deploy?repo=https://github.com/Alikhalil2r/iqraa22
+2. سجّل الدخول واربط حساب GitHub، ثم اسمح لـ Render بالوصول إلى المستودع الخاص `Alikhalil2r/iqraa22`
+3. Render يقرأ `render.yaml` وينشئ **Web Service + PostgreSQL** تلقائياً
+4. انتظر حتى يصبح النشر **Live** (5–15 دقيقة في المرة الأولى)
+5. افتح الرابط: `https://iqraa-web.onrender.com` (أو الاسم الذي يظهر في لوحة Render)
+6. **بيانات تجريبية (مرة واحدة):** في Render → **Shell** → نفّذ:
+   ```bash
+   cd server && npm run db:seed
+   ```
+   ثم سجّل الدخول: `admin` / `demo2026`
+
+ملفات النشر: `render.yaml`, `Dockerfile`, `docker-compose.yml`
+
+### Option B — GitHub Codespaces (معاينة سريعة من المتصفح)
+
+1. افتح: https://github.com/Alikhalil2r/iqraa22
+2. **Code** → تبويب **Codespaces** → **Create codespace on main**
+3. بعد فتح البيئة، في الطرفية:
+   ```bash
+   npm run dev
+   ```
+4. عندما يظهر منبّه المنفذ **5000**، اختر **Open in Browser** (أو **Ports** → 5000 → **Globe icon**)
+5. الرابط العام يكون مثل: `https://xxxx-5000.app.github.dev`
+
+PostgreSQL و Node.js مُعدّان في `.devcontainer/devcontainer.json` — وضع `DEMO_MODE=true` في `server/.env` يفعّل البيانات التجريبية تلقائياً.
+
 ## Implementation plan
 
 Phase 1 (Weeks 1–5) tracks progress in [GitHub Issues](https://github.com/Alikhalil2r/iqraa22/issues) under milestone **M1: Production Foundation**.
